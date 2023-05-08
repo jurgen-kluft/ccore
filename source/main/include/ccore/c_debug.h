@@ -23,7 +23,7 @@ namespace ncore
     };
 
     //------------------------------------------------------------------------------
-    extern void gSetAssertHandler(asserthandler_t* handler);
+    void gSetAssertHandler(asserthandler_t* handler);
 
     //------------------------------------------------------------------------------
     // Summary:

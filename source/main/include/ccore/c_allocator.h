@@ -48,6 +48,14 @@ namespace ncore
         virtual ~alloc_t() {}
     };
 
+    template<typename T> inline T* g_allocate_array(alloc_t* a, u32 maxsize)
+    {
+        void* ptr = a->allocate(maxsize * sizeof(T));
+        return (T*)ptr;
+    }
+
+    template <typename T> inline void g_deallocate_array(alloc_t* a, T* array) { a->deallocate(array); }
+
     // class new and delete
 #define DCORE_CLASS_PLACEMENT_NEW_DELETE                                     \
     void *operator new(ncore::uint_t num_bytes, void *mem) { return mem; }   \

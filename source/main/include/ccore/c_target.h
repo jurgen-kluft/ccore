@@ -1,5 +1,6 @@
 #ifndef __CCORE_TARGET_H__
 #define __CCORE_TARGET_H__
+#pragma once
 
 namespace ncore
 {
