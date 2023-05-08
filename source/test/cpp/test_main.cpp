@@ -61,13 +61,8 @@ namespace ncore
         }
 
         virtual void* v_allocate(u32 size, u32 alignment) { return mAllocator->Allocate(size, alignment); }
-
-        virtual u32 v_deallocate(void* mem) { return mAllocator->Deallocate(mem); }
-
-        virtual void v_release()
-        {
-            // Do nothing
-        }
+        virtual u32   v_deallocate(void* mem) { return mAllocator->Deallocate(mem); }
+        virtual void  v_release() {}
     };
 } // namespace ncore
 
@@ -92,6 +87,5 @@ bool gRunUnitTest(UnitTest::TestReporter& reporter, UnitTest::TestContext& conte
     }
 
     ncore::gSetAssertHandler(nullptr);
-
     return r == 0;
 }
