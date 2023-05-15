@@ -12,43 +12,40 @@ namespace ncore
     class alloc_t
     {
     public:
-        void *allocate(u32 size, u32 alignment) { return v_allocate(size, alignment); }
-        void *allocate(u32 size) { return v_allocate(size, sizeof(void *)); }
-        u32   deallocate(void *ptr) { return v_deallocate(ptr); }
+        void* allocate(u32 size, u32 alignment) { return v_allocate(size, alignment); }
+        void* allocate(u32 size) { return v_allocate(size, sizeof(void*)); }
+        u32   deallocate(void* ptr) { return v_deallocate(ptr); }
         void  release() { v_release(); }
 
-        template <typename T, typename... Args>
-        T *construct(Args... args)
+        template <typename T, typename... Args> T* construct(Args... args)
         {
-            void *mem    = v_allocate(sizeof(T), sizeof(void *));
-            T    *object = new (mem) T(args...);
+            void* mem    = v_allocate(sizeof(T), sizeof(void*));
+            T*    object = new (mem) T(args...);
             return object;
         }
 
-        template <typename T, typename... Args>
-        T *placement(u32 EXTRA = 0, Args... args)
+        template <typename T, typename... Args> T* placement(u32 EXTRA = 0, Args... args)
         {
-            void *mem    = v_allocate(sizeof(T) + EXTRA, sizeof(void *));
-            T    *object = new (mem) T(args...);
+            void* mem    = v_allocate(sizeof(T) + EXTRA, sizeof(void*));
+            T*    object = new (mem) T(args...);
             return object;
         }
 
-        template <typename T>
-        void destruct(T *p)
+        template <typename T> void destruct(T* p)
         {
             p->~T();
             v_deallocate(p);
         }
 
     protected:
-        virtual void *v_allocate(u32 size, u32 align) = 0;  // Allocate memory with alignment
-        virtual u32   v_deallocate(void *p)           = 0;  // Deallocate/Free memory
+        virtual void* v_allocate(u32 size, u32 align) = 0; // Allocate memory with alignment
+        virtual u32   v_deallocate(void* p)           = 0; // Deallocate/Free memory
         virtual void  v_release()                     = 0;
 
         virtual ~alloc_t() {}
     };
 
-    template<typename T> inline T* g_allocate_array(alloc_t* a, u32 maxsize)
+    template <typename T> inline T* g_allocate_array(alloc_t* a, u32 maxsize)
     {
         void* ptr = a->allocate(maxsize * sizeof(T));
         return (T*)ptr;
@@ -58,34 +55,35 @@ namespace ncore
 
     // class new and delete
 #define DCORE_CLASS_PLACEMENT_NEW_DELETE                                     \
-    void *operator new(ncore::uint_t num_bytes, void *mem) { return mem; }   \
-    void  operator delete(void *mem, void *) {}                              \
-    void *operator new(ncore::uint_t num_bytes) noexcept { return nullptr; } \
-    void  operator delete(void *mem) {}
+    void* operator new(ncore::uint_t num_bytes, void* mem) { return mem; }   \
+    void  operator delete(void* mem, void*) {}                               \
+    void* operator new(ncore::uint_t num_bytes) noexcept { return nullptr; } \
+    void  operator delete(void* mem) {}
 
 #define DCORE_CLASS_NEW_DELETE(get_allocator_func, align)                  \
-    void *operator new(ncore::uint_t num_bytes, void *mem) { return mem; } \
-    void  operator delete(void *mem, void *) {}                            \
-    void *operator new(ncore::uint_t num_bytes)                            \
+    void* operator new(ncore::uint_t num_bytes, void* mem) { return mem; } \
+    void  operator delete(void* mem, void*) {}                             \
+    void* operator new(ncore::uint_t num_bytes)                            \
     {                                                                      \
         ASSERT(num_bytes < (ncore::uint_t)2 * 1024 * 1024 * 1024);         \
         return get_allocator_func()->allocate((u32)num_bytes, align);      \
     }                                                                      \
-    void operator delete(void *mem) { get_allocator_func()->deallocate(mem); }
+    void operator delete(void* mem) { get_allocator_func()->deallocate(mem); }
 
 #define DCORE_CLASS_ARRAY_NEW_DELETE(get_allocator_func, align)       \
-    void *operator new[](ncore::uint_t num_bytes)                     \
+    void* operator new[](ncore::uint_t num_bytes)                     \
     {                                                                 \
         ASSERT(num_bytes < (ncore::uint_t)2 * 1024 * 1024 * 1024);    \
         return get_allocator_func()->allocate((u32)num_bytes, align); \
     }                                                                 \
-    void operator delete[](void *mem) { get_allocator_func()->deallocate(mem); }
+    void operator delete[](void* mem) { get_allocator_func()->deallocate(mem); }
 
     // helper functions
-    inline void *g_advance_ptr(void *ptr, uint_t size) { return (void *)((ptr_t)ptr + size); }
-    inline void *g_align_ptr(void *ptr, u32 alignment) { return (void *)(((ptr_t)ptr + (alignment - 1)) & ~((ptr_t)alignment - 1)); }
-    inline ptr_t g_diff_ptr(void *ptr, void *next_ptr) { return (ptr_t)((ptr_t)next_ptr - (ptr_t)ptr); }
-    inline bool  g_ptr_in_range(void *buffer, uint_t size, void *ptr)
+    template <typename T> inline T* g_advance_ptr(T* ptr, uint_t size) { return (T*)((ptr_t)ptr + size); }
+    template <typename T> inline T* g_align_ptr(T* ptr, u32 alignment) { return (T*)(((ptr_t)ptr + (alignment - 1)) & ~((ptr_t)alignment - 1)); }
+
+    inline uint_t g_ptr_diff_bytes(void* ptr, void* next_ptr) { return (uint_t)((ptr_t)next_ptr - (ptr_t)ptr); }
+    inline bool  g_ptr_in_range(void* buffer, uint_t size, void* ptr)
     {
         ptr_t begin  = (ptr_t)buffer;
         ptr_t end    = begin + size;
@@ -95,27 +93,25 @@ namespace ncore
 
     class alloc_buffer_t : public alloc_t
     {
-        static inline u8 *align_ptr(u8 *ptr, ptr_t align) { return (u8 *)(((ptr_t)ptr + (align - 1)) & ~(align - 1)); }
-
-        u8 *m_base;
-        u8 *m_ptr;
-        u8 *m_end;
+        u8* m_base;
+        u8* m_ptr;
+        u8* m_end;
         s64 m_cnt;
 
     public:
-        alloc_buffer_t(u8 *buffer, s64 length);
+        alloc_buffer_t(u8* buffer, s64 length);
 
-        u8       *data() { return m_base; }
-        u8 const *data() const { return m_base; }
+        u8*       data() { return m_base; }
+        u8 const* data() const { return m_base; }
 
         DCORE_CLASS_PLACEMENT_NEW_DELETE
 
     protected:
-        virtual void *v_allocate(u32 size, u32 align)
+        virtual void* v_allocate(u32 size, u32 align)
         {
-            if ((align_ptr(m_ptr, align) + size) <= m_end)
+            if ((g_align_ptr(m_ptr, align) + size) <= m_end)
             {
-                u8 *ptr = align_ptr(m_ptr, align);
+                u8* ptr = g_align_ptr(m_ptr, align);
                 m_ptr   = ptr + size;
                 m_cnt += 1;
                 return ptr;
@@ -123,7 +119,7 @@ namespace ncore
             return nullptr;
         }
 
-        virtual u32 v_deallocate(void *p)
+        virtual u32 v_deallocate(void* p)
         {
             if (p != nullptr)
             {
@@ -143,6 +139,6 @@ namespace ncore
         }
     };
 
-};  // namespace ncore
+};     // namespace ncore
 
-#endif  ///< __CCORE_ALLOCATOR_H__
+#endif ///< __CCORE_ALLOCATOR_H__
