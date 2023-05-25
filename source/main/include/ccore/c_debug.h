@@ -237,33 +237,33 @@ namespace ncore
                 D_BREAK;                                                                               \
         } while (0)
 
-#    define ASSERTCT(expr)                    DASSERTCT(expr)
-#    define ASSERTSL(level, expr, str)        DASSERTSL(level, expr, str)
-#    define ASSERTL(level, expr)              DASSERTL(level, expr)
-#    define ASSERT(expr)                      DASSERT(expr)
+#    define ASSERTCT(expr) DASSERTCT(expr)
+#    define ASSERTSL(level, expr, str) DASSERTSL(level, expr, str)
+#    define ASSERTL(level, expr) DASSERTL(level, expr)
+#    define ASSERT(expr) DASSERT(expr)
 #    define ASSERT_OPEN_RANGE(_i, _min, _max) DASSERT(_i >= _min && _i < _max)
-#    define ASSERTS(expr, str)                DASSERTS(expr, str)
+#    define ASSERTS(expr, str) DASSERTS(expr, str)
 
 #else
 
 #    define DASSERTCT(expr)
-#    define DASSERT(expr)               (void(0))
-#    define DASSERTS(expr, str)         (void(0))
+#    define DASSERT(expr) (void(0))
+#    define DASSERTS(expr, str) (void(0))
 #    define DASSERTSL(level, expr, str) (void(0))
-#    define DASSERTL(level, expr)       (void(0))
+#    define DASSERTL(level, expr) (void(0))
 #    define ASSERTCT(expr)
-#    define ASSERT(expr)                      (void(0))
+#    define ASSERT(expr) (void(0))
 #    define ASSERT_OPEN_RANGE(_i, _min, _max) (void(0))
-#    define ASSERTS(expr, str)                (void(0))
-#    define ASSERTSL(level, expr, str)        (void(0))
-#    define ASSERTL(level, expr)              (void(0))
+#    define ASSERTS(expr, str) (void(0))
+#    define ASSERTSL(level, expr, str) (void(0))
+#    define ASSERTL(level, expr) (void(0))
 
-#    define DVERIFY(expr)       (expr)
+#    define DVERIFY(expr) (expr)
 #    define DVERIFYS(expr, str) (expr)
 #    define DBOUNDS(v, l, h)
 
 #endif
 
-};  // namespace ncore
+};     // namespace ncore
 
-#endif  /// __CCORE_DEBUG_H__
+#endif /// __CCORE_DEBUG_H__
