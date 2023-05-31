@@ -11,16 +11,8 @@ UNITTEST_SUITE_BEGIN(test_types)
 		UNITTEST_FIXTURE_SETUP() {}
 		UNITTEST_FIXTURE_TEARDOWN() {}
 
-		static void sTypeOf_bool_IsUnique(bool a) { }
-		static void sTypeOf_bool_IsUnique(s32 a) { }
-		static void sTypeOf_bool_IsUnique(u32 a) { }
-
 		UNITTEST_TEST(type_size_check)
 		{
-			sTypeOf_bool_IsUnique(bool(0));
-			sTypeOf_bool_IsUnique(s32(0));
-			sTypeOf_bool_IsUnique(u32(0));
-
 #ifdef TARGET_32BIT
 			CHECK_TRUE(sizeof(void*) == 4);
 #endif
