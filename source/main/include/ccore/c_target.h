@@ -7,11 +7,31 @@ namespace ncore
     // Hardware enumeration for TARGET_PLATFORM
     enum eplatform
     {
-        PLATFORM_NONE = 0,
-        PLATFORM_PC   = (1 << 0),
-        PLATFORM_MAC  = (1 << 1),
-        PLATFORM_ALL  = (1 << 15),
-        PLATFORM_PAD  = 0xffffffff
+        TARGET_PLATFORM_NONE  = 0,
+        TARGET_PLATFORM_PC    = (0x0001 << 0),
+        TARGET_PLATFORM_MAC   = (0x0001 << 1),
+        TARGET_PLATFORM_LINUX = (0x0001 << 2),
+        TARGET_PLATFORM_ALL   = TARGET_PLATFORM_PC | TARGET_PLATFORM_MAC | TARGET_PLATFORM_LINUX,
+    };
+
+    // Available configurations
+    enum econfig
+    {
+        TARGET_CONFIG_NONE    = 0,
+        TARGET_CONFIG_DEBUG   = (0x0100 << 0),
+        TARGET_CONFIG_RELEASE = (0x0100 << 1),
+        TARGET_CONFIG_FINAL   = (0x0100 << 2),
+        TARGET_CONFIG_ALL     = TARGET_CONFIG_DEBUG | TARGET_CONFIG_RELEASE | TARGET_CONFIG_FINAL,
+    };
+
+    // Available build types
+    enum ebuild
+    {
+        TARGET_BUILD_NONE   = 0,
+        TARGET_BUILD_DEV    = (0x1000 << 0),
+        TARGET_BUILD_RETAIL = (0x1000 << 1),
+        TARGET_BUILD_TEST   = (0x1000 << 2),
+        TARGET_BUILD_ALL    = TARGET_BUILD_DEV | TARGET_BUILD_RETAIL | TARGET_BUILD_TEST,
     };
 
 // -------------------------------------------------------------------------------------------
@@ -45,48 +65,49 @@ namespace ncore
 #endif
 
 #if defined(__CYGWIN__)
-#    if !defined(TARGET_CYGWIN)
-#        define TARGET_CYGWIN 1
+#    if !defined(OS_CYGWIN)
+#        define OS_CYGWIN 1
 #    endif
 #elif defined(_WIN32)
-#    if !defined(TARGET_PC)
-#        define TARGET_PC 1
+#    if !defined(OS_WINDOWS)
+#        define OS_WINDOWS 1
 #    endif
 #    ifndef NOMINMAX
 #        define NOMINMAX
 #    endif
 #elif defined(__APPLE__)
-#    if !defined(TARGET_MAC)
-#        define TARGET_MAC 1
+#    if !defined(OS_MACOS)
+#        define OS_MACOS 1
 #    endif
 #elif defined(__FreeBSD__)
-#    if !defined(TARGET_FREEBSD)
-#        define TARGET_FREEBSD 1
+#    if !defined(OS_FREEBSD)
+#        define OS_FREEBSD 1
 #    endif
 #elif defined(__NetBSD__)
-#    if !defined(TARGET_NETBSD)
-#        define TARGET_NETBSD 1
+#    if !defined(OS_NETBSD)
+#        define OS_NETBSD 1
 #    endif
 #elif defined(__OpenBSD__)
-#    if !defined(TARGET_OPENBSD)
-#        define TARGET_OPENBSD 1
+#    if !defined(OS_OPENBSD)
+#        define OS_OPENBSD 1
 #    endif
 #elif defined(__linux__)
-#    if !defined(TARGET_LINUX)
-#        define TARGET_LINUX 1
+#    if !defined(OS_LINUX)
+#        define OS_LINUX 1
 #    endif
 #endif
 
 // Check if the configuration is debug or release
+#if !defined(TARGET_DEV) && !defined(TARGET_RETAIL) && !defined(TARGET_TEST)
+#    define TARGET_DEV 1
+#endif
 #if defined(NDEBUG) && !defined(_DEBUG)
 #    if !defined(TARGET_RELEASE)
 #        define TARGET_RELEASE 1
-#        define TARGET_DEV     1
 #    endif
 #else
 #    if !defined(TARGET_DEBUG)
 #        define TARGET_DEBUG 1
-#        define TARGET_DEV   1
 #    endif
 #endif
 
@@ -223,7 +244,7 @@ namespace ncore
 #        define TARGET_DEVKIT
 #        define TARGET_DEBUG
 #        define TARGET_TEST
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #        define D_DEBUG
 #    endif
@@ -240,7 +261,7 @@ namespace ncore
 #        define TARGET_DEVKIT
 #        define TARGET_DEV
 #        define TARGET_TEST
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -256,7 +277,7 @@ namespace ncore
 #        define TARGET_DEVKIT
 #        define TARGET_RELEASE
 #        define TARGET_TEST
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -271,7 +292,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_DEVKIT
 #        define TARGET_DEBUG
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #        define D_DEBUG
 #    endif
@@ -287,7 +308,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_DEVKIT
 #        define TARGET_DEV
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -302,7 +323,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_DEVKIT
 #        define TARGET_RELEASE
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -317,7 +338,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_DEVKIT
 #        define TARGET_FINAL
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #        define D_DEBUG
 #    endif
@@ -333,7 +354,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_CLIENT
 #        define TARGET_DEBUG
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #        define D_DEBUG
 #    endif
@@ -349,7 +370,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_CLIENT
 #        define TARGET_DEV
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -364,7 +385,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_CLIENT
 #        define TARGET_RELEASE
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #        define D_DEBUG
 #    endif
@@ -380,7 +401,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_CLIENT
 #        define TARGET_RELEASE
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #        define D_DEBUG
 #    endif
@@ -396,7 +417,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_RETAIL
 #        define TARGET_DEBUG
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #        define D_DEBUG
 #    endif
@@ -412,7 +433,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_RETAIL
 #        define TARGET_DEV
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -427,7 +448,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_RETAIL
 #        define TARGET_RELEASE
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #        define D_DEBUG
 #    endif
@@ -443,7 +464,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_RETAIL
 #        define TARGET_FINAL
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 #        define D_DEBUG
 #    endif
@@ -461,7 +482,7 @@ namespace ncore
 #        define TARGET_DEVKIT
 #        define TARGET_DEBUG
 #        define TARGET_TEST
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 #        define D_DEBUG
 #    endif
@@ -478,7 +499,7 @@ namespace ncore
 #        define TARGET_DEVKIT
 #        define TARGET_DEV
 #        define TARGET_TEST
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -494,7 +515,7 @@ namespace ncore
 #        define TARGET_DEVKIT
 #        define TARGET_RELEASE
 #        define TARGET_TEST
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -509,7 +530,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_DEVKIT
 #        define TARGET_DEBUG
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 #        define D_DEBUG
 #    endif
@@ -525,7 +546,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_DEVKIT
 #        define TARGET_DEV
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -540,7 +561,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_DEVKIT
 #        define TARGET_RELEASE
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -555,7 +576,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_RETAIL
 #        define TARGET_FINAL
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -570,7 +591,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_CLIENT
 #        define TARGET_DEBUG
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 #        define D_DEBUG
 #    endif
@@ -586,7 +607,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_CLIENT
 #        define TARGET_DEV
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -601,7 +622,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_CLIENT
 #        define TARGET_RELEASE
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -616,7 +637,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_CLIENT
 #        define TARGET_FINAL
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -631,7 +652,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_RETAIL
 #        define TARGET_DEBUG
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 #        define D_DEBUG
 #    endif
@@ -647,7 +668,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_RETAIL
 #        define TARGET_DEV
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 #        define D_DEBUG
 #    endif
@@ -663,7 +684,7 @@ namespace ncore
 #        define TARGET_64BIT
 #        define TARGET_RETAIL
 #        define TARGET_FINAL
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 #    endif
 #endif
@@ -679,7 +700,7 @@ namespace ncore
 #        define TARGET_DEVKIT
 #        define TARGET_MFC
 #        define TARGET_DEBUG
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define TARGET_EDITOR
 #        define VALID_TARGET
 // #define D_USE_NATIVE_NEW_AND_DELETE
@@ -699,7 +720,7 @@ namespace ncore
 #        define TARGET_DEVKIT
 #        define TARGET_MFC
 #        define TARGET_DEV
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define TARGET_EDITOR
 #        define VALID_TARGET
 // #define D_USE_NATIVE_NEW_AND_DELETE
@@ -719,7 +740,7 @@ namespace ncore
 #        define TARGET_DEVKIT
 #        define TARGET_MFC
 #        define TARGET_RELEASE
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define TARGET_EDITOR
 #        define VALID_TARGET
 // #define D_USE_NATIVE_NEW_AND_DELETE
@@ -738,7 +759,7 @@ namespace ncore
 #        undef TARGET_PC
 #        define TARGET_PC
 #        define TARGET_64BIT
-#        define TARGET_PLATFORM PLATFORM_PC
+#        define TARGET_PLATFORM TARGET_PLATFORM_PC
 #        define VALID_TARGET
 
 #        ifdef _DEBUG
@@ -751,7 +772,7 @@ namespace ncore
 #        undef TARGET_MAC
 #        define TARGET_MAC
 #        define TARGET_64BIT
-#        define TARGET_PLATFORM PLATFORM_MAC
+#        define TARGET_PLATFORM TARGET_PLATFORM_MAC
 #        define VALID_TARGET
 
 #        ifdef _DEBUG
