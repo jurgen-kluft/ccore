@@ -3,7 +3,7 @@
 !*/
 
 vendor/
-tags
+target/
 
 #except the following files
 !*.cpp
