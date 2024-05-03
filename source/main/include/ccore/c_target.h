@@ -1249,12 +1249,14 @@ namespace ncore
     //==============================================================================
 
     typedef unsigned D_INT8  u8;
+    typedef unsigned D_INT8  byte;
     typedef unsigned D_INT16 u16;
     typedef unsigned D_INT32 u32;
     typedef D_UINT64         u64;
     typedef D_UINT128        u128;
     typedef D_UINT256        u256;
     typedef signed D_INT8    s8;
+    typedef signed D_INT8    sbyte;
     typedef signed D_INT16   s16;
     typedef signed D_INT32   s32;
     typedef D_INT64          s64;
