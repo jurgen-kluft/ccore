@@ -115,10 +115,10 @@ namespace ncore
     public:
         alloc_buffer_t(u8* buffer, s64 length);
 
-        u8*       data() { return m_base; }
-        u8 const* data() const { return m_base; }
-        s64       cap() const { return m_end - m_base; }
-        s64       size() const { return m_end - m_ptr; }
+        inline u8*       data() { return m_base; }
+        inline u8 const* data() const { return m_base; }
+        inline s64       cap() const { return m_end - m_base; }
+        inline s64       size() const { return m_ptr - m_base; }
 
         DCORE_CLASS_PLACEMENT_NEW_DELETE
 
@@ -139,6 +139,7 @@ namespace ncore
         {
             if (p != nullptr)
             {
+                ASSERT(g_ptr_in_range(m_base, cap(), p));
                 ASSERT(m_cnt > 0);
                 m_cnt -= 1;
                 if (m_cnt == 0)
