@@ -186,31 +186,31 @@ namespace ncore
 #elif defined(TARGET_LINUX)
 #    if defined(TARGET_DEBUG)
 #        if defined(TARGET_DEV)
-#            define TARGET_LINUD_DEV_DEBUG
+#            define TARGET_LINUX_DEV_DEBUG
 #        elif defined(TARGET_RETAIL)
-#            define TARGET_LINUD_RETAIL_DEBUG
+#            define TARGET_LINUX_RETAIL_DEBUG
 #        elif defined(TARGET_TEST)
-#            define TARGET_LINUD_TEST_DEBUG
+#            define TARGET_LINUX_TEST_DEBUG
 #        else
 #            error "TARGET_DEBUG must be defined with TARGET_DEV, TARGET_RETAIL or TARGET_TEST"
 #        endif
 #    elif defined(TARGET_RELEASE)
 #        if defined(TARGET_DEV)
-#            define TARGET_LINUD_DEV_RELEASE
+#            define TARGET_LINUX_DEV_RELEASE
 #        elif defined(TARGET_RETAIL)
-#            define TARGET_LINUD_RETAIL_RELEASE
+#            define TARGET_LINUX_RETAIL_RELEASE
 #        elif defined(TARGET_TEST)
-#            define TARGET_LINUD_TEST_RELEASE
+#            define TARGET_LINUX_TEST_RELEASE
 #        else
 #            error "TARGET_RELEASE must be defined with TARGET_DEV, TARGET_RETAIL or TARGET_TEST"
 #        endif
 #    elif defined(TARGET_FINAL)
 #        if defined(TARGET_DEV)
-#            define TARGET_LINUD_DEV_FINAL
+#            define TARGET_LINUX_DEV_FINAL
 #        elif defined(TARGET_RETAIL)
-#            define TARGET_LINUD_RETAIL_FINAL
+#            define TARGET_LINUX_RETAIL_FINAL
 #        elif defined(TARGET_TEST)
-#            define TARGET_LINUD_TEST_FINAL
+#            define TARGET_LINUX_TEST_FINAL
 #        else
 #            error "TARGET_FINAL must be defined with TARGET_DEV, TARGET_RETAIL or TARGET_TEST"
 #        endif
@@ -768,6 +768,19 @@ namespace ncore
 #        else
 #            define TARGET_DEV
 #        endif
+#    elif defined(__linux__) && defined(__clang__)
+#        undef TARGET_LINUX
+#        define TARGET_LINUX
+#        define TARGET_64BIT
+#        define TARGET_PLATFORM TARGET_PLATFORM_LINUX
+#        define VALID_TARGET
+
+#        ifdef _DEBUG
+#            define TARGET_DEBUG
+#            define D_DEBUG
+#        else
+#            define TARGET_DEV
+#        endif
 #    elif defined(__APPLE__) && defined(__clang__)
 #        undef TARGET_MAC
 #        define TARGET_MAC
@@ -782,8 +795,8 @@ namespace ncore
 #            define TARGET_DEV
 #        endif
 #    else
-#        error x_target, error; Target specification invalid or not found.
-#        error x_target, error; The compilation environment must define one of the macros listed in x_targets.h
+#        error VALID_TARGET, error; Target specification invalid or not found.
+#        error VALID_TARGET, error; The compilation environment must define one of the macros listed in x_targets.h
 #    endif
 #endif
 
@@ -797,9 +810,9 @@ namespace ncore
 #            define TARGET_64BIT
 #        elif defined(__i386__)
 #            define TARGET_32BIT
-#            error x_target, error; Unknown target architecture type, only 32-bit or 64-bit are supported
+#            error VALID_TARGET, error; Unknown target architecture type, only 32-bit or 64-bit are supported
 #        else
-#            error x_target, error; Unknown target architecture type, only 32-bit or 64-bit are supported
+#            error VALID_TARGET, error; Unknown target architecture type, only 32-bit or 64-bit are supported
 #        endif
 #    endif
 #endif
@@ -980,7 +993,7 @@ namespace ncore
 #            define COMPILER_DEFAULT
 #            define COMPILER_VERSION 2022
 #        else
-#            error x_target, error; Unknown _MSVC_VER compiler version
+#            error TARGET, error; Unknown _MSVC_VER compiler version
 #        endif
 #    elif defined(__clang__)
 #        define COMPILER_CLANG
@@ -991,7 +1004,7 @@ namespace ncore
 #        define COMPILER_DEFAULT
 #        define COMPILER_VERSION 4
 #    else
-#        error x_target, error; This compiler is not supported for TARGET_PC
+#        error TARGET, error; This compiler is not supported for TARGET_PC
 #    endif
 #elif defined(TARGET_MAC)
 #    ifdef __clang__
@@ -1005,10 +1018,24 @@ namespace ncore
 #        define COMPILER_DEFAULT
 #        define COMPILER_VERSION 4
 #    else
-#        error x_target, error; This compiler is not supported for TARGET_MAC
+#        error TARGET, error; This compiler is not supported for TARGET_MAC
+#    endif
+#elif defined(TARGET_LINUX)
+#    ifdef __clang__
+#        define TARGET_OS_LINUX
+#        define COMPILER_CLANG
+#        define COMPILER_DEFAULT
+#        define COMPILER_VERSION 7
+#    elif defined(__GNUC__)
+#        define TARGET_OS_LINUX
+#        define COMPILER_GCC
+#        define COMPILER_DEFAULT
+#        define COMPILER_VERSION 4
+#    else
+#        error TARGET, error; This compiler is not supported for TARGET_LINUX
 #    endif
 #else
-#    error x_target, error; This compiler is not supported for TARGET_UNKNOWN
+#    error TARGET, error; This compiler is not supported for TARGET_UNKNOWN
 #endif
 
 #undef D_CHAR_BIT
@@ -1176,15 +1203,15 @@ namespace ncore
 #    define D_FINAL        final
 
 #else
-#    error x_target, error; no compiler selected
+#    error TARGET, error; no compiler selected
 #endif
 
 #if (!defined(D_BIG_ENDIAN) && !defined(D_LITTLE_ENDIAN))
-#    error x_target, error; endian is not defined.
+#    error TARGET, error; endian is not defined.
 #endif
 
 #if (defined(D_BIG_ENDIAN) && defined(D_LITTLE_ENDIAN))
-#    error x_target, error; both endian specifications are defined!
+#    error TARGET, error; both endian specifications are defined!
 #endif
 
     // Multi-threading configuration
@@ -1314,7 +1341,7 @@ namespace ncore
 #elif defined(TARGET_MAC)
         MEMALIGN = MEMALIGN_MACOS,
 #else
-#    error x_target, error unknown platform
+#    error TARGET, error unknown platform
 #endif
         D__PAD = 0xffffffff
     };
