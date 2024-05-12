@@ -107,25 +107,25 @@ namespace ncore
 
     class alloc_buffer_t : public alloc_t
     {
-        u8* m_base;
-        u8* m_ptr;
-        u8* m_end;
-        s64 m_cnt;
+        byte* m_base;
+        byte* m_ptr;
+        s32   m_size;
+        s32   m_cnt;
 
     public:
-        alloc_buffer_t(u8* buffer, s64 length);
+        alloc_buffer_t(byte* buffer, s32 length);
 
-        inline u8*       data() { return m_base; }
-        inline u8 const* data() const { return m_base; }
-        inline s64       cap() const { return m_end - m_base; }
-        inline s64       size() const { return m_ptr - m_base; }
+        inline byte*       data() { return m_base; }
+        inline byte const* data() const { return m_base; }
+        inline s32         cap() const { return m_size; }
+        inline s32         size() const { return m_ptr - m_base; }
 
         DCORE_CLASS_PLACEMENT_NEW_DELETE
 
     protected:
         virtual void* v_allocate(u32 size, u32 align)
         {
-            if ((g_align_ptr(m_ptr, align) + size) <= m_end)
+            if ((g_align_ptr(m_ptr, align) + size) <= (m_base + m_size))
             {
                 u8* ptr = g_align_ptr(m_ptr, align);
                 m_ptr   = ptr + size;

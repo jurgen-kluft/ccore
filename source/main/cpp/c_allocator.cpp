@@ -3,10 +3,10 @@
 
 namespace ncore
 {
-    alloc_buffer_t::alloc_buffer_t(u8* buffer, s64 length)
+    alloc_buffer_t::alloc_buffer_t(byte* buffer, s32 length)
         : m_base(buffer)
         , m_ptr(buffer)
-        , m_end(buffer + length)
+        , m_size(length)
         , m_cnt(0)
     {
     }
