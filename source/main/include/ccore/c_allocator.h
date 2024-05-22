@@ -118,7 +118,7 @@ namespace ncore
         inline byte*       data() { return m_base; }
         inline byte const* data() const { return m_base; }
         inline s32         cap() const { return m_size; }
-        inline s32         size() const { return m_ptr - m_base; }
+        inline s32         size() const { return (s32)(m_ptr - m_base); }
 
         DCORE_CLASS_PLACEMENT_NEW_DELETE
 
