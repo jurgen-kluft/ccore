@@ -1044,10 +1044,6 @@ namespace ncore
 #if defined(COMPILER_MSVC)
 #    define D_NO_CUSTOM_INT64
 #    define D_NO_CUSTOM_UINT64
-    class s128;
-    class u128;
-    class s256;
-    class u256;
 
     template <bool>
     struct CompileTimeAssert;
@@ -1078,10 +1074,6 @@ namespace ncore
 #    define D_INT32        int
 #    define D_INT64        signed __int64
 #    define D_UINT64       unsigned __int64
-#    define D_INT128       s128
-#    define D_UINT128      u128
-#    define D_INT256       s256
-#    define D_UINT256      u256
 #    ifdef TARGET_64BIT
 #        define D_SIZE              unsigned __int64
 #        define D_INT               __int64
@@ -1119,10 +1111,6 @@ namespace ncore
 
 #    define D_NO_CUSTOM_INT64
 #    define D_NO_CUSTOM_UINT64
-    class s128;
-    class u128;
-    class s256;
-    class u256;
 
 #    define __NO_PARTIAL_TEMPLATE__
 #    define D_CACHE_LINE_SIZE 32
@@ -1145,10 +1133,6 @@ namespace ncore
 #        define D_INT32   int
 #        define D_INT64   signed long
 #        define D_UINT64  unsigned long
-#        define D_INT128  s128
-#        define D_UINT128 u128
-#        define D_INT256  s256
-#        define D_UINT256 u256
 #    else
 #        define D_BOOL    unsigned int
 #        define D_BYTE    unsigned char
@@ -1158,10 +1142,6 @@ namespace ncore
 #        define D_INT32   int
 #        define D_INT64   signed long long
 #        define D_UINT64  unsigned long long
-#        define D_INT128  s128
-#        define D_UINT128 u128
-#        define D_INT256  s256
-#        define D_UINT256 u256
 #    endif
 
     template <bool>
@@ -1276,25 +1256,25 @@ namespace ncore
     //==============================================================================
 
     typedef unsigned D_INT8  u8;
-    typedef unsigned D_INT8  byte;
     typedef unsigned D_INT16 u16;
     typedef unsigned D_INT32 u32;
     typedef D_UINT64         u64;
-    typedef D_UINT128        u128;
-    typedef D_UINT256        u256;
     typedef signed D_INT8    s8;
-    typedef signed D_INT8    sbyte;
     typedef signed D_INT16   s16;
     typedef signed D_INT32   s32;
     typedef D_INT64          s64;
-    typedef D_INT128         s128;
-    typedef D_INT256         s256;
+    typedef signed D_INT8    i8;
+    typedef signed D_INT16   i16;
+    typedef signed D_INT32   i32;
+    typedef D_INT64          i64;
     typedef D_FLOAT          f32;
     typedef D_DOUBLE         f64;
     typedef D_SIZE           uint_t;
     typedef D_INT            int_t;
     typedef D_PTR_SIZED_INT  ptr_t;
     typedef D_WCHAR          wchar;
+    typedef signed D_INT8    sbyte;
+    typedef unsigned D_INT8  byte;
 
     //==============================================================================
     // ASCII + UTF 8, 16, 32
