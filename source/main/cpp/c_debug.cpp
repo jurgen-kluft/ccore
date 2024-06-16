@@ -15,7 +15,7 @@ namespace ncore
     class asserthandler_default_t : public asserthandler_t
     {
     public:
-        bool handle_assert(u32& flags, const char* fileName, s32 lineNumber, const char* exprString, const char* messageString);
+        bool handle_assert(const char* fileName, s32 lineNumber, const char* exprString, const char* messageString);
     };
 
     static asserthandler_default_t sAssertHandlerDefault;
@@ -49,23 +49,10 @@ namespace ncore
     //     gAssertHandler
     //------------------------------------------------------------------------------
 
-    bool gAssertHandler(u32& flags, const char* fileName, s32 lineNumber, const char* exprString, const char* messageString) { return sAssertHandler->handle_assert(flags, fileName, lineNumber, exprString, messageString); }
+    bool gAssertHandler(const char* fileName, s32 lineNumber, const char* exprString, const char* messageString) { return sAssertHandler->handle_assert(fileName, lineNumber, exprString, messageString); }
 
-    bool asserthandler_default_t::handle_assert(u32& flags, const char* fileName, s32 lineNumber, const char* exprString, const char* messageString)
+    bool asserthandler_default_t::handle_assert(const char* fileName, s32 lineNumber, const char* exprString, const char* messageString)
     {
-        //
-        // handle flags
-        //
-        if ((flags & asserthandler_t::DB_FLAG_IGNORE) != 0)
-        {
-            return false;
-        }
-
-        //
-        // next time ignore it
-        //
-        flags |= asserthandler_t::DB_FLAG_IGNORE;
-
         //
         // Survive nullptr entries
         //

@@ -939,7 +939,7 @@ namespace ncore
 #undef COMPILER_VERSION
 
 #ifdef TARGET_PC
-#    define TARGET_OS_WINDOWS
+#    define CCORE_OS_WINDOWS
 #    ifdef _MSC_VER
 
     // 1200      == VC++ 6.0
@@ -1008,12 +1008,12 @@ namespace ncore
 #    endif
 #elif defined(TARGET_MAC)
 #    ifdef __clang__
-#        define TARGET_OS_MAC
+#        define CCORE_OS_MAC
 #        define COMPILER_CLANG
 #        define COMPILER_DEFAULT
 #        define COMPILER_VERSION 7
 #    elif defined(__GNUC__)
-#        define TARGET_OS_MAC
+#        define CCORE_OS_MAC
 #        define COMPILER_GCC
 #        define COMPILER_DEFAULT
 #        define COMPILER_VERSION 4
@@ -1022,12 +1022,12 @@ namespace ncore
 #    endif
 #elif defined(TARGET_LINUX)
 #    ifdef __clang__
-#        define TARGET_OS_LINUX
+#        define CCORE_OS_LINUX
 #        define COMPILER_CLANG
 #        define COMPILER_DEFAULT
 #        define COMPILER_VERSION 7
 #    elif defined(__GNUC__)
-#        define TARGET_OS_LINUX
+#        define CCORE_OS_LINUX
 #        define COMPILER_GCC
 #        define COMPILER_DEFAULT
 #        define COMPILER_VERSION 4
@@ -1124,24 +1124,24 @@ namespace ncore
 #    define D_FORCE_INLINE     __attribute__((always_inline))
 #    define D_FORCE_INLINE_SPU __attribute__((always_inline))
 
-#    ifdef TARGET_OS_MAC
-#        define D_BOOL    unsigned int
-#        define D_BYTE    unsigned char
-#        define D_WCHAR   unsigned short
-#        define D_INT8    char
-#        define D_INT16   short
-#        define D_INT32   int
-#        define D_INT64   signed long
-#        define D_UINT64  unsigned long
+#    ifdef CCORE_OS_MAC
+#        define D_BOOL   unsigned int
+#        define D_BYTE   unsigned char
+#        define D_WCHAR  unsigned short
+#        define D_INT8   char
+#        define D_INT16  short
+#        define D_INT32  int
+#        define D_INT64  signed long
+#        define D_UINT64 unsigned long
 #    else
-#        define D_BOOL    unsigned int
-#        define D_BYTE    unsigned char
-#        define D_WCHAR   unsigned short
-#        define D_INT8    char
-#        define D_INT16   short
-#        define D_INT32   int
-#        define D_INT64   signed long long
-#        define D_UINT64  unsigned long long
+#        define D_BOOL   unsigned int
+#        define D_BYTE   unsigned char
+#        define D_WCHAR  unsigned short
+#        define D_INT8   char
+#        define D_INT16  short
+#        define D_INT32  int
+#        define D_INT64  signed long long
+#        define D_UINT64 unsigned long long
 #    endif
 
     template <bool>
