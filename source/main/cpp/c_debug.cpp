@@ -95,7 +95,7 @@ namespace ncore
 {
     void gSetAssertHandler(asserthandler_t* handler) {}
 
-    bool gAssertHandler(u32& flags, const char* fileName, s32 lineNumber, const char* exprString, const char* messageString) { return false; }
+    bool gAssertHandler(const char* fileName, s32 lineNumber, const char* exprString, const char* messageString) { return false; }
 }  // namespace ncore
 
 #endif

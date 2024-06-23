@@ -98,9 +98,9 @@ namespace ncore
 
     inline uint_t g_ptr_diff_bytes(void* ptr, void* next_ptr) { return (uint_t)((ptr_t)next_ptr - (ptr_t)ptr); }
     inline bool   g_ptr_in_range(void* buffer, uint_t size, void* ptr)
-    {
+{
         ptr_t begin  = (ptr_t)buffer;
-        ptr_t end    = begin + size;
+        ptr_t end    = (ptr_t)((uint_t)begin + size);
         ptr_t cursor = (ptr_t)ptr;
         return cursor >= begin && cursor < end;
     }
@@ -139,7 +139,7 @@ namespace ncore
         {
             if (p != nullptr)
             {
-                ASSERT(g_ptr_in_range(m_base, cap(), p));
+                ASSERT(g_ptr_in_range(m_base, (uint_t)cap(), p));
                 ASSERT(m_cnt > 0);
                 m_cnt -= 1;
                 if (m_cnt == 0)
@@ -150,4 +150,4 @@ namespace ncore
 
 };  // namespace ncore
 
-#endif  ///< __CCORE_ALLOCATOR_H__
+#endif  // __CCORE_ALLOCATOR_H__
