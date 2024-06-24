@@ -39,13 +39,13 @@ namespace ncore
         virtual void* Allocate(unsigned int size, unsigned int alignment)
         {
             mNumAllocations++;
-            void* ptr = malloc(size);
+            void* ptr = ::malloc(size);
             return ptr;
         }
         virtual unsigned int Deallocate(void* ptr, int* status)
         {
             --mNumAllocations;
-            free(ptr);
+            ::free(ptr);
             return 0;
         }
     };
@@ -66,6 +66,23 @@ namespace ncore
     };
 } // namespace ncore
 
+namespace ncore
+{
+    UnitTestAllocator* mAllocator;
+
+    void* malloc(u64 size, u16 align)
+    {
+        return mAllocator->Allocate((u32)size, align);
+    }
+
+    void  free(void* ptr)
+    {
+        int status = 0;
+        mAllocator->Deallocate(ptr, &status);
+    }
+}  // namespace ncore
+
+
 bool gRunUnitTest(UnitTest::TestReporter& reporter, UnitTest::TestContext& context)
 {
 
@@ -76,6 +93,7 @@ bool gRunUnitTest(UnitTest::TestReporter& reporter, UnitTest::TestContext& conte
 
     ncore::UnitTestAllocator unittestAllocator;
     context.mAllocator = &unittestAllocator;
+    ncore::mAllocator = &unittestAllocator;
 
     ncore::TestAllocator testAllocator(&unittestAllocator);
 
@@ -85,6 +103,8 @@ bool gRunUnitTest(UnitTest::TestReporter& reporter, UnitTest::TestContext& conte
         reporter.reportFailure(__FILE__, __LINE__, "cunittest", "memory leaks detected!");
         r = -1;
     }
+
+    ncore::mAllocator = nullptr;
 
     ncore::gSetAssertHandler(nullptr);
     return r == 0;

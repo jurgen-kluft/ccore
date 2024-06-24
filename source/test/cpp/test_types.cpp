@@ -1,12 +1,13 @@
 #include "ccore/c_target.h"
+#include "ccore/c_allocator.h"
 
 #include "cunittest/cunittest.h"
 
 using namespace ncore;
 
-UNITTEST_SUITE_BEGIN(test_types)
+UNITTEST_SUITE_BEGIN(ccore)
 {
-	UNITTEST_FIXTURE(main)
+	UNITTEST_FIXTURE(types)
 	{
 		UNITTEST_FIXTURE_SETUP() {}
 		UNITTEST_FIXTURE_TEARDOWN() {}
@@ -41,6 +42,19 @@ UNITTEST_SUITE_BEGIN(test_types)
 			CHECK_TRUE(sizeof(uchar16) == 2);
 			CHECK_TRUE(sizeof(uchar32) == 4);
 		}
+    }
+
+	UNITTEST_FIXTURE(allocator)
+	{
+		UNITTEST_FIXTURE_SETUP() {}
+		UNITTEST_FIXTURE_TEARDOWN() {}
+
+        UNITTEST_TEST(cnew_cdelete)
+        {
+            s32* p = ncore::tmalloc<s32>();
+            CHECK_TRUE(p != nullptr);
+            tfree (p);
+        }
 	}
 }
 UNITTEST_SUITE_END

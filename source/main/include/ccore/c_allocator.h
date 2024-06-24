@@ -98,7 +98,7 @@ namespace ncore
 
     inline uint_t g_ptr_diff_bytes(void* ptr, void* next_ptr) { return (uint_t)((ptr_t)next_ptr - (ptr_t)ptr); }
     inline bool   g_ptr_in_range(void* buffer, uint_t size, void* ptr)
-{
+    {
         ptr_t begin  = (ptr_t)buffer;
         ptr_t end    = (ptr_t)((uint_t)begin + size);
         ptr_t cursor = (ptr_t)ptr;
@@ -113,7 +113,9 @@ namespace ncore
         s32   m_cnt;
 
     public:
-        alloc_buffer_t(byte* buffer, s32 length);
+        alloc_buffer_t();
+
+        void init(byte* buffer, s32 length);
 
         inline byte*       data() { return m_base; }
         inline byte const* data() const { return m_base; }
@@ -147,6 +149,35 @@ namespace ncore
             }
         }
     };
+    struct new_signature
+    {
+    };
+
+    void* malloc(u64 size, u16 align = sizeof(void*));
+    void  free(void* ptr);
+
+}  // namespace ncore
+
+inline void* operator new(ncore::uint_t size, ncore::new_signature, void* p) { return p; }
+inline void  operator delete(void* p, ncore::new_signature, void* q) {}
+
+namespace ncore
+{
+    // Type malloc
+    template <typename T, typename... Args>
+    T* tmalloc(Args... args)
+    {
+        void* mem = malloc(sizeof(T));
+        T*    obj = new (ncore::new_signature(), mem) T(args...);
+        return obj;
+    }
+    // Type free
+    template <typename T>
+    void tfree(T* p)
+    {
+        p->~T();
+        ncore::free(p);
+    }
 
 };  // namespace ncore
 
