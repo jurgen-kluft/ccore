@@ -168,20 +168,19 @@ inline void  operator delete(void* p, ncore::new_signature, void* q) {}
 
 namespace ncore
 {
-    // Type malloc
+    // Type malloc and free
     template <typename T, typename... Args>
     T* tmalloc(Args... args)
     {
         void* mem = malloc(sizeof(T));
-        T*    obj = new (ncore::new_signature(), mem) T(args...);
+        T*    obj = new (new_signature(), mem) T(args...);
         return obj;
     }
-    // Type free
     template <typename T>
     void tfree(T* p)
     {
         p->~T();
-        ncore::free(p);
+        free(p);
     }
 
 };  // namespace ncore
