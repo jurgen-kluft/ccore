@@ -3,7 +3,7 @@
 namespace ncore
 {
     // Mono Bound binary search algorithm
-    
+
     template <typename T>
     s32 g_BinarySearch_mb_T(T const* array, u32 array_size, T key)
     {
@@ -41,7 +41,7 @@ namespace ncore
         {
             u32 const mid = top >> 1;
             //if (key >= array[bot + mid])
-            if (!is_less(key, array, bot + mid))
+            if (!is_less(key, array, bot + mid, user_data))
             {
                 bot += mid;
             }
@@ -49,7 +49,7 @@ namespace ncore
         }
 
         // if (key == array[bot])
-        if (is_equal(key, array, bot))
+        if (is_equal(key, array, bot, user_data))
         {
             return bot;
         }
