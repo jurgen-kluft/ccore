@@ -75,7 +75,7 @@ namespace ncore
     void g_qsortN(u8* a, s32 n, s32 es, s8 (*cmp)(const void*, const void*, void*), void* user_data)
     {
         u8 *pa, *pb, *pc, *pd, *pl, *pm, *pn;
-        s32 d, r, swaptype, swap_cnt;
+        s32 d, r, swap_cnt;
     loop:
         swap_cnt = 0;
         if (n < 7)
@@ -166,7 +166,7 @@ namespace ncore
     void g_qsort2(u16* a, s32 n, s8 (*cmp)(const void*, const void*, void*), void* data)
     {
         u16 *pa, *pb, *pc, *pd, *pl, *pm, *pn;
-        s32  d, r, swaptype, swap_cnt;
+        s32  d, r, swap_cnt;
     loop:
         swap_cnt = 0;
         if (n < 7)
@@ -255,7 +255,7 @@ namespace ncore
     void g_qsort4(u32* a, s32 n, s8 (*cmp)(const void*, const void*, void*), void* data)
     {
         u32 *pa, *pb, *pc, *pd, *pl, *pm, *pn;
-        s32  d, r, swaptype, swap_cnt;
+        s32  d, r, swap_cnt;
     loop:
         swap_cnt = 0;
         if (n < 7)
@@ -344,7 +344,7 @@ namespace ncore
     void g_qsort8(u64* a, s32 n, s8 (*cmp)(const void*, const void*, void*), void* data)
     {
         u64 *pa, *pb, *pc, *pd, *pl, *pm, *pn;
-        s32  d, r, swaptype, swap_cnt;
+        s32  d, r, swap_cnt;
     loop:
         swap_cnt = 0;
         if (n < 7)
