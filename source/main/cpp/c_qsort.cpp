@@ -6,8 +6,11 @@ namespace ncore
     // Custom QuickSort
     namespace __qsort
     {
-		template <typename T>
-		static inline T minimum(T a, T b) { return (a) < (b) ? a : b; }
+        template <typename T>
+        static inline T minimum(T a, T b)
+        {
+            return (a) < (b) ? a : b;
+        }
 
         static inline void sSwap(u8* a, u8* b, s32 n)
         {
@@ -53,26 +56,26 @@ namespace ncore
             }
         }
 
-        static inline u8* sMed3(u8* a, u8* b, u8* c, s8 (*cmp)(const void* const, const void* const, void*), void* data)
+        static inline u8* sMed3(u8* a, u8* b, u8* c, s8 (*cmp)(const void* const, const void* const, const void*), const void* data)
         {
             return cmp(a, b, data) < 0 ? (cmp(b, c, data) < 0 ? b : (cmp(a, c, data) < 0 ? c : a)) : (cmp(b, c, data) > 0 ? b : (cmp(a, c, data) < 0 ? a : c));
         }
-        static inline u16* sMed3(u16* a, u16* b, u16* c, s8 (*cmp)(const void* const, const void* const, void*), void* data)
+        static inline u16* sMed3(u16* a, u16* b, u16* c, s8 (*cmp)(const void* const, const void* const, const void*), const void* data)
         {
             return cmp(a, b, data) < 0 ? (cmp(b, c, data) < 0 ? b : (cmp(a, c, data) < 0 ? c : a)) : (cmp(b, c, data) > 0 ? b : (cmp(a, c, data) < 0 ? a : c));
         }
-        static inline u32* sMed3(u32* a, u32* b, u32* c, s8 (*cmp)(const void* const, const void* const, void*), void* data)
+        static inline u32* sMed3(u32* a, u32* b, u32* c, s8 (*cmp)(const void* const, const void* const, const void*), const void* data)
         {
             return cmp(a, b, data) < 0 ? (cmp(b, c, data) < 0 ? b : (cmp(a, c, data) < 0 ? c : a)) : (cmp(b, c, data) > 0 ? b : (cmp(a, c, data) < 0 ? a : c));
         }
-        static inline u64* sMed3(u64* a, u64* b, u64* c, s8 (*cmp)(const void* const, const void* const, void*), void* data)
+        static inline u64* sMed3(u64* a, u64* b, u64* c, s8 (*cmp)(const void* const, const void* const, const void*), const void* data)
         {
             return cmp(a, b, data) < 0 ? (cmp(b, c, data) < 0 ? b : (cmp(a, c, data) < 0 ? c : a)) : (cmp(b, c, data) > 0 ? b : (cmp(a, c, data) < 0 ? a : c));
         }
     }  // namespace __qsort
 
-	// Sort routine for element size other than 2, 4, or 8 bytes
-    void g_qsortN(u8* a, s32 n, s32 es, s8 (*cmp)(const void*, const void*, void*), void* user_data)
+    // Sort routine for element size other than 2, 4, or 8 bytes
+    void g_qsortN(u8* a, s32 n, s32 es, s8 (*cmp)(const void*, const void*, const void*), const void* user_data)
     {
         u8 *pa, *pb, *pc, *pd, *pl, *pm, *pn;
         s32 d, r, swap_cnt;
@@ -163,7 +166,7 @@ namespace ncore
         }
     }
 
-    void g_qsort2(u16* a, s32 n, s8 (*cmp)(const void*, const void*, void*), void* data)
+    void g_qsort2(u16* a, s32 n, s8 (*cmp)(const void*, const void*, const void*), const void* data)
     {
         u16 *pa, *pb, *pc, *pd, *pl, *pm, *pn;
         s32  d, r, swap_cnt;
@@ -252,7 +255,7 @@ namespace ncore
         }
     }
 
-    void g_qsort4(u32* a, s32 n, s8 (*cmp)(const void*, const void*, void*), void* data)
+    void g_qsort4(u32* a, s32 n, s8 (*cmp)(const void*, const void*, const void*), const void* data)
     {
         u32 *pa, *pb, *pc, *pd, *pl, *pm, *pn;
         s32  d, r, swap_cnt;
@@ -341,7 +344,7 @@ namespace ncore
         }
     }
 
-    void g_qsort8(u64* a, s32 n, s8 (*cmp)(const void*, const void*, void*), void* data)
+    void g_qsort8(u64* a, s32 n, s8 (*cmp)(const void*, const void*, const void*), const void* data)
     {
         u64 *pa, *pb, *pc, *pd, *pl, *pm, *pn;
         s32  d, r, swap_cnt;
@@ -430,23 +433,15 @@ namespace ncore
         }
     }
 
-    void g_qsort(void* a, s32 n, s32 es, s8 (*cmp)(const void*, const void*, void*), void* user_data)
-	{
-		switch (es)
-		{
-		case 2:
-			g_qsort2((u16*)a, n, cmp, user_data);
-			break;
-		case 4:
-			g_qsort4((u32*)a, n, cmp, user_data);
-			break;
-		case 8:
-			g_qsort8((u64*)a, n, cmp, user_data);
-			break;
-		default:
-			g_qsortN((u8*)a, n, es, cmp, user_data);
-			break;
-		}
-	}
+    void g_qsort(void* a, s32 n, s32 es, s8 (*cmp)(const void*, const void*, const void*), const void* user_data)
+    {
+        switch (es)
+        {
+            case 2: g_qsort2((u16*)a, n, cmp, user_data); break;
+            case 4: g_qsort4((u32*)a, n, cmp, user_data); break;
+            case 8: g_qsort8((u64*)a, n, cmp, user_data); break;
+            default: g_qsortN((u8*)a, n, es, cmp, user_data); break;
+        }
+    }
 
 };  // namespace ncore

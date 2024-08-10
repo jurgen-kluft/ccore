@@ -32,7 +32,7 @@ namespace ncore
     template <typename T>
     inline void g_qsort(T *a, s32 n)
     {
-        auto cmper = [](const void *_lhs, const void *_rhs, void const *data)
+        auto cmper = [](const void *_lhs, const void *_rhs, const void *user_data)
         {
             T const *const lhs = (T const *)_lhs;
             T const *const rhs = (T const *)_rhs;
