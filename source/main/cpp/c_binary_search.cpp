@@ -2,69 +2,30 @@
 
 namespace ncore
 {
-    // Mono Bound binary search algorithm
+    // Mono-Bound binary search algorithm
 
-    template <typename T>
-    s32 g_BinarySearch_mb_T(T const* array, u32 array_size, T key)
+    s32 g_BinarySearch(void const* array, u32 array_size, const void* key, const void* user_data, less_predicate_fn is_less, equal_predicate_fn is_equal)
     {
         if (array_size == 0)
             return -1;
 
-        u32 bot = 0;
-        u32 top = array_size;
-        while (top > 1)
+        u32 bottom = 0;
+        u32 range = array_size;
+        while (range > 1)
         {
-            u32 const mid = top >> 1;
-            if (key >= array[bot + mid])
+            u32 const middle = range >> 1;
+            if (!is_less(key, array, bottom + middle, user_data))
             {
-                bot += mid;
+                bottom += middle;
             }
-            top -= mid;
+            range -= middle;
         }
 
-        if (key == array[bot])
+        if (is_equal(key, array, bottom, user_data))
         {
-            return bot;
+            return bottom;
         }
         return -1;
     }
-
-    template <typename T>
-    s32 g_BinarySearch_mb_T_P(T const* array, u32 array_size, const void* key, const void* user_data, less_predicate_fn is_less, equal_predicate_fn is_equal)
-    {
-        if (array_size == 0)
-            return -1;
-
-        u32 bot = 0;
-        u32 top = array_size;
-        while (top > 1)
-        {
-            u32 const mid = top >> 1;
-            //if (key >= array[bot + mid])
-            if (!is_less(key, array, bot + mid, user_data))
-            {
-                bot += mid;
-            }
-            top -= mid;
-        }
-
-        // if (key == array[bot])
-        if (is_equal(key, array, bot, user_data))
-        {
-            return bot;
-        }
-        return -1;
-    }
-
-    s32 g_BinarySearch(s16 const* array, u32 array_size, s16 key) { return g_BinarySearch_mb_T(array, array_size, key); }
-    s32 g_BinarySearch(s32 const* array, u32 array_size, s32 key) { return g_BinarySearch_mb_T(array, array_size, key); }
-    s32 g_BinarySearch(s64 const* array, u32 array_size, s64 key) { return g_BinarySearch_mb_T(array, array_size, key); }
-    s32 g_BinarySearch(u16 const* array, u32 array_size, u16 key) { return g_BinarySearch_mb_T(array, array_size, key); }
-    s32 g_BinarySearch(u32 const* array, u32 array_size, u32 key) { return g_BinarySearch_mb_T(array, array_size, key); }
-    s32 g_BinarySearch(u64 const* array, u32 array_size, u64 key) { return g_BinarySearch_mb_T(array, array_size, key); }
-
-    s32 g_BinarySearch(s16 const *array, u32 array_size, const void* key, const void* user_data, less_predicate_fn less, equal_predicate_fn equal) { return g_BinarySearch_mb_T_P(array, array_size, key, user_data, less, equal); }
-    s32 g_BinarySearch(s32 const *array, u32 array_size, const void* key, const void* user_data, less_predicate_fn less, equal_predicate_fn equal) { return g_BinarySearch_mb_T_P(array, array_size, key, user_data, less, equal); }
-    s32 g_BinarySearch(s64 const *array, u32 array_size, const void* key, const void* user_data, less_predicate_fn less, equal_predicate_fn equal) { return g_BinarySearch_mb_T_P(array, array_size, key, user_data, less, equal); }
 
 };  // namespace ncore
