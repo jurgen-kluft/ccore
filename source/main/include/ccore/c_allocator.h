@@ -9,6 +9,16 @@
 
 namespace ncore
 {
+    struct signature_t
+    {
+    };
+}  // namespace ncore
+
+inline void* operator new(ncore::uint_t size, ncore::signature_t s, void* p) { return p; }
+inline void  operator delete(void* p, ncore::signature_t s, void* q) {}
+
+namespace ncore
+{
     class alloc_t
     {
     public:
@@ -20,7 +30,7 @@ namespace ncore
         T* construct(Args... args)
         {
             void* mem    = v_allocate(sizeof(T), sizeof(void*));
-            T*    object = new (mem) T(args...);
+            T*    object = new (signature_t(), mem) T(args...);
             return object;
         }
 
@@ -28,7 +38,7 @@ namespace ncore
         T* placement(u32 EXTRA = 0, Args... args)
         {
             void* mem    = v_allocate(sizeof(T) + EXTRA, sizeof(void*));
-            T*    object = new (mem) T(args...);
+            T*    object = new (signature_t(), mem) T(args...);
             return object;
         }
 
@@ -60,11 +70,12 @@ namespace ncore
     }
 
     // class new and delete
-#define DCORE_CLASS_PLACEMENT_NEW_DELETE                                     \
-    void* operator new(ncore::uint_t num_bytes, void* mem) { return mem; }   \
-    void  operator delete(void* mem, void*) {}                               \
-    void* operator new(ncore::uint_t num_bytes) noexcept { return nullptr; } \
-    void  operator delete(void* mem) {}
+#define     DCORE_CLASS_PLACEMENT_NEW_DELETE
+// #define DCORE_CLASS_PLACEMENT_NEW_DELETE                                     \
+//     void* operator new(ncore::uint_t num_bytes, void* mem) { return mem; }   \
+//     void  operator delete(void* mem, void*) {}                               \
+//     void* operator new(ncore::uint_t num_bytes) noexcept { return nullptr; } \
+//     void  operator delete(void* mem) {}
 
 #define DCORE_CLASS_NEW_DELETE(get_allocator_func, align)                  \
     void* operator new(ncore::uint_t num_bytes, void* mem) { return mem; } \
@@ -154,17 +165,11 @@ namespace ncore
             }
         }
     };
-    struct new_signature
-    {
-    };
 
     void* malloc(u64 size, u16 align = sizeof(void*));
     void  free(void* ptr);
 
 }  // namespace ncore
-
-inline void* operator new(ncore::uint_t size, ncore::new_signature, void* p) { return p; }
-inline void  operator delete(void* p, ncore::new_signature, void* q) {}
 
 namespace ncore
 {
@@ -173,7 +178,7 @@ namespace ncore
     T* tmalloc(Args... args)
     {
         void* mem = malloc(sizeof(T));
-        T*    obj = new (new_signature(), mem) T(args...);
+        T*    obj = new (signature_t(), mem) T(args...);
         return obj;
     }
     template <typename T>
