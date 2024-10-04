@@ -43,18 +43,5 @@ UNITTEST_SUITE_BEGIN(ccore)
 			CHECK_TRUE(sizeof(uchar32) == 4);
 		}
     }
-
-	UNITTEST_FIXTURE(allocator)
-	{
-		UNITTEST_FIXTURE_SETUP() {}
-		UNITTEST_FIXTURE_TEARDOWN() {}
-
-        UNITTEST_TEST(cnew_cdelete)
-        {
-            s32* p = ncore::tmalloc<s32>();
-            CHECK_TRUE(p != nullptr);
-            tfree (p);
-        }
-	}
 }
 UNITTEST_SUITE_END

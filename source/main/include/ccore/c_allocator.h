@@ -54,6 +54,23 @@ namespace ncore
     }
 
     template <typename T>
+    inline T* g_allocate_array_and_memset(alloc_t* a, u32 maxsize, u32 value = 0xCDCDCDCD)
+    {
+        u32 const memsize = maxsize * sizeof(T);
+        void*     ptr     = a->allocate(memsize);
+        ASSERT(ptr != nullptr && ((ptr_t)ptr & 3) == 0);  // Ensure 4 byte alignment
+        u32*       clr32 = (u32*)ptr;
+        u32 const* end32 = clr32 + (memsize >> 2);
+        while (clr32 < end32)
+            *clr32++ = value;
+        u8*       clr8 = (u8*)clr32;
+        u8 const* end8 = clr8 + (memsize & 3);
+        while (clr8 < end8)
+            *clr8++ = (u8)value;
+        return (T*)ptr;
+    }
+
+    template <typename T>
     inline void g_deallocate_array(alloc_t* a, T* array)
     {
         a->deallocate(array);
@@ -154,37 +171,6 @@ namespace ncore
             }
         }
     };
-
-    void* g_malloc(u64 size, u16 align = sizeof(void*));
-    void  g_free(void* ptr);
-
 }  // namespace ncore
-
-namespace ncore
-{
-    // Type malloc and free
-    template <typename T, typename... Args>
-    T* g_malloc_typed(Args... args)
-    {
-        void* mem = g_malloc(sizeof(T));
-        T*    obj = new (mem) T(args...);
-        return obj;
-    }
-
-    template <typename T>
-    void g_free_typed(T* p)
-    {
-        p->~T();
-        g_free(p);
-    }
-
-};  // namespace ncore
-
-template <class T>
-inline void g_delete(T* p)
-{
-    p->~T();
-    ncore::g_free(p);
-}
 
 #endif  // __CCORE_ALLOCATOR_H__
