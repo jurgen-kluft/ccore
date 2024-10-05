@@ -46,6 +46,20 @@ namespace ncore
         virtual ~alloc_t() {}
     };
 
+    template<typename T, typename... Args>
+    inline T* g_construct(alloc_t* a, Args... args)
+    {
+        void* mem = a->allocate(sizeof(T), sizeof(void*));
+        return new (mem) T(args...);
+    }
+
+    template<typename T>
+    inline void g_destruct(alloc_t* a, T* p)
+    {
+        p->~T();
+        a->deallocate(p);
+    }
+
     template <typename T>
     inline T* g_allocate_array(alloc_t* a, u32 maxsize)
     {

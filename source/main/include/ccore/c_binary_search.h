@@ -15,7 +15,7 @@ namespace ncore
 
     // Type T (is required to have operator< and operator==)
     template <typename T>
-    s32 g_BinarySearchT(const T* array, u32 array_size, const T& key)
+    inline s32 g_BinarySearchT(const T* array, u32 array_size, const T& key)
     {
         if (array_size == 0)
             return -1;
@@ -39,18 +39,18 @@ namespace ncore
         return -1;
     }
 
-    
-    s32 g_BinarySearch(s8 const* array, u32 array_size, s8 key) { return g_BinarySearchT<s8>(array, array_size, key); }
-    s32 g_BinarySearch(s16 const* array, u32 array_size, s16 key) { return g_BinarySearchT<s16>(array, array_size, key); }
-    s32 g_BinarySearch(s32 const* array, u32 array_size, s32 key) { return g_BinarySearchT<s32>(array, array_size, key); }
-    s32 g_BinarySearch(f32 const* array, u32 array_size, f32 key) { return g_BinarySearchT<f32>(array, array_size, key); }
-    s32 g_BinarySearch(s64 const* array, u32 array_size, s64 key) { return g_BinarySearchT<s64>(array, array_size, key); }
 
-    s32 g_BinarySearch(u8 const* array, u32 array_size, u8 key) { return g_BinarySearchT<u8>(array, array_size, key); }
-    s32 g_BinarySearch(u16 const* array, u32 array_size, u16 key) { return g_BinarySearchT<u16>(array, array_size, key); }
-    s32 g_BinarySearch(u32 const* array, u32 array_size, u32 key) { return g_BinarySearchT<u32>(array, array_size, key); }
-    s32 g_BinarySearch(u64 const* array, u32 array_size, u64 key) { return g_BinarySearchT<u64>(array, array_size, key); }
-    s32 g_BinarySearch(f64 const* array, u32 array_size, f64 key) { return g_BinarySearchT<f64>(array, array_size, key); }
+    inline s32 g_BinarySearch(s8 const* array, u32 array_size, s8 key) { return g_BinarySearchT<s8>(array, array_size, key); }
+    inline s32 g_BinarySearch(s16 const* array, u32 array_size, s16 key) { return g_BinarySearchT<s16>(array, array_size, key); }
+    inline s32 g_BinarySearch(s32 const* array, u32 array_size, s32 key) { return g_BinarySearchT<s32>(array, array_size, key); }
+    inline s32 g_BinarySearch(f32 const* array, u32 array_size, f32 key) { return g_BinarySearchT<f32>(array, array_size, key); }
+    inline s32 g_BinarySearch(s64 const* array, u32 array_size, s64 key) { return g_BinarySearchT<s64>(array, array_size, key); }
+
+    inline s32 g_BinarySearch(u8 const* array, u32 array_size, u8 key) { return g_BinarySearchT<u8>(array, array_size, key); }
+    inline s32 g_BinarySearch(u16 const* array, u32 array_size, u16 key) { return g_BinarySearchT<u16>(array, array_size, key); }
+    inline s32 g_BinarySearch(u32 const* array, u32 array_size, u32 key) { return g_BinarySearchT<u32>(array, array_size, key); }
+    inline s32 g_BinarySearch(u64 const* array, u32 array_size, u64 key) { return g_BinarySearchT<u64>(array, array_size, key); }
+    inline s32 g_BinarySearch(f64 const* array, u32 array_size, f64 key) { return g_BinarySearchT<f64>(array, array_size, key); }
 
 
 }; // namespace ncore
