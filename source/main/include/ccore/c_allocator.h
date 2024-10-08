@@ -67,11 +67,10 @@ namespace ncore
         return (T*)ptr;
     }
 
-    template <typename T>
-    inline T* g_allocate_array_and_memset(alloc_t* a, u32 maxsize, u32 value = 0xCDCDCDCD)
+    inline void* g_allocate_and_memset(alloc_t* alloc, u32 size, u32 value = 0xCDCDCDCD)
     {
-        u32 const memsize = maxsize * sizeof(T);
-        void*     ptr     = a->allocate(memsize);
+        u32 const memsize = size;;
+        void*     ptr     = alloc->allocate(memsize);
         ASSERT(ptr != nullptr && ((ptr_t)ptr & 3) == 0);  // Ensure 4 byte alignment
         u32*       clr32 = (u32*)ptr;
         u32 const* end32 = clr32 + (memsize >> 2);
@@ -81,8 +80,18 @@ namespace ncore
         u8 const* end8 = clr8 + (memsize & 3);
         while (clr8 < end8)
             *clr8++ = (u8)value;
+        return (void*)ptr;        
+    }
+
+    template <typename T>
+    inline T* g_allocate_array_and_memset(alloc_t* a, u32 maxsize, u32 value = 0xCDCDCDCD)
+    {
+        u32 const memsize = maxsize * sizeof(T);
+        void*     ptr     = g_allocate_and_memset(a, memsize, value);
         return (T*)ptr;
     }
+
+    void* g_reallocate(alloc_t* alloc, void* ptr, u32 size, u32 new_size);
 
     template <typename T>
     inline void g_deallocate_array(alloc_t* a, T* array)
