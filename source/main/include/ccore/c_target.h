@@ -993,7 +993,10 @@ namespace ncore
 #            define COMPILER_DEFAULT
 #            define COMPILER_VERSION 2022
 #        else
-#            error TARGET, error; Unknown _MSVC_VER compiler version
+#            define COMPILER_MSVC
+#            define COMPILER_DEFAULT
+#            define COMPILER_VERSION 2022
+//#            error TARGET, error; Unknown _MSVC_VER compiler version
 #        endif
 #    elif defined(__clang__)
 #        define COMPILER_CLANG
