@@ -39,7 +39,7 @@ namespace ncore
         u8 const* dstend8 = dstptr8 + (minsize & 3);
         u8*       srcptr8 = (u8*)srcptr;
         while (dstptr8 < dstend8)
-            *dstptr8++ = *dstptr8++;
+            *dstptr8++ = *srcptr8++;
 
         alloc->deallocate(ptr);
         return newptr;

@@ -60,7 +60,7 @@ namespace ncore
         a->deallocate(p);
     }
 
-    template <typename T, size_t N>
+    template <typename T, uint_t N>
     constexpr s32 g_array_size(T (&)[N])
     {
         ASSERT(N < 0x7FFFFFFF);
@@ -87,7 +87,7 @@ namespace ncore
         u8 const* end8 = clr8 + (memsize & 3);
         while (clr8 < end8)
             *clr8++ = (u8)value;
-        return (void*)ptr;        
+        return (void*)ptr;
     }
 
     template <typename T>
