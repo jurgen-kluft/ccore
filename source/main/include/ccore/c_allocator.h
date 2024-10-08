@@ -60,6 +60,13 @@ namespace ncore
         a->deallocate(p);
     }
 
+    template <typename T, size_t N>
+    constexpr s32 g_array_size(T (&)[N])
+    {
+        ASSERT(N < 0x7FFFFFFF);
+        return (s32)N;
+    }
+
     template <typename T>
     inline T* g_allocate_array(alloc_t* a, u32 maxsize)
     {
@@ -69,7 +76,7 @@ namespace ncore
 
     inline void* g_allocate_and_memset(alloc_t* alloc, u32 size, u32 value = 0xCDCDCDCD)
     {
-        u32 const memsize = size;;
+        u32 const memsize = size;
         void*     ptr     = alloc->allocate(memsize);
         ASSERT(ptr != nullptr && ((ptr_t)ptr & 3) == 0);  // Ensure 4 byte alignment
         u32*       clr32 = (u32*)ptr;
