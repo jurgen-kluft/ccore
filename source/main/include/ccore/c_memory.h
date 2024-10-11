@@ -32,11 +32,8 @@ namespace ncore
             return p;
         }
         inline void* ptr_align(void* ptr, u32 alignment) { return (void*)(((ptr_t)ptr + (ptr_t)(alignment - 1)) & ~((ptr_t)(alignment - 1))); }
-        inline s32   ptr_diff(void* ptr, void* other)
-        {
-            ptr_t d = (u8*)other - (u8*)ptr;
-            return (s32)d;
-        }
+        inline s64   ptr_diff(void* ptr, void* other) { return (s64)((u8*)other - (u8*)ptr); }
+        inline bool  ptr_is_aligned(void* ptr, u32 alignment) { return ((ptr_t)ptr & (ptr_t)(alignment - 1)) == 0; }
 
         ///@name Conversion
         inline s64 toKb(s64 inNumBytes) { return (inNumBytes + (s64)512) / (s64)1024; }
