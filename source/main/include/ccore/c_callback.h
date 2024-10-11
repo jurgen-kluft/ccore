@@ -118,6 +118,8 @@ namespace ncore
         class ChildFree : public Base
         {
         public:
+            DCORE_CLASS_PLACEMENT_NEW_DELETE
+
             ChildFree(R (*function)(Args... args))
                 : mFunc(function)
             {
