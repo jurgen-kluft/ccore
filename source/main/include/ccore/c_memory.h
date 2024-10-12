@@ -32,7 +32,7 @@ namespace ncore
             return p;
         }
         inline void* ptr_align(void* ptr, u32 alignment) { return (void*)(((ptr_t)ptr + (ptr_t)(alignment - 1)) & ~((ptr_t)(alignment - 1))); }
-        inline s64   ptr_diff(void* ptr, void* other) { return (s64)((u8*)other - (u8*)ptr); }
+        inline int_t ptr_diff(void* ptr, void* other) { return (int_t)((u8*)other - (u8*)ptr); }
         inline bool  ptr_is_aligned(void* ptr, u32 alignment) { return ((ptr_t)ptr & (ptr_t)(alignment - 1)) == 0; }
 
         ///@name Conversion

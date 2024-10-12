@@ -996,7 +996,7 @@ namespace ncore
 #            define COMPILER_MSVC
 #            define COMPILER_DEFAULT
 #            define COMPILER_VERSION 2022
-//#            error TARGET, error; Unknown _MSVC_VER compiler version
+// #            error TARGET, error; Unknown _MSVC_VER compiler version
 #        endif
 #    elif defined(__clang__)
 #        define COMPILER_CLANG
@@ -1096,9 +1096,8 @@ namespace ncore
 #    define D_ALIGN_BEGIN(a) __declspec(align(a))
 #    define D_ALIGN_END(a)
 
-#    define ALIGNOF(t) __alignof(t)
-
-#    define D_OFFSET_OF(type, member) (D_SIZE) & reinterpret_cast<const volatile char&>((((type*)0)->member))
+#    define D_ALIGN_OF(t) __alignof(t)
+#    define D_OFFSET_OF(type, member)
 
 #    pragma inline_depth(255)
 
@@ -1120,12 +1119,13 @@ namespace ncore
 #    define D_CHAR_BIT        8
 #    define D_IEEE_FLOATS     1
 #    define D_USE_PRAGMA_ONCE
-#    define D_STD_CALL         __stdcall
-#    define D_C_DECL           __cdecl
-#    define f_inline           __attribute__((always_inline))
-#    define f_noinline         __attribute__((noinline))
-#    define D_FORCE_INLINE     __attribute__((always_inline))
-#    define D_FORCE_INLINE_SPU __attribute__((always_inline))
+#    define D_STD_CALL               __stdcall
+#    define D_C_DECL                 __cdecl
+#    define D_INLINE                 __attribute__((always_inline))
+#    define D_NOINLINE               __attribute__((noinline))
+#    define D_FORCE_INLINE           __attribute__((always_inline))
+#    define D_FORCE_INLINE_SPU       __attribute__((always_inline))
+#    define D_OFFSETOF(TYPE, MEMBER) __builtin_offsetof(TYPE, MEMBER)
 
 #    ifdef CCORE_OS_MAC
 #        define D_BOOL   unsigned int
@@ -1178,9 +1178,8 @@ namespace ncore
 #    define D_ALIGN_BEGIN(a)
 #    define D_ALIGN_END(a) __attribute__((aligned(a)))
 
-#    define D_OFFSET_OF(type, member) (D_SIZE) & reinterpret_cast<const volatile char&>((((type*)0)->member))
-
-#    define D_ALIGNOF(t) __alignof(t)
+#    define D_ALIGN_OF(t)             __alignof(t)
+#    define D_OFFSET_OF(type, member) __builtin_offsetof(type, member)
 
 #    define D_THREAD_LOCAL __declspec(thread)
 #    define D_FINAL        final
