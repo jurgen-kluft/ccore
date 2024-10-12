@@ -162,7 +162,6 @@ namespace ncore
     template <typename T, uint_t N>
     constexpr s32 g_array_size(T (&)[N])
     {
-        ASSERT(N < 0x7FFFFFFF);
         return (s32)N;
     }
 
