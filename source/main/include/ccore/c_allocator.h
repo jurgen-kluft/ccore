@@ -9,6 +9,32 @@
 
 namespace ncore
 {
+    // class new and delete
+#define DCORE_CLASS_PLACEMENT_NEW_DELETE                                     \
+    void* operator new(ncore::uint_t num_bytes, void* mem) { return mem; }   \
+    void  operator delete(void* mem, void*) {}                               \
+    void* operator new(ncore::uint_t num_bytes) noexcept { return nullptr; } \
+    void  operator delete(void* mem) {}
+
+#define DCORE_CLASS_NEW_DELETE(get_allocator_func, align)                  \
+    void* operator new(ncore::uint_t num_bytes, void* mem) { return mem; } \
+    void  operator delete(void* mem, void*) {}                             \
+    void* operator new(ncore::uint_t num_bytes)                            \
+    {                                                                      \
+        ASSERT(num_bytes < (ncore::uint_t)2 * 1024 * 1024 * 1024);         \
+        return get_allocator_func()->allocate((u32)num_bytes, align);      \
+    }                                                                      \
+    void operator delete(void* mem) { get_allocator_func()->deallocate(mem); }
+
+#define DCORE_CLASS_ARRAY_NEW_DELETE(get_allocator_func, align)       \
+    void* operator new[](ncore::uint_t num_bytes)                     \
+    {                                                                 \
+        ASSERT(num_bytes < (ncore::uint_t)2 * 1024 * 1024 * 1024);    \
+        return get_allocator_func()->allocate((u32)num_bytes, align); \
+    }                                                                 \
+    void operator delete[](void* mem) { get_allocator_func()->deallocate(mem); }
+
+    // Allocator interface
     class alloc_t
     {
     public:
@@ -46,18 +72,91 @@ namespace ncore
         virtual ~alloc_t() {}
     };
 
-    template<typename T, typename... Args>
+    // Fixed size allocator interface
+    class fsa_t
+    {
+    public:
+        template <typename T>
+        inline T* allocate()
+        {
+            ASSERT(sizeof(T) <= v_allocsize());
+            return static_cast<T*>(v_allocate());
+        }
+
+        template <typename T>
+        inline void deallocate(T* p)
+        {
+            ASSERT(sizeof(T) <= v_allocsize());
+            v_deallocate(p);
+        }
+
+        template <typename T, typename... Args>
+        inline T* construct(Args... args)
+        {
+            ASSERT(sizeof(T) <= v_allocsize());
+            void* mem = v_allocate();
+            return new (mem) T(args...);
+        }
+
+        template <typename T>
+        inline void destruct(T* p)
+        {
+            ASSERT(sizeof(T) <= v_allocsize());
+            p->~T();
+            v_deallocate(p);
+        }
+
+    protected:
+        virtual u32   v_allocsize() const = 0;
+        virtual void* v_allocate()        = 0;
+        virtual void  v_deallocate(void*) = 0;
+    };
+
+    // The dexer interface, 'pointer to index' and 'index to pointer'
+    class dexer_t
+    {
+    public:
+        inline void* idx2ptr(u32 index) { return v_idx2ptr(index); }
+        inline u32   ptr2idx(void const* ptr) const { return v_ptr2idx(ptr); }
+
+        template <typename T>
+        inline T* idx2obj(u32 index)
+        {
+            return static_cast<T*>(v_idx2ptr(index));
+        }
+        template <typename T>
+        inline u32 obj2idx(T const* ptr) const
+        {
+            return v_ptr2idx(ptr);
+        }
+
+    protected:
+        virtual void* v_idx2ptr(u32 index)             = 0;
+        virtual u32   v_ptr2idx(void const* ptr) const = 0;
+    };
+
+    // The pool allocator interface
+    template <typename T>
+    class pool_t : public fsa_t, public dexer_t
+    {
+    public:
+        ~pool_t() = default;
+
+        DCORE_CLASS_PLACEMENT_NEW_DELETE
+    };
+
+    // Construct and destruct
+
+    template <typename T, typename... Args>
     inline T* g_construct(alloc_t* a, Args... args)
     {
-        void* mem = a->allocate(sizeof(T), sizeof(void*));
-        return new (mem) T(args...);
+        return a->construct<T>(args...);
     }
 
-    template<typename T>
+    template <typename T>
     inline void g_destruct(alloc_t* a, T* p)
     {
-        p->~T();
-        a->deallocate(p);
+        a->destruct(p);
     }
 
     template <typename T, uint_t N>
@@ -105,31 +204,6 @@ namespace ncore
     {
         a->deallocate(array);
     }
-
-    // class new and delete
-#define DCORE_CLASS_PLACEMENT_NEW_DELETE                                     \
-    void* operator new(ncore::uint_t num_bytes, void* mem) { return mem; }   \
-    void  operator delete(void* mem, void*) {}                               \
-    void* operator new(ncore::uint_t num_bytes) noexcept { return nullptr; } \
-    void  operator delete(void* mem) {}
-
-#define DCORE_CLASS_NEW_DELETE(get_allocator_func, align)                  \
-    void* operator new(ncore::uint_t num_bytes, void* mem) { return mem; } \
-    void  operator delete(void* mem, void*) {}                             \
-    void* operator new(ncore::uint_t num_bytes)                            \
-    {                                                                      \
-        ASSERT(num_bytes < (ncore::uint_t)2 * 1024 * 1024 * 1024);         \
-        return get_allocator_func()->allocate((u32)num_bytes, align);      \
-    }                                                                      \
-    void operator delete(void* mem) { get_allocator_func()->deallocate(mem); }
-
-#define DCORE_CLASS_ARRAY_NEW_DELETE(get_allocator_func, align)       \
-    void* operator new[](ncore::uint_t num_bytes)                     \
-    {                                                                 \
-        ASSERT(num_bytes < (ncore::uint_t)2 * 1024 * 1024 * 1024);    \
-        return get_allocator_func()->allocate((u32)num_bytes, align); \
-    }                                                                 \
-    void operator delete[](void* mem) { get_allocator_func()->deallocate(mem); }
 
     // helper functions
     template <typename T>
