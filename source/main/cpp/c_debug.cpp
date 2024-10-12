@@ -49,7 +49,11 @@ namespace ncore
     //     gAssertHandler
     //------------------------------------------------------------------------------
 
-    bool gAssertHandler(const char* fileName, s32 lineNumber, const char* exprString, const char* messageString) { return sAssertHandler->handle_assert(fileName, lineNumber, exprString, messageString); }
+    bool gAssertHandler(const char* fileName, s32 lineNumber, const char* exprString, const char* messageString)
+    {
+        // Assert handler
+        return sAssertHandler->handle_assert(fileName, lineNumber, exprString, messageString);
+    }
 
     bool asserthandler_default_t::handle_assert(const char* fileName, s32 lineNumber, const char* exprString, const char* messageString)
     {
