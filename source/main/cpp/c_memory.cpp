@@ -97,15 +97,16 @@ namespace ncore
 
             if (!n)
                 return dest;
-            s[0] = s[n - 1] = (unsigned char)c;
-            if (n <= 2)
-                return dest;
-            s[1] = s[n - 2] = (unsigned char)c;
-            s[2] = s[n - 3] = (unsigned char)c;
-            if (n <= 6)
-                return dest;
-            s[3] = s[n - 4] = (unsigned char)c;
-            if (n <= 8)
+
+            int_t const r = 8 ^ ((n ^ 8) & -(n < 8)); // min(x, y)
+            switch (((r - 1) & 7) >> 1)
+            {
+                case 3: s[3] = c; s[n-4] = c;
+                case 2: s[2] = c; s[n-3] = c;
+                case 1: s[1] = c; s[n-2] = c;
+                case 0: s[0] = c; s[n-1] = c;
+            }
+            if (((n-1) & ~7) == 0)
                 return dest;
 
             // Advance pointer to align it at a 4-byte boundary,
@@ -113,10 +114,9 @@ namespace ncore
             // already took care of any head/tail that get cut off
             // by the alignment.
 
-            k = -(ptr_t)s & 3;
+            k = (4 - ((ptr_t)s & 3)) & 3;
             s += k;
             n -= k;
-            n &= -4;
             n /= 4;
 
             u32 *ws = (u32 *)s;

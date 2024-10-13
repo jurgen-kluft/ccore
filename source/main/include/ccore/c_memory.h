@@ -21,19 +21,36 @@ namespace ncore
         inline void memclr(void* inDest, int_t inLength) { memset(inDest, 0, inLength); }
 
         ///@name Pointer arithmetic
-        inline void* ptr_add(void* ptr, int_t size) { return (void*)((u8*)ptr + size); }
-        inline void* ptr_add_clamp(void* ptr, int_t size, void* lower, void* upper)
+        template <typename T>
+        inline T* ptr_add(T* ptr, int_t size)
+        {
+            return (T*)((u8*)ptr + size);
+        }
+
+        template <typename T>
+        inline T* ptr_add_clamp(T* ptr, int_t size, T* lower, T* upper)
         {
             void* p = (void*)((u8*)ptr + size);
             if (p < lower)
                 p = lower;
             else if (p > upper)
                 p = upper;
-            return p;
+            return (T*)p;
         }
-        inline void* ptr_align(void* ptr, u32 alignment) { return (void*)(((ptr_t)ptr + (ptr_t)(alignment - 1)) & ~((ptr_t)(alignment - 1))); }
+
+        template <typename T>
+        inline T* ptr_align(T* ptr, u32 alignment)
+        {
+            return (T*)(((ptr_t)ptr + (ptr_t)(alignment - 1)) & ~((ptr_t)(alignment - 1)));
+        }
+
+        template <typename T>
+        inline bool ptr_is_aligned(T* ptr, u32 alignment)
+        {
+            return ((ptr_t)ptr & (ptr_t)(alignment - 1)) == 0;
+        }
+
         inline int_t ptr_diff(void* ptr, void* other) { return (int_t)((u8*)other - (u8*)ptr); }
-        inline bool  ptr_is_aligned(void* ptr, u32 alignment) { return ((ptr_t)ptr & (ptr_t)(alignment - 1)) == 0; }
 
         ///@name Conversion
         inline s64 toKb(s64 inNumBytes) { return (inNumBytes + (s64)512) / (s64)1024; }
