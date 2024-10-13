@@ -9,7 +9,8 @@ namespace ncore
 {
     /// Stores a callback for a function taking 1 parameters.
     ///\tparam R Callback function return type.
-    template <typename R, typename... Args> class callback_t
+    template <typename R, typename... Args>
+    class callback_t
     {
     public:
         /// Constructs the callback to a specific object and member function.
@@ -65,7 +66,11 @@ namespace ncore
         /// Sets the callback to a specific object and member function.
         ///\param object Pointer to the object to call upon. Care should be taken that this object remains valid as long as the callback may be invoked.
         ///\param function Member function address to call.
-        template <typename C> void Reset(C* object, R (C::*function)(Args... args)) { mCallback = new (&mMem) ChildMethod<C>(object, function); }
+        template <typename C>
+        void Reset(C* object, R (C::*function)(Args... args))
+        {
+            mCallback = new (&mMem) ChildMethod<C>(object, function);
+        }
 
         /// Sets the callback to a free function or static member function.
         ///\param function Free function address to call.
@@ -112,7 +117,7 @@ namespace ncore
             virtual bool        operator<(const Base& rhs) const  = 0;
             virtual void const* FreeFunction() const              = 0;
             virtual void const* MethodFunction() const            = 0;
-            virtual void*       Comp() const                      = 0; // Returns a pointer used in comparisons.
+            virtual void*       Comp() const                      = 0;  // Returns a pointer used in comparisons.
         };
 
         class ChildFree : public Base
@@ -140,7 +145,7 @@ namespace ncore
                 const ChildFree* const r = (const ChildFree*)rhs.FreeFunction();
                 if (r)
                     return (void const*)mFunc < (void const*)r->mFunc;
-                return true; // Free functions will always be less than methods (because comp returns 0).
+                return true;  // Free functions will always be less than methods (because comp returns 0).
             }
 
             virtual void const* FreeFunction() const final { return this; }
@@ -152,7 +157,8 @@ namespace ncore
             R (*const mFunc)(Args... args);
         };
 
-        template <typename C> class ChildMethod : public Base
+        template <typename C>
+        class ChildMethod : public Base
         {
         public:
             DCORE_CLASS_PLACEMENT_NEW_DELETE
@@ -180,8 +186,8 @@ namespace ncore
                 {
                     if (mObj != r->mObj)
                         return mObj < r->mObj;
-                    s32 const size = (s32)((sizeof(mFunc) + 7) / 8);
-                    u64 const* const mem = (u64 const*)&mFunc;
+                    s32 const        size = (s32)((sizeof(mFunc) + 7) / 8);
+                    u64 const* const mem  = (u64 const*)&mFunc;
                     u64 const* const rmem = (u64 const*)&(r->mFunc);
                     for (s32 i = 0; i < size; ++i)
                     {
@@ -205,9 +211,9 @@ namespace ncore
         /// This class is only to find the worst case method pointer size.
         class unknown;
 
-        u64  mMem[(sizeof(ChildMethod<unknown>) + 7) / 8];  // Reserve memory for creating useful objects later.
+        u64   mMem[(sizeof(ChildMethod<unknown>) + 7) / 8];  // Reserve memory for creating useful objects later.
         Base* mCallback;
     };
-} // namespace ncore
+}  // namespace ncore
 
 #endif  // __CCORE_ALLOCATOR_H__

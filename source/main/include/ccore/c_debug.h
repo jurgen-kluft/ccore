@@ -192,20 +192,20 @@ namespace ncore
 #    define DASSERTCT(expr) \
         do                  \
         {                   \
-        } while (ncore::CompileTimeAssert<(expr) != 0>::OK);
+        } while (ncore::CompileTimeAssert < (expr) != 0 > ::OK);
 
-#    define DASSERTSL(level, expr, str)                                                                                        \
-        do                                                                                                                     \
-        {                                                                                                                      \
+#    define DASSERTSL(level, expr, str)                                                                                       \
+        do                                                                                                                    \
+        {                                                                                                                     \
             if (ncore::ChooseDebugLevel(level) && ((expr) == false) && ncore::gAssertHandler(__FILE__, __LINE__, #expr, str)) \
-                D_BREAK;                                                                                                       \
+                D_BREAK;                                                                                                      \
         } while (0)
 
-#    define DASSERTL(level, expr)                                                                                                  \
-        do                                                                                                                         \
-        {                                                                                                                          \
+#    define DASSERTL(level, expr)                                                                                                 \
+        do                                                                                                                        \
+        {                                                                                                                         \
             if (ncore::ChooseDebugLevel(level) && ((expr) == false) && ncore::gAssertHandler(__FILE__, __LINE__, #expr, nullptr)) \
-                D_BREAK;                                                                                                           \
+                D_BREAK;                                                                                                          \
         } while (0)
 
 #    define DASSERT(expr)                                                                    \
