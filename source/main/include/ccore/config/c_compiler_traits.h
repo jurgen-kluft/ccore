@@ -1118,6 +1118,36 @@ namespace ncore
     #endif
 #endif
 
+
+// ------------------------------------------------------------------------
+// CC_INLINE
+//
+// Example usage:
+//     CC_INLINE void Foo() { ..... }
+//
+#ifndef CC_INLINE
+    #if defined(CC_COMPILER_MSVC)
+        #define CC_INLINE inline
+        #define D_INLINE inline
+    #elif defined(CC_COMPILER_GNUC) && (((__GNUC__ * 100) + __GNUC_MINOR__) >= 301) || defined(CC_COMPILER_CLANG)
+        #if defined(__cplusplus)
+            #define CC_INLINE inline
+            #define D_INLINE inline
+        #else
+            #define CC_INLINE __inline__
+            #define D_INLINE __inline__
+        #endif
+    #else
+        #if defined(__cplusplus)
+            #define CC_INLINE inline
+            #define D_INLINE inline
+        #else
+            #define CC_INLINE __inline
+            #define D_INLINE __inline
+        #endif
+    #endif
+#endif
+
 // ------------------------------------------------------------------------
 // CC_FORCE_INLINE              // Used as a prefix.
 //

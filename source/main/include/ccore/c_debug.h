@@ -109,6 +109,10 @@ namespace ncore
 #    define D_NOP {__asm nop}
 #endif
 
+#if defined(TARGET_LINUX) && defined(COMPILER_DEFAULT)
+#    define D_NOP {__asm nop}
+#endif
+
 #if !defined(D_NOP)
 #    error Unknown Platform/Compiler configuration for D_NOP
 #endif

@@ -1,11 +1,14 @@
 #include "ccore/c_memory.h"
 
-#ifdef TARGET_CPU_X86
+#define CC_SSE 2
+
+#if CC_SSE >= 2
 
 #include <emmintrin.h>
 
 namespace ncore
 {
+    #define D_INLINE inline
     namespace nmem
     {
         // https://github.com/skywind3000/FastMemcpy
