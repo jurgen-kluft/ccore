@@ -4,83 +4,17 @@
 
 namespace ncore
 {
-    // Hardware enumeration for TARGET_PLATFORM
-    namespace eplatform
-    {
-        enum enum_value
-        {
-            PLATFORM_NONE             = 0,
-            PLATFORM_PC               = (0x0001 << 0),
-            PLATFORM_MAC              = (0x0001 << 1),
-            PLATFORM_LINUX            = (0x0001 << 2),
-            PLATFORM_ANDROID          = 0,
-            PLATFORM_APPLE            = 0,
-            PLATFORM_IPHONE           = 0,
-            PLATFORM_IPHONE_SIMULATOR = 0,
-            PLATFORM_OSX              = 0,
-            PLATFORM_LINUX            = 0,
-            PLATFORM_SAMSUNG_TV       = 0,
-            PLATFORM_WINDOWS          = 0,
-            PLATFORM_WIN32            = 0,
-            PLATFORM_WIN64            = 0,
-            PLATFORM_WINDOWS_PHONE    = 0,
-            PLATFORM_WINRT            = 0,
-            PLATFORM_SUN              = 0,
-            PLATFORM_LRB              = 0,  // (Larrabee)
-            PLATFORM_POSIX            = 0,  // (pseudo-platform; may be defined with another platform like PLATFORM_LINUX, PLATFORM_UNIX, PLATFORM_QNX)
-            PLATFORM_UNIX             = 0,  // (pseudo-platform; may be defined with another platform like PLATFORM_LINUX)
-            PLATFORM_CYGWIN           = 0,  // (pseudo-platform; may be defined with another platform like PLATFORM_LINUX)
-            PLATFORM_MINGW            = 0,  // (pseudo-platform; may be defined with another platform like PLATFORM_WINDOWS)
-            PLATFORM_MICROSOFT        = 0,  // (pseudo-platform; may be defined with another platform like PLATFORM_WINDOWS)
-            PLATFORM_ALL              = TARGET_PLATFORM_PC | TARGET_PLATFORM_MAC | TARGET_PLATFORM_LINUX,
-        };
-
-        const char* ToString(enum_value platform);
-
-    };  // namespace eplatform
-
-    // Available configurations
-    namespace econfig
-    {
-        enum enum_value
-        {
-            CONFIG_NONE    = 0,
-            CONFIG_DEBUG   = (0x0100 << 0),
-            CONFIG_RELEASE = (0x0100 << 1),
-            CONFIG_FINAL   = (0x0100 << 2),
-            CONFIG_ALL     = CONFIG_DEBUG | CONFIG_RELEASE | CONFIG_FINAL,
-        };
-
-        const char* ToString(enum_value config);
-
-    }  // namespace econfig
-
-    // Available build types
-    namespace ebuild
-    {
-        enum enum_value
-        {
-            BUILD_NONE    = 0,
-            BUILD_DEV     = (0x1000 << 0),
-            BUILD_TEST    = (0x1000 << 1),
-            BUILD_PROFILE = (0x1000 << 2),
-            BUILD_RETAIL  = (0x1000 << 3),
-            BUILD_ALL     = BUILD_DEV | BUILD_RETAIL | BUILD_TEST,
-        };
-
-        const char* ToString(enum_value build);
-
-    }  // namespace ebuild
-
     // Platform define emanations from this file:
     // #define CC_PLATFORM_ANDROID
     // #define CC_PLATFORM_APPLE
     // #define CC_PLATFORM_IPHONE
     // #define CC_PLATFORM_IPHONE_SIMULATOR
     // #define CC_PLATFORM_OSX
+    // #define CC_PLATFORM_MAC
     // #define CC_PLATFORM_LINUX
     // #define CC_PLATFORM_SAMSUNG_TV
     // #define CC_PLATFORM_WINDOWS
+    // #define CC_PLATFORM_PC
     // #define CC_PLATFORM_WIN32
     // #define CC_PLATFORM_WIN64
     // #define CC_PLATFORM_WINDOWS_PHONE
@@ -144,6 +78,7 @@ namespace ncore
 
 #if defined(CC_PLATFORM_LRB) || defined(__LRB__) || (defined(__EDG__) && defined(__ICC) && defined(__x86_64__))
     #undef CC_PLATFORM_LRB
+    #define CC_PLATFORM_DESKTOP     1
     #define CC_PLATFORM_LRB         1
     #define CC_PLATFORM_NAME        "Larrabee"
     #define CC_PLATFORM_DESCRIPTION "Larrabee on LRB1"
@@ -153,15 +88,15 @@ namespace ncore
     #else
         #define CC_SYSTEM_LITTLE_ENDIAN 1
     #endif
-    #define CC_PROCESSOR_LRB    1
-    #define CC_PROCESSOR_LRB1   1  // Larrabee version 1
-    #define CC_ASM_STYLE_ATT    1  // Both types of asm style
-    #define CC_ASM_STYLE_INTEL  1  // are supported.
-    #define CC_PLATFORM_DESKTOP 1
+    #define CC_PROCESSOR_LRB   1
+    #define CC_PROCESSOR_LRB1  1  // Larrabee version 1
+    #define CC_ASM_STYLE_ATT   1  // Both types of asm style
+    #define CC_ASM_STYLE_INTEL 1  // are supported.
 
 // Android (Google phone OS)
 #elif defined(CC_PLATFORM_ANDROID) || defined(__ANDROID__)
     #undef CC_PLATFORM_ANDROID
+    #define CC_PLATFORM_MOBILE  1
     #define CC_PLATFORM_ANDROID 1
     #define CC_PLATFORM_LINUX   1
     #define CC_PLATFORM_UNIX    1
@@ -187,7 +122,6 @@ namespace ncore
     #if !defined(CC_SYSTEM_BIG_ENDIAN) && !defined(CC_SYSTEM_LITTLE_ENDIAN)
         #define CC_SYSTEM_LITTLE_ENDIAN 1
     #endif
-    #define CC_PLATFORM_MOBILE 1
 
 // Samsung SMART TV - a Linux-based smart TV
 #elif defined(CC_PLATFORM_SAMSUNG_TV)
@@ -215,6 +149,7 @@ namespace ncore
     // TARGET_OS_IPHONE will be undefined on an unknown compiler, and will be defined on gcc.
     #if defined(CC_PLATFORM_IPHONE) || defined(__IPHONE__) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE) || (defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR)
         #undef CC_PLATFORM_IPHONE
+        #define CC_PLATFORM_MOBILE         1
         #define CC_PLATFORM_IPHONE         1
         #define CC_PLATFORM_NAME           "iPhone"
         #define CC_ASM_STYLE_ATT           1
@@ -241,7 +176,6 @@ namespace ncore
         #else
             #error Unknown processor
         #endif
-        #define CC_PLATFORM_MOBILE 1
 
     // Macintosh OSX
     // TARGET_OS_MAC is defined by the Metrowerks and older AppleC compilers.
@@ -252,11 +186,13 @@ namespace ncore
     // powerc and __powerc are defined by the Metrowerks and GCC compilers.
     #elif defined(CC_PLATFORM_OSX) || defined(__MACH__) || (defined(__MSL__) && (__dest_os == __mac_os_x))
         #undef CC_PLATFORM_OSX
-        #define CC_PLATFORM_OSX   1
-        #define CC_PLATFORM_UNIX  1
-        #define CC_PLATFORM_POSIX 1
-       // #define CC_PLATFORM_BSD 1           We don't currently define this. OSX has some BSD history but a lot of the API is different.
-        #define CC_PLATFORM_NAME  "OSX"
+        #define CC_PLATFORM_OSX     1
+        #define TARGET_MAC          1
+        #define CC_PLATFORM_DESKTOP 1
+        #define CC_PLATFORM_UNIX    1
+        #define CC_PLATFORM_POSIX   1
+            // #define CC_PLATFORM_BSD 1           We don't currently define this. OSX has some BSD history but a lot of the API is different.
+        #define CC_PLATFORM_NAME    "OSX"
         #if defined(__i386__) || defined(__intel__)
             #define CC_PROCESSOR_X86        1
             #define CC_SYSTEM_LITTLE_ENDIAN 1
@@ -293,7 +229,6 @@ namespace ncore
         #else
             #define CC_ASM_STYLE_MOTOROLA 1
         #endif
-        #define CC_PLATFORM_DESKTOP 1
     #else
         #error Unknown Apple Platform
     #endif
@@ -309,10 +244,12 @@ namespace ncore
 // __ARM_ARCH_7A__ is defined by GCC on an ARM v7l (Raspberry Pi 2)
 #elif defined(CC_PLATFORM_LINUX) || (defined(__linux) || defined(__linux__))
     #undef CC_PLATFORM_LINUX
-    #define CC_PLATFORM_LINUX 1
-    #define CC_PLATFORM_UNIX  1
-    #define CC_PLATFORM_POSIX 1
-    #define CC_PLATFORM_NAME  "Linux"
+    #define CC_PLATFORM_DESKTOP 1
+    #define CC_PLATFORM_LINUX   1
+    #define TARGET_LINUX        1
+    #define CC_PLATFORM_UNIX    1
+    #define CC_PLATFORM_POSIX   1
+    #define CC_PLATFORM_NAME    "Linux"
     #if defined(__i386__) || defined(__intel__) || defined(_M_IX86)
         #define CC_PROCESSOR_X86        1
         #define CC_SYSTEM_LITTLE_ENDIAN 1
@@ -345,14 +282,14 @@ namespace ncore
     #if defined(__GNUC__)
         #define CC_ASM_STYLE_ATT 1
     #endif
-    #define CC_PLATFORM_DESKTOP 1
 
 #elif defined(CC_PLATFORM_BSD) || (defined(__BSD__) || defined(__FreeBSD__))
     #undef CC_PLATFORM_BSD
-    #define CC_PLATFORM_BSD   1
-    #define CC_PLATFORM_UNIX  1
-    #define CC_PLATFORM_POSIX 1  // BSD's posix complaince is not identical to Linux's
-    #define CC_PLATFORM_NAME  "BSD Unix"
+    #define CC_PLATFORM_DESKTOP 1
+    #define CC_PLATFORM_BSD     1
+    #define CC_PLATFORM_UNIX    1
+    #define CC_PLATFORM_POSIX   1  // BSD's posix complaince is not identical to Linux's
+    #define CC_PLATFORM_NAME    "BSD Unix"
     #if defined(__i386__) || defined(__intel__)
         #define CC_PROCESSOR_X86        1
         #define CC_SYSTEM_LITTLE_ENDIAN 1
@@ -381,7 +318,6 @@ namespace ncore
     #if defined(__GNUC__)
         #define CC_ASM_STYLE_ATT 1
     #endif
-    #define CC_PLATFORM_DESKTOP 1
 
 #elif defined(CC_PLATFORM_WINDOWS_PHONE)
     #undef CC_PLATFORM_WINDOWS_PHONE
@@ -444,8 +380,12 @@ namespace ncore
 // _M_ARM is defined by the VC++ compiler.
 #elif (defined(CC_PLATFORM_WINDOWS) || (defined(_WIN32) || defined(__WIN32__) || defined(_WIN64))) && !defined(CS_UNDEFINED_STRING)
     #undef CC_PLATFORM_WINDOWS
-    #define CC_PLATFORM_WINDOWS 1
-    #define CC_PLATFORM_NAME    "Windows"
+    #define CC_PLATFORM_DESKTOP   1
+    #define CC_PLATFORM_MICROSOFT 1
+    #define CC_PLATFORM_WINDOWS   1
+    #define CC_PLATFORM_PC        1
+    #define TARGET_PC             1
+    #define CC_PLATFORM_NAME      "Windows"
     #ifdef _WIN64  // VC++ defines both _WIN32 and _WIN64 when compiling for Win64.
         #define CC_PLATFORM_WIN64 1
     #else
@@ -481,8 +421,6 @@ namespace ncore
     #elif defined(_MSC_VER) || defined(__BORLANDC__) || defined(__ICL)
         #define CC_ASM_STYLE_INTEL 1
     #endif
-    #define CC_PLATFORM_DESKTOP   1
-    #define CC_PLATFORM_MICROSOFT 1
 
     #if defined(_KERNEL_MODE)
         #define CC_PLATFORM_WINDOWS_KERNEL 1

@@ -40,29 +40,24 @@ namespace ncore
 #endif
 
 // ------------------------------------------------------------------------
-// C98/99 Standard typedefs. From the ANSI ISO/IEC 9899 standards document
-// Most recent versions of the gcc-compiler come with these defined in
-// inttypes.h or stddef.h. Determining if they are predefined can be
-// tricky, so we expect some problems on non-standard compilers
-
-// #if (defined(_INTTYPES_H) || defined(_INTTYPES_H_)) && !defined(PRId64)
-//     #error "<inttypes.h> was #included before eabase.h, but without __STDC_FORMAT_MACROS #defined. You must #include eabase.h or an equivalent before #including C99 headers, or you must define __STDC_FORMAT_MACRO before #including system headrs."
-// #endif
-
-// ------------------------------------------------------------------------
 // We need to test this after we potentially include stddef.h, otherwise we
 // would have put this into the compilertraits header.
-#if !defined(CC_COMPILER_HAS_INTTYPES) && (!defined(_MSC_VER) || (_MSC_VER > 1500)) && (defined(CC_COMPILER_IS_C99) || defined(INT8_MIN) || defined(CC_COMPILER_HAS_C99_TYPES) || defined(_SN_STDINT_H))
+#if !defined(CC_COMPILER_HAS_INTTYPES) && (!defined(_MSC_VER) || (_MSC_VER > 1500)) && (defined(CC_COMPILER_IS_C99) || defined(D_S8_MIN) || defined(CC_COMPILER_HAS_C99_TYPES) || defined(_SN_STDINT_H))
     #define CC_COMPILER_HAS_INTTYPES
 #endif
 
     // ------------------------------------------------------------------------
-    typedef signed char    s8;   //< 8 bit signed integer
-    typedef signed short   s16;  //< 16 bit signed integer
-    typedef signed int     s32;  //< 32 bit signed integer. This works for both 32 bit and 64 bit platforms, as we assume the LP64 is followed.
-    typedef unsigned char  u8;   //< 8 bit unsigned integer
-    typedef unsigned short u16;  //< 16 bit unsigned integer
-    typedef unsigned int   u32;  //< 32 bit unsigned integer. This works for both 32 bit and 64 bit platforms, as we assume the LP64 is followed.
+    typedef signed char    s8;     // 8 bit signed integer
+    typedef signed short   s16;    // 16 bit signed integer
+    typedef signed int     s32;    // 32 bit signed integer. This works for both 32 bit and 64 bit platforms, as we assume the LP64 is followed.
+    typedef signed char    i8;     // 8 bit signed integer
+    typedef signed short   i16;    // 16 bit signed integer
+    typedef signed int     i32;    // 32 bit signed integer. This works for both 32 bit and 64 bit platforms, as we assume the LP64 is followed.
+    typedef unsigned char  u8;     // 8 bit unsigned integer
+    typedef unsigned short u16;    // 16 bit unsigned integer
+    typedef unsigned int   u32;    // 32 bit unsigned integer. This works for both 32 bit and 64 bit platforms, as we assume the LP64 is followed.
+    typedef s8             sbyte;  // 8 bit signed integer
+    typedef u8             byte;   // 8 bit unsigned integer
 
 // According to the C98/99 standard, FLT_EVAL_METHOD defines control the
 // width used for floating point _t types.
@@ -90,11 +85,11 @@ namespace ncore
 #if defined(CC_COMPILER_MSVC)
     typedef signed __int64   s64;
     typedef unsigned __int64 u64;
-
 #else
     typedef signed long long   s64;
     typedef unsigned long long u64;
 #endif
+    typedef s64 i64;
 
 #if (CC_PLATFORM_PTR_SIZE == 4)
     typedef s32 ptr_t;
@@ -108,130 +103,178 @@ namespace ncore
     typedef u64 uint_t;
 #endif
 
+    //==============================================================================
+    // ASCII, UTF 8, UTF 16, UTF 32
+    typedef char uchar;
+    typedef u8   uchar8;
+    typedef u16  uchar16;
+    typedef u32  uchar32;
+
     // ------------------------------------------------------------------------
     // macros for declaring constants in a portable way.
     //
-    // e.g. s64  x =  INT64_C(1234567812345678);
-    // e.g. s64  x =  INT64_C(0x1111111122222222);
-    // e.g. u64 x = UINT64_C(0x1111111122222222);
+    // e.g. s64  x = D_S64(1234567812345678);
+    // e.g. s64  x = D_S64(0x1111111122222222);
+    // e.g. u64  x = D_U64(0x1111111122222222);
     //
-    // Microsoft VC++'s definitions of INT8_C/UINT8_C/INT16_C/UINT16_C are like so:
-    //    #define INT8_C(x)     (x)
-    //    #define INT16_C(x)    (x)
-    //    #define UINT8_C(x)    (x)
-    //    #define UINT16_C(x)   (x)
+    // Microsoft VC++'s definitions of D_S8/D_U8/D_S16/D_U16 are like so:
+    //    #define D_S8(x)    (x)
+    //    #define D_S16(x)   (x)
+    //    #define D_U8(x)    (x)
+    //    #define D_U16(x)   (x)
     // To consider: undefine Microsoft's and use the casting versions below.
     // ------------------------------------------------------------------------
 
-#ifndef INT8_C_DEFINED  // If the user hasn't already defined these...
-    #define INT8_C_DEFINED
+#ifndef D_INTEGER_CONSTANT_DEFINED  // If the user hasn't already defined these...
+    #define D_INTEGER_CONSTANT_DEFINED
 
-    #ifndef INT8_C
-        #define INT8_C(x) s8(x)  // For the majority of compilers and platforms, long is 32 bits and long long is 64 bits.
+    #ifndef D_S8
+        #define D_S8(x) s8(x)  // For the majority of compilers and platforms, long is 32 bits and long long is 64 bits.
     #endif
-    #ifndef UINT8_C
-        #define UINT8_C(x) u8(x)
+    #ifndef D_U8
+        #define D_U8(x) u8(x)
     #endif
-    #ifndef INT16_C
-        #define INT16_C(x) s16(x)
+    #ifndef D_S16
+        #define D_S16(x) s16(x)
     #endif
-    #ifndef UINT16_C
-        #define UINT16_C(x) u16(x)  // Possibly we should make this be u16(x##u). Let's see how compilers react before changing this.
+    #ifndef D_U16
+        #define D_U16(x) u16(x)  // Possibly we should make this be u16(x##u). Let's see how compilers react before changing this.
     #endif
-    #ifndef INT32_C
-        #define INT32_C(x) x##L
+    #ifndef D_S32
+        #define D_S32(x) x##L
     #endif
-    #ifndef UINT32_C
-        #define UINT32_C(x) x##UL
+    #ifndef D_U32
+        #define D_U32(x) x##UL
     #endif
-    #ifndef INT64_C
-        #define INT64_C(x) x##LL  // The way to deal with this is to compare ULONG_MAX to 0xffffffff and if not equal, then remove the L.
+    #ifndef D_S64
+        #define D_S64(x) x##LL  // The way to deal with this is to compare ULONG_MAX to 0xffffffff and if not equal, then remove the L.
     #endif
-    #ifndef UINT64_C
-        #define UINT64_C(x) x##ULL  // We need to follow a similar approach for LL.
+    #ifndef D_U64
+        #define D_U64(x) x##ULL  // We need to follow a similar approach for LL.
     #endif
-    #ifndef UINTMAX_C
-        #define UINTMAX_C(x) UINT64_C(x)
+    #ifndef D_UINTMAX
+        #define D_UINTMAX(x) D_U64(x)
     #endif
 #endif
 
 // ------------------------------------------------------------------------
 // type sizes
-#ifndef INT8_MAX_DEFINED  // If the user hasn't already defined these...
-    #define INT8_MAX_DEFINED
+#ifndef D_INTEGER_MAX_DEFINED  // If the user hasn't already defined these...
+    #define D_INTEGER_MAX_DEFINED
 
     // The value must be 2^(n-1)-1
-    #ifndef INT8_MAX
-        #define INT8_MAX 127
+    #ifndef D_S8_MAX
+        #define D_S8_MAX 127
     #endif
-    #ifndef INT16_MAX
-        #define INT16_MAX 32767
+    #ifndef D_S16_MAX
+        #define D_S16_MAX 32767
     #endif
-    #ifndef INT32_MAX
-        #define INT32_MAX 2147483647
+    #ifndef D_S32_MAX
+        #define D_S32_MAX 2147483647
     #endif
-    #ifndef INT64_MAX
-        #define INT64_MAX INT64_C(9223372036854775807)
+    #ifndef D_S64_MAX
+        #define D_S64_MAX D_S64(9223372036854775807)
     #endif
-    #ifndef INTMAX_MAX
-        #define INTMAX_MAX INT64_MAX
+    #ifndef D_INTMAX_MAX
+        #define D_INTMAX_MAX D_S64_MAX
     #endif
-    #ifndef INTPTR_MAX
+    #ifndef D_INTPTR_MAX
         #if CC_PLATFORM_PTR_SIZE == 4
-            #define INTPTR_MAX INT32_MAX
+            #define D_INTPTR_MAX D_S32_MAX
         #else
-            #define INTPTR_MAX INT64_MAX
+            #define D_INTPTR_MAX D_S64_MAX
         #endif
     #endif
 
     // The value must be either -2^(n-1) or 1-2(n-1).
-    #ifndef INT8_MIN
-        #define INT8_MIN -128
+    #ifndef D_S8_MIN
+        #define D_S8_MIN -128
     #endif
-    #ifndef INT16_MIN
-        #define INT16_MIN -32768
+    #ifndef D_S16_MIN
+        #define D_S16_MIN -32768
     #endif
-    #ifndef INT32_MIN
-        #define INT32_MIN (-INT32_MAX - 1)  // -2147483648
+    #ifndef D_S32_MIN
+        #define D_S32_MIN (-D_S32_MAX - 1)  // -2147483648
     #endif
-    #ifndef INT64_MIN
-        #define INT64_MIN (-INT64_MAX - 1)  // -9223372036854775808
+    #ifndef D_S64_MIN
+        #define D_S64_MIN (-D_S64_MAX - 1)  // -9223372036854775808
     #endif
-    #ifndef INTMAX_MIN
-        #define INTMAX_MIN INT64_MIN
+    #ifndef D_INTMAX_MIN
+        #define D_INTMAX_MIN D_S64_MIN
     #endif
-    #ifndef INTPTR_MIN
+    #ifndef D_INTPTR_MIN
         #if CC_PLATFORM_PTR_SIZE == 4
-            #define INTPTR_MIN INT32_MIN
+            #define D_INTPTR_MIN D_S32_MIN
         #else
-            #define INTPTR_MIN INT64_MIN
+            #define D_INTPTR_MIN D_S64_MIN
         #endif
     #endif
 
     // The value must be 2^n-1
-    #ifndef UINT8_MAX
-        #define UINT8_MAX 0xffU  // 255
+    #ifndef D_U8_MAX
+        #define D_U8_MAX 0xffU  // 255
     #endif
-    #ifndef UINT16_MAX
-        #define UINT16_MAX 0xffffU  // 65535
+    #ifndef D_U16_MAX
+        #define D_U16_MAX 0xffffU  // 65535
     #endif
-    #ifndef UINT32_MAX
-        #define UINT32_MAX UINT32_C(0xffffffff)  // 4294967295
+    #ifndef D_U32_MAX
+        #define D_U32_MAX D_U32(0xffffffff)  // 4294967295
     #endif
-    #ifndef UINT64_MAX
-        #define UINT64_MAX UINT64_C(0xffffffffffffffff)  // 18446744073709551615
+    #ifndef D_U64_MAX
+        #define D_U64_MAX D_U64(0xffffffffffffffff)  // 18446744073709551615
     #endif
-    #ifndef UINTMAX_MAX
-        #define UINTMAX_MAX UINT64_MAX
+    #ifndef D_UINTMAX_MAX
+        #define D_UINTMAX_MAX D_U64_MAX
     #endif
-    #ifndef UINTPTR_MAX
+    #ifndef D_UINTPTR_MAX
         #if CC_PLATFORM_PTR_SIZE == 4
-            #define UINTPTR_MAX UINT32_MAX
+            #define D_UINTPTR_MAX D_U32_MAX
         #else
-            #define UINTPTR_MAX UINT64_MAX
+            #define D_UINTPTR_MAX D_U64_MAX
         #endif
     #endif
 #endif
+
+
+    //==============================================================================
+    // Min/Max values
+    //==============================================================================
+
+    const u8 cU8Min = (u8)0x00;   ///< minimum value of a u8.
+    const u8 cU8Max = (u8)0xFF;   ///< maximum value of a u8.
+    const s8 cS8Min = (s8)-0x80;  ///< minimum value of a s8.
+    const s8 cS8Max = (s8)0x7F;   ///< maximum value of a s8.
+
+    const u16 cU16Min = (u16)0x0000;   ///< minimum value of a u16
+    const u16 cU16Max = (u16)0xFFFF;   ///< maximum value of a u16.
+    const s16 cS16Min = (s16)-0x8000;  ///< minimum value of a s16.
+    const s16 cS16Max = (s16)0x7FFF;   ///< maximum value of a s16.
+
+    const u32 cU32Min = (u32)0x00000000;  ///< minimum value of a u32.
+    const u32 cU32Max = (u32)0xFFFFFFFF;  ///< maximum value of a u32.
+    const s32 cS32Min = (s32)0x80000000;  ///< minimum value of a s32.
+    const s32 cS32Max = (s32)0x7FFFFFFF;  ///< maximum value of a s32.
+
+    const u64 cU64Min = (u64)0x0000000000000000ull;  ///< minimum value of a u64.
+    const u64 cU64Max = (u64)0xFFFFFFFFFFFFFFFFull;  ///< maximum value of a u64.
+    const s64 cS64Min = (s64)0x8000000000000000ll;   ///< minimum value of a s64.
+    const s64 cS64Max = (s64)0x7FFFFFFFFFFFFFFFll;   ///< maximum value of a s64.
+
+    const f32 cF32Min = (f32)1.175494351e-38f;  ///< minimum value of a f32.
+    const f32 cF32Max = (f32)3.402823466e+38f;  ///< maximum value of a f32.
+    const f32 cF32Eps = (f32)0.0001f;           ///< default epsilon generally good to check values in the range [0 - 1], normalisations, dot products and such.
+
+    const f64 cF64Min = (f64)2.2250738585072014e-308;  ///< minimum value of a f64.
+    const f64 cF64Max = (f64)1.7976931348623158e+308;  ///< maximum value of a f64.
+
+    //==============================================================================
+    // KB, MB, GB, TB values
+    //==============================================================================
+    const u64 cKB = (u64)1024;
+    const u64 cMB = (u64)1024 * 1024;
+    const u64 cGB = (u64)1024 * 1024 * 1024;
+    const u64 cTB = (u64)1024 * 1024 * 1024 * 1024;
+
 
 #if defined(CC_COMPILER_HAS_INTTYPES) && (!defined(CC_COMPILER_MSVC) || (defined(CC_COMPILER_MSVC) && CC_COMPILER_VERSION >= 1800))
     #define CC_COMPILER_HAS_C99_FORMAT_MACROS
@@ -787,13 +830,13 @@ namespace ncore
         #define NEED_CUSTOM_STATIC_ASSERT
     #endif
 #elif defined(__GNUC__) && (defined(__GXX_EXPERIMENTAL_CXX0X__) || (defined(__cplusplus) && (__cplusplus >= 201103L)))
-                               // static_assert is defined by the compiler.
+                      // static_assert is defined by the compiler.
 #elif defined(__EDG_VERSION__) && (__EDG_VERSION__ >= 401) && defined(CC_COMPILER_CPP11_ENABLED)
-                               // static_assert is defined by the compiler.
+                      // static_assert is defined by the compiler.
 #elif !defined(__cplusplus) && defined(__GLIBC__) && defined(__USE_ISOC11)
-                               // static_assert is defined by the compiler.
+                      // static_assert is defined by the compiler.
 #elif !defined(__cplusplus) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201100L
-                               // static_assert is defined by the compiler.
+                      // static_assert is defined by the compiler.
 #else
     #define NEED_CUSTOM_STATIC_ASSERT
 #endif
@@ -807,6 +850,7 @@ namespace ncore
     #else
         #define CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
     #endif
+
     #define CC_STATIC_ASSERT_TOKEN_PASTE(a, b)        a##b
     #define CC_STATIC_ASSERT_CONCATENATE_HELPER(a, b) CC_STATIC_ASSERT_TOKEN_PASTE(a, b)
 
