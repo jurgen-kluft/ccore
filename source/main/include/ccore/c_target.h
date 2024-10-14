@@ -4,36 +4,7 @@
 
 namespace ncore
 {
-    // Hardware enumeration for TARGET_PLATFORM
-    enum eplatform
-    {
-        TARGET_PLATFORM_NONE  = 0,
-        TARGET_PLATFORM_PC    = (0x0001 << 0),
-        TARGET_PLATFORM_MAC   = (0x0001 << 1),
-        TARGET_PLATFORM_LINUX = (0x0001 << 2),
-        TARGET_PLATFORM_ALL   = TARGET_PLATFORM_PC | TARGET_PLATFORM_MAC | TARGET_PLATFORM_LINUX,
-    };
-
-    // Available configurations
-    enum econfig
-    {
-        TARGET_CONFIG_NONE    = 0,
-        TARGET_CONFIG_DEBUG   = (0x0100 << 0),
-        TARGET_CONFIG_RELEASE = (0x0100 << 1),
-        TARGET_CONFIG_FINAL   = (0x0100 << 2),
-        TARGET_CONFIG_ALL     = TARGET_CONFIG_DEBUG | TARGET_CONFIG_RELEASE | TARGET_CONFIG_FINAL,
-    };
-
-    // Available build types
-    enum ebuild
-    {
-        TARGET_BUILD_NONE   = 0,
-        TARGET_BUILD_DEV    = (0x1000 << 0),
-        TARGET_BUILD_RETAIL = (0x1000 << 1),
-        TARGET_BUILD_TEST   = (0x1000 << 2),
-        TARGET_BUILD_ALL    = TARGET_BUILD_DEV | TARGET_BUILD_RETAIL | TARGET_BUILD_TEST,
-    };
-
+  
 // -------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------
 // Platform, Compiler and Configuration Detection
@@ -97,19 +68,6 @@ namespace ncore
 #    endif
 #endif
 
-// Check if the configuration is debug or release
-#if !defined(TARGET_DEV) && !defined(TARGET_RETAIL) && !defined(TARGET_TEST)
-#    define TARGET_DEV 1
-#endif
-#if defined(NDEBUG) && !defined(_DEBUG)
-#    if !defined(TARGET_RELEASE)
-#        define TARGET_RELEASE 1
-#    endif
-#else
-#    if !defined(TARGET_DEBUG)
-#        define TARGET_DEBUG 1
-#    endif
-#endif
 
     // -------------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------------

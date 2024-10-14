@@ -16,6 +16,32 @@ CC_INCLUDE_ONCE
 namespace ncore
 {
     // ------------------------------------------------------------------------
+    // Build configurations, which are used to determine the build type.
+    // Configuration: 
+    //    - TARGET_DEBUG
+    //    - TARGET_RELEASE
+    //    - TARGET_FINAL
+    // Variants: 
+    //    - TARGET_DEV
+    //    - TARGET_RETAIL
+    //    - TARGET_TEST
+    //    - TARGET_PROFILE
+
+// Check if the configuration is debug, release or final
+#if !defined(TARGET_DEV) && !defined(TARGET_RETAIL) && !defined(TARGET_TEST) && !defined(TARGET_PROFILE)
+#    define TARGET_DEV 1
+#endif
+#if defined(NDEBUG) && !defined(_DEBUG)
+#    if !defined(TARGET_RELEASE) && !defined(TARGET_FINAL)
+#        define TARGET_RELEASE 1
+#    endif
+#else
+#    if !defined(TARGET_DEBUG) && !defined(TARGET_FINAL)
+#        define TARGET_DEBUG 1
+#    endif
+#endif    
+
+    // ------------------------------------------------------------------------
     // By default, GCC defines NULL as ((void*)0), which is the
     // C definition. This causes all sort of problems for C++ code, so it is
     // worked around by undefining NULL.
