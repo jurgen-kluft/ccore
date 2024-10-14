@@ -1,6 +1,6 @@
 #include "ccore/c_memory.h"
 
-#if 0
+#if CC_NEON
 
 #    include <arm_neon.h>
 
@@ -209,7 +209,7 @@ namespace ncore
                         dst += 128;
                     }
                 }
-                __builtin___clear_cache((char *)destination, (char *)(destination + size));
+                __builtin___clear_cache((char *)destination, (char *)dst + size);
             }
 
             memcpy_le_128_bytes(dst, src, size);
