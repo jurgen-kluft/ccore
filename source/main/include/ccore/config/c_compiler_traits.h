@@ -89,39 +89,36 @@ namespace ncore
     //    Find a way to reliably detect wchar_t size at preprocessor time and
     //    implement it below for CC_WCHAR_SIZE.
     //
-    //  Todo:
-    //    Find out how to support CC_PASCAL and CC_PASCAL_FUNC for systems in
-    //    which it hasn't yet been found out for.
 
 // Metrowerks uses #defines in its core C header files to define
 // the kind of information we need below (e.g. C99 compatibility)
 
 // Determine if this compiler is ANSI C compliant and if it is C99 compliant.
 #if defined(__STDC__)
-    #define CC_COMPILER_IS_ANSIC 1  // The compiler claims to be ANSI C
+#    define CC_COMPILER_IS_ANSIC 1  // The compiler claims to be ANSI C
 
-    // Is the compiler a C99 compiler or equivalent?
-    // From ISO/IEC 9899:1999:
-    //    6.10.8 Predefined macro names
-    //    __STDC_VERSION__ The integer constant 199901L. (150)
-    //
-    //    150) This macro was not specified in ISO/IEC 9899:1990 and was
-    //    specified as 199409L in ISO/IEC 9899/AMD1:1995. The intention
-    //    is that this will remain an integer constant of type long int
-    //    that is increased with each revision of this International Standard.
-    //
-    #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
-        #define CC_COMPILER_IS_C99 1
-    #endif
+// Is the compiler a C99 compiler or equivalent?
+// From ISO/IEC 9899:1999:
+//    6.10.8 Predefined macro names
+//    __STDC_VERSION__ The integer constant 199901L. (150)
+//
+//    150) This macro was not specified in ISO/IEC 9899:1990 and was
+//    specified as 199409L in ISO/IEC 9899/AMD1:1995. The intention
+//    is that this will remain an integer constant of type long int
+//    that is increased with each revision of this International Standard.
+//
+#    if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+#        define CC_COMPILER_IS_C99 1
+#    endif
 
-    // Is the compiler a C11 compiler?
-    // From ISO/IEC 9899:2011:
-    //   Page 176, 6.10.8.1 (Predefined macro names) :
-    //   __STDC_VERSION__ The integer constant 201112L. (178)
-    //
-    #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
-        #define CC_COMPILER_IS_C11 1
-    #endif
+// Is the compiler a C11 compiler?
+// From ISO/IEC 9899:2011:
+//   Page 176, 6.10.8.1 (Predefined macro names) :
+//   __STDC_VERSION__ The integer constant 201112L. (178)
+//
+#    if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
+#        define CC_COMPILER_IS_C11 1
+#    endif
 #endif
 
 // Some compilers (e.g. GCC) define __USE_ISOC99 if they are not
@@ -129,34 +126,34 @@ namespace ncore
 // to use C99 functionality. Metrowerks defines _MSL_C99 as 1 in
 // this case, but 0 otherwise.
 #if (defined(__USE_ISOC99) || (defined(_MSL_C99) && (_MSL_C99 == 1))) && !defined(CC_COMPILER_IS_C99)
-    #define CC_COMPILER_IS_C99 1
+#    define CC_COMPILER_IS_C99 1
 #endif
 
 // Metrowerks defines C99 types (e.g. intptr_t) instrinsically when in C99 mode (-lang C99 on the command line).
 #if (defined(_MSL_C99) && (_MSL_C99 == 1))
-    #define CC_COMPILER_HAS_C99_TYPES 1
+#    define CC_COMPILER_HAS_C99_TYPES 1
 #endif
 
 #if defined(__GNUC__)
-    #if (((__GNUC__ * 100) + __GNUC_MINOR__) >= 302)  // Also, GCC defines _HAS_C9X.
-        #define CC_COMPILER_HAS_C99_TYPES 1           // The compiler is not necessarily a C99 compiler, but it defines C99 types.
+#    if (((__GNUC__ * 100) + __GNUC_MINOR__) >= 302)  // Also, GCC defines _HAS_C9X.
+#        define CC_COMPILER_HAS_C99_TYPES 1           // The compiler is not necessarily a C99 compiler, but it defines C99 types.
 
-        #ifndef __STDC_LIMIT_MACROS
-            #define __STDC_LIMIT_MACROS 1
-        #endif
+    // #ifndef __STDC_LIMIT_MACROS
+    //     #define __STDC_LIMIT_MACROS 1
+    // #endif
 
-        #ifndef __STDC_CONSTANT_MACROS
-            #define __STDC_CONSTANT_MACROS 1  // This tells the GCC compiler that we want it to use its native C99 types.
-        #endif
-    #endif
+    // #ifndef __STDC_CONSTANT_MACROS
+    //     #define __STDC_CONSTANT_MACROS 1  // This tells the GCC compiler that we want it to use its native C99 types.
+    // #endif
+#    endif
 #endif
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1600)
-    #define CC_COMPILER_HAS_C99_TYPES 1
+#    define CC_COMPILER_HAS_C99_TYPES 1
 #endif
 
 #ifdef __cplusplus
-    #define CC_COMPILER_IS_CPLUSPLUS 1
+#    define CC_COMPILER_IS_CPLUSPLUS 1
 #endif
 
 // ------------------------------------------------------------------------
@@ -178,9 +175,9 @@ namespace ncore
 // something like __LINE__(Var+37).
 //
 #ifndef CC_PREPROCESSOR_JOIN
-    #define CC_PREPROCESSOR_JOIN(a, b)  CC_PREPROCESSOR_JOIN1(a, b)
-    #define CC_PREPROCESSOR_JOIN1(a, b) CC_PREPROCESSOR_JOIN2(a, b)
-    #define CC_PREPROCESSOR_JOIN2(a, b) a##b
+#    define CC_PREPROCESSOR_JOIN(a, b)  CC_PREPROCESSOR_JOIN1(a, b)
+#    define CC_PREPROCESSOR_JOIN1(a, b) CC_PREPROCESSOR_JOIN2(a, b)
+#    define CC_PREPROCESSOR_JOIN2(a, b) a##b
 #endif
 
 // ------------------------------------------------------------------------
@@ -190,26 +187,26 @@ namespace ncore
 //     printf("Line: %s", CC_STRINGIFY(__LINE__));
 //
 #ifndef CC_STRINGIFY
-    #define CC_STRINGIFY(x)     CC_STRINGIFYIMPL(x)
-    #define CC_STRINGIFYIMPL(x) #x
+#    define CC_STRINGIFY(x)     CC_STRINGIFYIMPL(x)
+#    define CC_STRINGIFYIMPL(x) #x
 #endif
 
 // ------------------------------------------------------------------------
 // CC_IDENTITY
 //
 #ifndef CC_IDENTITY
-    #define CC_IDENTITY(x) x
+#    define CC_IDENTITY(x) x
 #endif
 
 // ------------------------------------------------------------------------
 // CC_COMPILER_MANAGED_CPP
 // Defined if this is being compiled with Managed C++ extensions
 #ifdef CC_COMPILER_MSVC
-    #if CC_COMPILER_VERSION >= 1300
-        #ifdef _MANAGED
-            #define CC_COMPILER_MANAGED_CPP 1
-        #endif
-    #endif
+#    if CC_COMPILER_VERSION >= 1300
+#        ifdef _MANAGED
+#            define CC_COMPILER_MANAGED_CPP 1
+#        endif
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -220,9 +217,9 @@ namespace ncore
 // you can use intmax_t and uintmax_t to use the actual types.
 //
 #if defined(__GNUC__) && defined(__x86_64__)
-    #define CC_COMPILER_INTMAX_SIZE 16  // intmax_t is __int128_t (GCC extension) and is 16 bytes.
+#    define CC_COMPILER_INTMAX_SIZE 16  // intmax_t is __int128_t (GCC extension) and is 16 bytes.
 #else
-    #define CC_COMPILER_INTMAX_SIZE 8  // intmax_t is int64_t and is 8 bytes.
+#    define CC_COMPILER_INTMAX_SIZE 8  // intmax_t is int64_t and is 8 bytes.
 #endif
 
 // ------------------------------------------------------------------------
@@ -236,16 +233,16 @@ namespace ncore
 //     int x = SOME_MACRO(SomeTemplate<int CC_COMMA() int EACOMMA() char>);
 //
 #ifndef CC_LPAREN
-    #define CC_LPAREN() (
+#    define CC_LPAREN() (
 #endif
 #ifndef CC_RPAREN
-    #define CC_RPAREN() )
+#    define CC_RPAREN() )
 #endif
 #ifndef CC_COMMA
-    #define CC_COMMA() ,
+#    define CC_COMMA() ,
 #endif
 #ifndef CC_SEMI
-    #define CC_SEMI() ;
+#    define CC_SEMI() ;
 #endif
 
 // ------------------------------------------------------------------------
@@ -265,9 +262,9 @@ namespace ncore
 //     size_t n = CC_OFFSETOF(A, y);
 //
 #if defined(__GNUC__)  // We can't use GCC 4's __builtin_offsetof because it mistakenly complains about non-PODs that are really PODs.
-    #define CC_OFFSETOF(struct_, member_) ((size_t)(((uintptr_t) & reinterpret_cast<const volatile char&>((((struct_*)65536)->member_))) - 65536))
+#    define CC_OFFSETOF(struct_, member_) ((size_t)(((uintptr_t)&reinterpret_cast<const volatile char&>((((struct_*)65536)->member_))) - 65536))
 #else
-    #define CC_OFFSETOF(struct_, member_) offsetof(struct_, member_)
+#    define CC_OFFSETOF(struct_, member_) offsetof(struct_, member_)
 #endif
 
 // ------------------------------------------------------------------------
@@ -283,9 +280,9 @@ namespace ncore
 //     size_t n = CC_SIZEOF_MEMBER(A, y);
 //
 #ifndef CC_COMPILER_NO_EXTENDED_SIZEOF
-    #define CC_SIZEOF_MEMBER(struct_, member_) (sizeof(struct_::member_))
+#    define CC_SIZEOF_MEMBER(struct_, member_) (sizeof(struct_::member_))
 #else
-    #define CC_SIZEOF_MEMBER(struct_, member_) (sizeof(((struct_*)0)->member_))
+#    define CC_SIZEOF_MEMBER(struct_, member_) (sizeof(((struct_*)0)->member_))
 #endif
 
     // ------------------------------------------------------------------------
@@ -324,16 +321,16 @@ namespace ncore
     //    typedef CC_ALIGNED(X, X16, 16); X16 x16;                      typedef X X16; X16 x16;         Define X16 as an X which is aligned on 16.
 
 #if !defined(CC_ALIGN_MAX)         // If the user hasn't globally set an alternative value...
-    #if defined(CC_PROCESSOR_ARM)  // ARM compilers in general tend to limit automatic variables to 8 or less.
-        #define CC_ALIGN_MAX_STATIC    1048576
-        #define CC_ALIGN_MAX_AUTOMATIC 1  // Typically they support only built-in natural aligment types (both arm-eabi and apple-abi).
-    #elif defined(CC_PLATFORM_APPLE)
-        #define CC_ALIGN_MAX_STATIC    1048576
-        #define CC_ALIGN_MAX_AUTOMATIC 16
-    #else
-        #define CC_ALIGN_MAX_STATIC    1048576  // Arbitrarily high value. What is the actual max?
-        #define CC_ALIGN_MAX_AUTOMATIC 1048576
-    #endif
+#    if defined(CC_PROCESSOR_ARM)  // ARM compilers in general tend to limit automatic variables to 8 or less.
+#        define CC_ALIGN_MAX_STATIC    1048576
+#        define CC_ALIGN_MAX_AUTOMATIC 1  // Typically they support only built-in natural aligment types (both arm-eabi and apple-abi).
+#    elif defined(CC_PLATFORM_APPLE)
+#        define CC_ALIGN_MAX_STATIC    1048576
+#        define CC_ALIGN_MAX_AUTOMATIC 16
+#    else
+#        define CC_ALIGN_MAX_STATIC    1048576  // Arbitrarily high value. What is the actual max?
+#        define CC_ALIGN_MAX_AUTOMATIC 1048576
+#    endif
 #endif
 
 // EDG intends to be compatible with GCC but has a bug whereby it
@@ -342,40 +339,40 @@ namespace ncore
 // the size like postfix does.  Prefix also fails on templates.  So gcc style post fix
 // is still used, but the user will need to use CC_POSTFIX_ALIGN before the constructor parameters.
 #if defined(__GNUC__) && (__GNUC__ < 3)
-    #define CC_ALIGN_OF(type) ((size_t) __alignof__(type))
-    #define CC_ALIGN(n)
-    #define CC_PREFIX_ALIGN(n)
-    #define CC_POSTFIX_ALIGN(n)                    __attribute__((aligned(n)))
-    #define CC_ALIGNED(variable_type, variable, n) variable_type variable __attribute__((aligned(n)))
-    #define CC_PACKED                              __attribute__((packed))
+#    define CC_ALIGN_OF(type) ((size_t)__alignof__(type))
+#    define CC_ALIGN(n)
+#    define CC_PREFIX_ALIGN(n)
+#    define CC_POSTFIX_ALIGN(n)                    __attribute__((aligned(n)))
+#    define CC_ALIGNED(variable_type, variable, n) variable_type variable __attribute__((aligned(n)))
+#    define CC_PACKED                              __attribute__((packed))
 
 // GCC 3.x+, IBM, and clang support prefix attributes.
 #elif (defined(__GNUC__) && (__GNUC__ >= 3)) || defined(__xlC__) || defined(__clang__)
-    #define CC_ALIGN_OF(type) ((size_t) __alignof__(type))
-    #define CC_ALIGN(n)       __attribute__((aligned(n)))
-    #define CC_PREFIX_ALIGN(n)
-    #define CC_POSTFIX_ALIGN(n)                    __attribute__((aligned(n)))
-    #define CC_ALIGNED(variable_type, variable, n) variable_type variable __attribute__((aligned(n)))
-    #define CC_PACKED                              __attribute__((packed))
+#    define CC_ALIGN_OF(type) ((size_t)__alignof__(type))
+#    define CC_ALIGN(n)       __attribute__((aligned(n)))
+#    define CC_PREFIX_ALIGN(n)
+#    define CC_POSTFIX_ALIGN(n)                    __attribute__((aligned(n)))
+#    define CC_ALIGNED(variable_type, variable, n) variable_type variable __attribute__((aligned(n)))
+#    define CC_PACKED                              __attribute__((packed))
 
 // Metrowerks supports prefix attributes.
 // Metrowerks does not support packed alignment attributes.
 #elif defined(CC_COMPILER_INTEL) || defined(CS_UNDEFINED_STRING) || (defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION >= 1300))
-    #define CC_ALIGN_OF(type)  ((size_t) __alignof(type))
-    #define CC_ALIGN(n)        __declspec(align(n))
-    #define CC_PREFIX_ALIGN(n) CC_ALIGN(n)
-    #define CC_POSTFIX_ALIGN(n)
-    #define CC_ALIGNED(variable_type, variable, n) CC_ALIGN(n) variable_type variable
-    #define CC_PACKED  // See CC_PRAGMA_PACK_VC for an alternative.
+#    define CC_ALIGN_OF(type)  ((size_t)__alignof(type))
+#    define CC_ALIGN(n)        __declspec(align(n))
+#    define CC_PREFIX_ALIGN(n) CC_ALIGN(n)
+#    define CC_POSTFIX_ALIGN(n)
+#    define CC_ALIGNED(variable_type, variable, n) CC_ALIGN(n) variable_type variable
+#    define CC_PACKED  // See CC_PRAGMA_PACK_VC for an alternative.
 
 // Arm brand compiler
 #elif defined(CC_COMPILER_ARM)
-    #define CC_ALIGN_OF(type)  ((size_t)__ALIGNOF__(type))
-    #define CC_ALIGN(n)        __align(n)
-    #define CC_PREFIX_ALIGN(n) __align(n)
-    #define CC_POSTFIX_ALIGN(n)
-    #define CC_ALIGNED(variable_type, variable, n) __align(n) variable_type variable
-    #define CC_PACKED                              __packed
+#    define CC_ALIGN_OF(type)  ((size_t)__ALIGNOF__(type))
+#    define CC_ALIGN(n)        __align(n)
+#    define CC_PREFIX_ALIGN(n) __align(n)
+#    define CC_POSTFIX_ALIGN(n)
+#    define CC_ALIGNED(variable_type, variable, n) __align(n) variable_type variable
+#    define CC_PACKED                              __packed
 
 // Unusual compilers
 // There is nothing we can do about some of these. This is not as bad a problem as it seems.
@@ -383,12 +380,12 @@ namespace ncore
 // likely that alignment doesn't matter for that platform. Otherwise they would have defined
 // functionality to manipulate alignment.
 #else
-    #define CC_ALIGN(n)
-    #define CC_PREFIX_ALIGN(n)
-    #define CC_POSTFIX_ALIGN(n)
-    #define CC_ALIGNED(variable_type, variable, n) variable_type variable
-    #define CC_PACKED
-    #define CC_ALIGN_OF(type) ((size_t)__ALIGNOF__(type))
+#    define CC_ALIGN(n)
+#    define CC_PREFIX_ALIGN(n)
+#    define CC_POSTFIX_ALIGN(n)
+#    define CC_ALIGNED(variable_type, variable, n) variable_type variable
+#    define CC_PACKED
+#    define CC_ALIGN_OF(type) ((size_t)__ALIGNOF__(type))
 
 #endif
 
@@ -402,13 +399,13 @@ namespace ncore
 //    CC_PRAGMA_PACK_VC(pop)
 //
 #if !defined(CC_PRAGMA_PACK_VC)
-    #if defined(CC_COMPILER_MSVC)
-        #define CC_PRAGMA_PACK_VC(...) __pragma(pack(__VA_ARGS__))
-    #elif !defined(CC_COMPILER_NO_VARIADIC_MACROS)
-        #define CC_PRAGMA_PACK_VC(...)
-    #else
-            // No support. However, all compilers of significance to us support variadic macros.
-    #endif
+#    if defined(CC_COMPILER_MSVC)
+#        define CC_PRAGMA_PACK_VC(...) __pragma(pack(__VA_ARGS__))
+#    elif !defined(CC_COMPILER_NO_VARIADIC_MACROS)
+#        define CC_PRAGMA_PACK_VC(...)
+#    else
+    // No support. However, all compilers of significance to us support variadic macros.
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -432,18 +429,18 @@ namespace ncore
 //       { ... }
 //
 #ifndef CC_LIKELY
-    #if (defined(__GNUC__) && (__GNUC__ >= 3)) || defined(__clang__)
-        #if defined(__cplusplus)
-            #define CC_LIKELY(x)   __builtin_expect(!!(x), true)
-            #define CC_UNLIKELY(x) __builtin_expect(!!(x), false)
-        #else
-            #define CC_LIKELY(x)   __builtin_expect(!!(x), 1)
-            #define CC_UNLIKELY(x) __builtin_expect(!!(x), 0)
-        #endif
-    #else
-        #define CC_LIKELY(x)   (x)
-        #define CC_UNLIKELY(x) (x)
-    #endif
+#    if (defined(__GNUC__) && (__GNUC__ >= 3)) || defined(__clang__)
+#        if defined(__cplusplus)
+#            define CC_LIKELY(x)   __builtin_expect(!!(x), true)
+#            define CC_UNLIKELY(x) __builtin_expect(!!(x), false)
+#        else
+#            define CC_LIKELY(x)   __builtin_expect(!!(x), 1)
+#            define CC_UNLIKELY(x) __builtin_expect(!!(x), 0)
+#        endif
+#    else
+#        define CC_LIKELY(x)   (x)
+#        define CC_UNLIKELY(x) (x)
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -460,11 +457,11 @@ namespace ncore
 //     #endif
 // #endif
 #if !defined(CC_HAS_INCLUDE_AVAILABLE)
-    #if CC_COMPILER_CPP17_ENABLED || CC_COMPILER_CLANG || CC_COMPILER_GNUC
-        #define CC_HAS_INCLUDE_AVAILABLE 1
-    #else
-        #define CC_HAS_INCLUDE_AVAILABLE 0
-    #endif
+#    if CC_COMPILER_CPP17_ENABLED || CC_COMPILER_CLANG || CC_COMPILER_GNUC
+#        define CC_HAS_INCLUDE_AVAILABLE 1
+#    else
+#        define CC_HAS_INCLUDE_AVAILABLE 0
+#    endif
 #endif
 
     // ------------------------------------------------------------------------
@@ -486,13 +483,13 @@ namespace ncore
     // #endif
 
 #if !defined(CC_HAS_INCLUDE)
-    #if CC_COMPILER_CPP17_ENABLED
-        #define CC_HAS_INCLUDE(x) __has_include(x)
-    #elif CC_COMPILER_CLANG
-        #define CC_HAS_INCLUDE(x) __has_include(x)
-    #elif CC_COMPILER_GNUC
-        #define CC_HAS_INCLUDE(x) __has_include(x)
-    #endif
+#    if CC_COMPILER_CPP17_ENABLED
+#        define CC_HAS_INCLUDE(x) __has_include(x)
+#    elif CC_COMPILER_CLANG
+#        define CC_HAS_INCLUDE(x) __has_include(x)
+#    elif CC_COMPILER_GNUC
+#        define CC_HAS_INCLUDE(x) __has_include(x)
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -502,11 +499,11 @@ namespace ncore
 // Defines if the GCC attribute init_priority is supported by the compiler.
 //
 #if !defined(CC_INIT_PRIORITY_AVAILABLE)
-    #if defined(__GNUC__) && !defined(__EDG__)  // EDG typically #defines __GNUC__ but doesn't implement init_priority.
-        #define CC_INIT_PRIORITY_AVAILABLE 1
-    #elif defined(__clang__)
-        #define CC_INIT_PRIORITY_AVAILABLE 1  // Clang implements init_priority
-    #endif
+#    if defined(__GNUC__) && !defined(__EDG__)  // EDG typically #defines __GNUC__ but doesn't implement init_priority.
+#        define CC_INIT_PRIORITY_AVAILABLE 1
+#    elif defined(__clang__)
+#        define CC_INIT_PRIORITY_AVAILABLE 1  // Clang implements init_priority
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -520,11 +517,11 @@ namespace ncore
 //     SomeClass gSomeClass CC_INIT_PRIORITY(2000);
 //
 #if !defined(CC_INIT_PRIORITY)
-    #if defined(CC_INIT_PRIORITY_AVAILABLE)
-        #define CC_INIT_PRIORITY(x) __attribute__((init_priority(x)))
-    #else
-        #define CC_INIT_PRIORITY(x)
-    #endif
+#    if defined(CC_INIT_PRIORITY_AVAILABLE)
+#        define CC_INIT_PRIORITY(x) __attribute__((init_priority(x)))
+#    else
+#        define CC_INIT_PRIORITY(x)
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -549,11 +546,11 @@ namespace ncore
 //    }
 //
 #ifndef CC_ASSUME
-    #if defined(_MSC_VER) && (_MSC_VER >= 1300)  // If VC7.0 and later
-        #define CC_ASSUME(x) __assume(x)
-    #else
-        #define CC_ASSUME(x)
-    #endif
+#    if defined(_MSC_VER) && (_MSC_VER >= 1300)  // If VC7.0 and later
+#        define CC_ASSUME(x) __assume(x)
+#    else
+#        define CC_ASSUME(x)
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -570,11 +567,11 @@ namespace ncore
 //    }
 //
 #ifndef CC_ANALYSIS_ASSUME
-    #if defined(_MSC_VER) && (_MSC_VER >= 1300)                 // If VC7.0 and later
-        #define CC_ANALYSIS_ASSUME(x) __analysis_assume(!!(x))  // !! because that allows for convertible-to-bool in addition to bool.
-    #else
-        #define CC_ANALYSIS_ASSUME(x)
-    #endif
+#    if defined(_MSC_VER) && (_MSC_VER >= 1300)                 // If VC7.0 and later
+#        define CC_ANALYSIS_ASSUME(x) __analysis_assume(!!(x))  // !! because that allows for convertible-to-bool in addition to bool.
+#    else
+#        define CC_ANALYSIS_ASSUME(x)
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -591,19 +588,19 @@ namespace ncore
 //     CC_RESTORE_VC_WARNING()
 //
 #ifndef CC_DISABLE_VC_WARNING
-    #if defined(_MSC_VER)
-        #define CC_DISABLE_VC_WARNING(w) __pragma(warning(push)) __pragma(warning(disable : w))
-    #else
-        #define CC_DISABLE_VC_WARNING(w)
-    #endif
+#    if defined(_MSC_VER)
+#        define CC_DISABLE_VC_WARNING(w) __pragma(warning(push)) __pragma(warning(disable : w))
+#    else
+#        define CC_DISABLE_VC_WARNING(w)
+#    endif
 #endif
 
 #ifndef CC_RESTORE_VC_WARNING
-    #if defined(_MSC_VER)
-        #define CC_RESTORE_VC_WARNING() __pragma(warning(pop))
-    #else
-        #define CC_RESTORE_VC_WARNING()
-    #endif
+#    if defined(_MSC_VER)
+#        define CC_RESTORE_VC_WARNING() __pragma(warning(pop))
+#    else
+#        define CC_RESTORE_VC_WARNING()
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -620,19 +617,19 @@ namespace ncore
 //     CC_DISABLE_VC_WARNING_AS_ERROR()
 //
 #ifndef CC_ENABLE_VC_WARNING_AS_ERROR
-    #if defined(_MSC_VER)
-        #define CC_ENABLE_VC_WARNING_AS_ERROR(w) __pragma(warning(push)) __pragma(warning(error : w))
-    #else
-        #define CC_ENABLE_VC_WARNING_AS_ERROR(w)
-    #endif
+#    if defined(_MSC_VER)
+#        define CC_ENABLE_VC_WARNING_AS_ERROR(w) __pragma(warning(push)) __pragma(warning(error : w))
+#    else
+#        define CC_ENABLE_VC_WARNING_AS_ERROR(w)
+#    endif
 #endif
 
 #ifndef CC_DISABLE_VC_WARNING_AS_ERROR
-    #if defined(_MSC_VER)
-        #define CC_DISABLE_VC_WARNING_AS_ERROR() __pragma(warning(pop))
-    #else
-        #define CC_DISABLE_VC_WARNING_AS_ERROR()
-    #endif
+#    if defined(_MSC_VER)
+#        define CC_DISABLE_VC_WARNING_AS_ERROR() __pragma(warning(pop))
+#    else
+#        define CC_DISABLE_VC_WARNING_AS_ERROR()
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -647,27 +644,27 @@ namespace ncore
 //     CC_RESTORE_GCC_WARNING()
 //
 #ifndef CC_DISABLE_GCC_WARNING
-    #if defined(CC_COMPILER_GNUC)
-        #define EAGCCWHELP0(x) #x
-        #define EAGCCWHELP1(x) EAGCCWHELP0(GCC diagnostic ignored x)
-        #define EAGCCWHELP2(x) EAGCCWHELP1(#x)
-    #endif
+#    if defined(CC_COMPILER_GNUC)
+#        define CC_GCCWHELP0(x) #x
+#        define CC_GCCWHELP1(x) CC_GCCWHELP0(GCC diagnostic ignored x)
+#        define CC_GCCWHELP2(x) CC_GCCWHELP1(#x)
+#    endif
 
-    #if defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4006)  // Can't test directly for __GNUC__ because some compilers lie.
-        #define CC_DISABLE_GCC_WARNING(w) _Pragma("GCC diagnostic push") _Pragma(EAGCCWHELP2(w))
-    #elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4004)
-        #define CC_DISABLE_GCC_WARNING(w) _Pragma(EAGCCWHELP2(w))
-    #else
-        #define CC_DISABLE_GCC_WARNING(w)
-    #endif
+#    if defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4006)  // Can't test directly for __GNUC__ because some compilers lie.
+#        define CC_DISABLE_GCC_WARNING(w) _Pragma("GCC diagnostic push") _Pragma(CC_GCCWHELP2(w))
+#    elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4004)
+#        define CC_DISABLE_GCC_WARNING(w) _Pragma(CC_GCCWHELP2(w))
+#    else
+#        define CC_DISABLE_GCC_WARNING(w)
+#    endif
 #endif
 
 #ifndef CC_RESTORE_GCC_WARNING
-    #if defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4006)
-        #define CC_RESTORE_GCC_WARNING() _Pragma("GCC diagnostic pop")
-    #else
-        #define CC_RESTORE_GCC_WARNING()
-    #endif
+#    if defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4006)
+#        define CC_RESTORE_GCC_WARNING() _Pragma("GCC diagnostic pop")
+#    else
+#        define CC_RESTORE_GCC_WARNING()
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -691,27 +688,27 @@ namespace ncore
 //     CC_DISABLE_GCC_WARNING_AS_ERROR()
 //
 #ifndef CC_ENABLE_GCC_WARNING_AS_ERROR
-    #if defined(CC_COMPILER_GNUC)
-        #define EAGCCWERRORHELP0(x) #x
-        #define EAGCCWERRORHELP1(x) EAGCCWERRORHELP0(GCC diagnostic error x)
-        #define EAGCCWERRORHELP2(x) EAGCCWERRORHELP1(#x)
-    #endif
+#    if defined(CC_COMPILER_GNUC)
+#        define CC_GCCWERRORHELP0(x) #x
+#        define CC_GCCWERRORHELP1(x) CC_GCCWERRORHELP0(GCC diagnostic error x)
+#        define CC_GCCWERRORHELP2(x) CC_GCCWERRORHELP1(#x)
+#    endif
 
-    #if defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4006)  // Can't test directly for __GNUC__ because some compilers lie.
-        #define CC_ENABLE_GCC_WARNING_AS_ERROR(w) _Pragma("GCC diagnostic push") _Pragma(EAGCCWERRORHELP2(w))
-    #elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4004)
-        #define CC_DISABLE_GCC_WARNING(w) _Pragma(EAGCCWERRORHELP2(w))
-    #else
-        #define CC_DISABLE_GCC_WARNING(w)
-    #endif
+#    if defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4006)  // Can't test directly for __GNUC__ because some compilers lie.
+#        define CC_ENABLE_GCC_WARNING_AS_ERROR(w) _Pragma("GCC diagnostic push") _Pragma(CC_GCCWERRORHELP2(w))
+#    elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4004)
+#        define CC_DISABLE_GCC_WARNING(w) _Pragma(CC_GCCWERRORHELP2(w))
+#    else
+#        define CC_DISABLE_GCC_WARNING(w)
+#    endif
 #endif
 
 #ifndef CC_DISABLE_GCC_WARNING_AS_ERROR
-    #if defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4006)
-        #define CC_DISABLE_GCC_WARNING_AS_ERROR() _Pragma("GCC diagnostic pop")
-    #else
-        #define CC_DISABLE_GCC_WARNING_AS_ERROR()
-    #endif
+#    if defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4006)
+#        define CC_DISABLE_GCC_WARNING_AS_ERROR() _Pragma("GCC diagnostic pop")
+#    else
+#        define CC_DISABLE_GCC_WARNING_AS_ERROR()
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -726,23 +723,23 @@ namespace ncore
 //     CC_RESTORE_CLANG_WARNING()
 //
 #ifndef CC_DISABLE_CLANG_WARNING
-    #if defined(CC_COMPILER_CLANG) || defined(CC_COMPILER_CLANG_CL)
-        #define EACLANGWHELP0(x) #x
-        #define EACLANGWHELP1(x) EACLANGWHELP0(clang diagnostic ignored x)
-        #define EACLANGWHELP2(x) EACLANGWHELP1(#x)
+#    if defined(CC_COMPILER_CLANG) || defined(CC_COMPILER_CLANG_CL)
+#        define CC_CLANGWHELP0(x) #x
+#        define CC_CLANGWHELP1(x) CC_CLANGWHELP0(clang diagnostic ignored x)
+#        define CC_CLANGWHELP2(x) CC_CLANGWHELP1(#x)
 
-        #define CC_DISABLE_CLANG_WARNING(w) _Pragma("clang diagnostic push") _Pragma(EACLANGWHELP2(-Wunknown - warning - option)) _Pragma(EACLANGWHELP2(w))
-    #else
-        #define CC_DISABLE_CLANG_WARNING(w)
-    #endif
+#        define CC_DISABLE_CLANG_WARNING(w) _Pragma("clang diagnostic push") _Pragma(CC_CLANGWHELP2(-Wunknown - warning - option)) _Pragma(CC_CLANGWHELP2(w))
+#    else
+#        define CC_DISABLE_CLANG_WARNING(w)
+#    endif
 #endif
 
 #ifndef CC_RESTORE_CLANG_WARNING
-    #if defined(CC_COMPILER_CLANG) || defined(CC_COMPILER_CLANG_CL)
-        #define CC_RESTORE_CLANG_WARNING() _Pragma("clang diagnostic pop")
-    #else
-        #define CC_RESTORE_CLANG_WARNING()
-    #endif
+#    if defined(CC_COMPILER_CLANG) || defined(CC_COMPILER_CLANG_CL)
+#        define CC_RESTORE_CLANG_WARNING() _Pragma("clang diagnostic pop")
+#    else
+#        define CC_RESTORE_CLANG_WARNING()
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -763,23 +760,23 @@ namespace ncore
 //     CC_DISABLE_CLANG_WARNING_AS_ERROR()
 //
 #ifndef CC_ENABLE_CLANG_WARNING_AS_ERROR
-    #if defined(CC_COMPILER_CLANG) || defined(CC_COMPILER_CLANG_CL)
-        #define EACLANGWERRORHELP0(x) #x
-        #define EACLANGWERRORHELP1(x) EACLANGWERRORHELP0(clang diagnostic error x)
-        #define EACLANGWERRORHELP2(x) EACLANGWERRORHELP1(#x)
+#    if defined(CC_COMPILER_CLANG) || defined(CC_COMPILER_CLANG_CL)
+#        define CC_CLANGWERRORHELP0(x) #x
+#        define CC_CLANGWERRORHELP1(x) CC_CLANGWERRORHELP0(clang diagnostic error x)
+#        define CC_CLANGWERRORHELP2(x) CC_CLANGWERRORHELP1(#x)
 
-        #define CC_ENABLE_CLANG_WARNING_AS_ERROR(w) _Pragma("clang diagnostic push") _Pragma(EACLANGWERRORHELP2(w))
-    #else
-        #define CC_DISABLE_CLANG_WARNING(w)
-    #endif
+#        define CC_ENABLE_CLANG_WARNING_AS_ERROR(w) _Pragma("clang diagnostic push") _Pragma(CC_CLANGWERRORHELP2(w))
+#    else
+#        define CC_DISABLE_CLANG_WARNING(w)
+#    endif
 #endif
 
 #ifndef CC_DISABLE_CLANG_WARNING_AS_ERROR
-    #if defined(CC_COMPILER_CLANG) || defined(CC_COMPILER_CLANG_CL)
-        #define CC_DISABLE_CLANG_WARNING_AS_ERROR() _Pragma("clang diagnostic pop")
-    #else
-        #define CC_DISABLE_CLANG_WARNING_AS_ERROR()
-    #endif
+#    if defined(CC_COMPILER_CLANG) || defined(CC_COMPILER_CLANG_CL)
+#        define CC_DISABLE_CLANG_WARNING_AS_ERROR() _Pragma("clang diagnostic pop")
+#    else
+#        define CC_DISABLE_CLANG_WARNING_AS_ERROR()
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -794,23 +791,23 @@ namespace ncore
 //     CC_RESTORE_EDG_WARNING()
 //
 #ifndef CC_DISABLE_EDG_WARNING
-        // EDG-based compilers are inconsistent in how the implement warning pragmas.
-    #if defined(CC_COMPILER_EDG) && !defined(CC_COMPILER_INTEL) && !defined(CC_COMPILER_RVCT)
-        #define EAEDGWHELP0(x) #x
-        #define EAEDGWHELP1(x) EAEDGWHELP0(diag_suppress x)
+    // EDG-based compilers are inconsistent in how the implement warning pragmas.
+#    if defined(CC_COMPILER_EDG) && !defined(CC_COMPILER_INTEL) && !defined(CC_COMPILER_RVCT)
+#        define CC_EDGWHELP0(x) #x
+#        define CC_EDGWHELP1(x) CC_EDGWHELP0(diag_suppress x)
 
-        #define CC_DISABLE_EDG_WARNING(w) _Pragma("control %push diag") _Pragma(EAEDGWHELP1(w))
-    #else
-        #define CC_DISABLE_EDG_WARNING(w)
-    #endif
+#        define CC_DISABLE_EDG_WARNING(w) _Pragma("control %push diag") _Pragma(CC_EDGWHELP1(w))
+#    else
+#        define CC_DISABLE_EDG_WARNING(w)
+#    endif
 #endif
 
 #ifndef CC_RESTORE_EDG_WARNING
-    #if defined(CC_COMPILER_EDG) && !defined(CC_COMPILER_INTEL) && !defined(CC_COMPILER_RVCT)
-        #define CC_RESTORE_EDG_WARNING() _Pragma("control %pop diag")
-    #else
-        #define CC_RESTORE_EDG_WARNING()
-    #endif
+#    if defined(CC_COMPILER_EDG) && !defined(CC_COMPILER_INTEL) && !defined(CC_COMPILER_RVCT)
+#        define CC_RESTORE_EDG_WARNING() _Pragma("control %pop diag")
+#    else
+#        define CC_RESTORE_EDG_WARNING()
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -850,12 +847,12 @@ namespace ncore
 //     CC_RESTORE_CW_WARNING(10324)
 //
 #ifndef CC_DISABLE_CW_WARNING
-    #define CC_DISABLE_CW_WARNING(w)
+#    define CC_DISABLE_CW_WARNING(w)
 #endif
 
 #ifndef CC_RESTORE_CW_WARNING
 
-    #define CC_RESTORE_CW_WARNING(w)
+#    define CC_RESTORE_CW_WARNING(w)
 
 #endif
 
@@ -863,12 +860,12 @@ namespace ncore
 // CC_DISABLE_ALL_CW_WARNINGS / CC_RESTORE_ALL_CW_WARNINGS
 //
 #ifndef CC_DISABLE_ALL_CW_WARNINGS
-    #define CC_DISABLE_ALL_CW_WARNINGS()
+#    define CC_DISABLE_ALL_CW_WARNINGS()
 
 #endif
 
 #ifndef CC_RESTORE_ALL_CW_WARNINGS
-    #define CC_RESTORE_ALL_CW_WARNINGS()
+#    define CC_RESTORE_ALL_CW_WARNINGS()
 #endif
 
 // ------------------------------------------------------------------------
@@ -891,19 +888,19 @@ namespace ncore
 //    CC_WEAK void Function();
 //
 #ifndef CC_WEAK
-    #if defined(_MSC_VER) && (_MSC_VER >= 1300)  // If VC7.0 and later
-        #define CC_WEAK           __declspec(selectany)
-        #define CC_WEAK_SUPPORTED 1
-    #elif defined(_MSC_VER) || (defined(__GNUC__) && defined(__CYGWIN__))
-        #define CC_WEAK
-        #define CC_WEAK_SUPPORTED 0
-    #elif defined(CC_COMPILER_ARM)  // Arm brand compiler for ARM CPU
-        #define CC_WEAK           __weak
-        #define CC_WEAK_SUPPORTED 1
-    #else  // GCC and IBM compilers, others.
-        #define CC_WEAK           __attribute__((weak))
-        #define CC_WEAK_SUPPORTED 1
-    #endif
+#    if defined(_MSC_VER) && (_MSC_VER >= 1300)  // If VC7.0 and later
+#        define CC_WEAK           __declspec(selectany)
+#        define CC_WEAK_SUPPORTED 1
+#    elif defined(_MSC_VER) || (defined(__GNUC__) && defined(__CYGWIN__))
+#        define CC_WEAK
+#        define CC_WEAK_SUPPORTED 0
+#    elif defined(CC_COMPILER_ARM)  // Arm brand compiler for ARM CPU
+#        define CC_WEAK           __weak
+#        define CC_WEAK_SUPPORTED 1
+#    else  // GCC and IBM compilers, others.
+#        define CC_WEAK           __attribute__((weak))
+#        define CC_WEAK_SUPPORTED 1
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -920,19 +917,19 @@ namespace ncore
 //    }
 //
 #ifndef CC_UNUSED
-        // The EDG solution below is pretty weak and needs to be augmented or replaced.
-    // It can't handle the C language, is limited to places where template declarations
-    // can be used, and requires the type x to be usable as a functions reference argument.
-    #if defined(__cplusplus) && defined(__EDG__)
+    // The EDG solution below is pretty weak and needs to be augmented or replaced.
+// It can't handle the C language, is limited to places where template declarations
+// can be used, and requires the type x to be usable as a functions reference argument.
+#    if defined(__cplusplus) && defined(__EDG__)
     template <typename T>
     inline void CCoreUnused(T const volatile& x)
     {
         (void)x;
     }
-        #define CC_UNUSED(x) CCoreUnused(x)
-    #else
-        #define CC_UNUSED(x) (void)x
-    #endif
+#        define CC_UNUSED(x) CCoreUnused(x)
+#    else
+#        define CC_UNUSED(x) (void)x
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -951,17 +948,17 @@ namespace ncore
 // compilers.
 //
 #ifndef CC__FUNCTION__
-    #if defined __GNUC__ || (defined __ICC && __ICC >= 600)
-        #define CC__FUNCTION__ __PRETTY_FUNCTION__
-    #elif defined(__FUNCSIG__)
-        #define CC__FUNCTION__ __FUNCSIG__
-    #elif (defined __INTEL_COMPILER && __INTEL_COMPILER >= 600) || (defined __IBMCPP__ && __IBMCPP__ >= 500) || (defined CS_UNDEFINED_STRING && CS_UNDEFINED_STRING >= 0x4200)
-        #define CC__FUNCTION__ __FUNCTION__
-    #elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901
-        #define CC__FUNCTION__ __func__
-    #else
-        #define CC__FUNCTION__ "(unknown function)"
-    #endif
+#    if defined __GNUC__ || (defined __ICC && __ICC >= 600)
+#        define CC__FUNCTION__ __PRETTY_FUNCTION__
+#    elif defined(__FUNCSIG__)
+#        define CC__FUNCTION__ __FUNCSIG__
+#    elif (defined __INTEL_COMPILER && __INTEL_COMPILER >= 600) || (defined __IBMCPP__ && __IBMCPP__ >= 500) || (defined CS_UNDEFINED_STRING && CS_UNDEFINED_STRING >= 0x4200)
+#        define CC__FUNCTION__ __FUNCTION__
+#    elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901
+#        define CC__FUNCTION__ __func__
+#    else
+#        define CC__FUNCTION__ "(unknown function)"
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -971,91 +968,91 @@ namespace ncore
 //    CC_WCHAR_SIZE = <sizeof(wchar_t)>
 //
 #ifndef CC_WCHAR_T_NON_NATIVE
-    // Compilers that always implement wchar_t as native include:
-    //     COMEAU, new SN, and other EDG-based compilers.
-    //     GCC
-    //     Borland
-    //     SunPro
-    //     IBM Visual Age
-    #if defined(CC_COMPILER_INTEL)
-        #if (CC_COMPILER_VERSION < 700)
-            #define CC_WCHAR_T_NON_NATIVE 1
-        #else
-            #if (!defined(_WCHAR_T_DEFINED) && !defined(_WCHAR_T))
-                #define CC_WCHAR_T_NON_NATIVE 1
-            #endif
-        #endif
-    #elif defined(CC_COMPILER_MSVC) || (defined(CC_COMPILER_CLANG) && defined(CC_PLATFORM_WINDOWS))
-        #ifndef _NATIVE_WCHAR_T_DEFINED
-            #define CC_WCHAR_T_NON_NATIVE 1
-        #endif
-    #elif defined(__EDG_VERSION__) && (!defined(_WCHAR_T) && (__EDG_VERSION__ < 400))
-        // EDG prior to v4 uses _WCHAR_T to indicate if wchar_t is native. v4+ may define something else, but we're not currently aware of it.
-        #define CC_WCHAR_T_NON_NATIVE 1
-    #endif
+// Compilers that always implement wchar_t as native include:
+//     COMEAU, new SN, and other EDG-based compilers.
+//     GCC
+//     Borland
+//     SunPro
+//     IBM Visual Age
+#    if defined(CC_COMPILER_INTEL)
+#        if (CC_COMPILER_VERSION < 700)
+#            define CC_WCHAR_T_NON_NATIVE 1
+#        else
+#            if (!defined(_WCHAR_T_DEFINED) && !defined(_WCHAR_T))
+#                define CC_WCHAR_T_NON_NATIVE 1
+#            endif
+#        endif
+#    elif defined(CC_COMPILER_MSVC) || (defined(CC_COMPILER_CLANG) && defined(CC_PLATFORM_WINDOWS))
+#        ifndef _NATIVE_WCHAR_T_DEFINED
+#            define CC_WCHAR_T_NON_NATIVE 1
+#        endif
+#    elif defined(__EDG_VERSION__) && (!defined(_WCHAR_T) && (__EDG_VERSION__ < 400))
+// EDG prior to v4 uses _WCHAR_T to indicate if wchar_t is native. v4+ may define something else, but we're not currently aware of it.
+#        define CC_WCHAR_T_NON_NATIVE 1
+#    endif
 #endif
 
 #ifndef CC_WCHAR_SIZE           // If the user hasn't specified that it is a given size...
-    #if defined(__WCHAR_MAX__)  // GCC defines this for most platforms.
-        #if (__WCHAR_MAX__ == 2147483647) || (__WCHAR_MAX__ == 4294967295)
-            #define CC_WCHAR_SIZE 4
-        #elif (__WCHAR_MAX__ == 32767) || (__WCHAR_MAX__ == 65535)
-            #define CC_WCHAR_SIZE 2
-        #elif (__WCHAR_MAX__ == 127) || (__WCHAR_MAX__ == 255)
-            #define CC_WCHAR_SIZE 1
-        #else
-            #define CC_WCHAR_SIZE 4
-        #endif
-    #elif defined(WCHAR_MAX)  // The SN and Arm compilers define this.
-        #if (WCHAR_MAX == 2147483647) || (WCHAR_MAX == 4294967295)
-            #define CC_WCHAR_SIZE 4
-        #elif (WCHAR_MAX == 32767) || (WCHAR_MAX == 65535)
-            #define CC_WCHAR_SIZE 2
-        #elif (WCHAR_MAX == 127) || (WCHAR_MAX == 255)
-            #define CC_WCHAR_SIZE 1
-        #else
-            #define CC_WCHAR_SIZE 4
-        #endif
-    #elif defined(__WCHAR_BIT)  // Green Hills (and other versions of EDG?) uses this.
-        #if (__WCHAR_BIT == 16)
-            #define CC_WCHAR_SIZE 2
-        #elif (__WCHAR_BIT == 32)
-            #define CC_WCHAR_SIZE 4
-        #elif (__WCHAR_BIT == 8)
-            #define CC_WCHAR_SIZE 1
-        #else
-            #define CC_WCHAR_SIZE 4
-        #endif
-    #elif defined(_WCMAX)  // The SN and Arm compilers define this.
-        #if (_WCMAX == 2147483647) || (_WCMAX == 4294967295)
-            #define CC_WCHAR_SIZE 4
-        #elif (_WCMAX == 32767) || (_WCMAX == 65535)
-            #define CC_WCHAR_SIZE 2
-        #elif (_WCMAX == 127) || (_WCMAX == 255)
-            #define CC_WCHAR_SIZE 1
-        #else
-            #define CC_WCHAR_SIZE 4
-        #endif
-    #elif defined(CC_PLATFORM_UNIX)
-            // It is standard on Unix to have wchar_t be int32_t or uint32_t.
-        // All versions of GNUC default to a 32 bit wchar_t, but EA has used
-        // the -fshort-wchar GCC command line option to force it to 16 bit.
-        // If you know that the compiler is set to use a wchar_t of other than
-        // the default, you need to manually define CC_WCHAR_SIZE for the build.
-        #define CC_WCHAR_SIZE 4
-    #else
-            // It is standard on Windows to have wchar_t be uint16_t.  GCC
-        // defines wchar_t as int by default.  Electronic Arts has
-        // standardized on wchar_t being an unsigned 16 bit value on all
-        // console platforms. Given that there is currently no known way to
-        // tell at preprocessor time what the size of wchar_t is, we declare
-        // it to be 2, as this is the Electronic Arts standard. If you have
-        // CC_WCHAR_SIZE != sizeof(wchar_t), then your code might not be
-        // broken, but it also won't work with wchar libraries and data from
-        // other parts of EA. Under GCC, you can force wchar_t to two bytes
-        // with the -fshort-wchar compiler argument.
-        #define CC_WCHAR_SIZE 2
-    #endif
+#    if defined(__WCHAR_MAX__)  // GCC defines this for most platforms.
+#        if (__WCHAR_MAX__ == 2147483647) || (__WCHAR_MAX__ == 4294967295)
+#            define CC_WCHAR_SIZE 4
+#        elif (__WCHAR_MAX__ == 32767) || (__WCHAR_MAX__ == 65535)
+#            define CC_WCHAR_SIZE 2
+#        elif (__WCHAR_MAX__ == 127) || (__WCHAR_MAX__ == 255)
+#            define CC_WCHAR_SIZE 1
+#        else
+#            define CC_WCHAR_SIZE 4
+#        endif
+#    elif defined(WCHAR_MAX)  // The SN and Arm compilers define this.
+#        if (WCHAR_MAX == 2147483647) || (WCHAR_MAX == 4294967295)
+#            define CC_WCHAR_SIZE 4
+#        elif (WCHAR_MAX == 32767) || (WCHAR_MAX == 65535)
+#            define CC_WCHAR_SIZE 2
+#        elif (WCHAR_MAX == 127) || (WCHAR_MAX == 255)
+#            define CC_WCHAR_SIZE 1
+#        else
+#            define CC_WCHAR_SIZE 4
+#        endif
+#    elif defined(__WCHAR_BIT)  // Green Hills (and other versions of EDG?) uses this.
+#        if (__WCHAR_BIT == 16)
+#            define CC_WCHAR_SIZE 2
+#        elif (__WCHAR_BIT == 32)
+#            define CC_WCHAR_SIZE 4
+#        elif (__WCHAR_BIT == 8)
+#            define CC_WCHAR_SIZE 1
+#        else
+#            define CC_WCHAR_SIZE 4
+#        endif
+#    elif defined(_WCMAX)  // The SN and Arm compilers define this.
+#        if (_WCMAX == 2147483647) || (_WCMAX == 4294967295)
+#            define CC_WCHAR_SIZE 4
+#        elif (_WCMAX == 32767) || (_WCMAX == 65535)
+#            define CC_WCHAR_SIZE 2
+#        elif (_WCMAX == 127) || (_WCMAX == 255)
+#            define CC_WCHAR_SIZE 1
+#        else
+#            define CC_WCHAR_SIZE 4
+#        endif
+#    elif defined(CC_PLATFORM_UNIX)
+    // It is standard on Unix to have wchar_t be int32_t or uint32_t.
+// All versions of GNUC default to a 32 bit wchar_t, but EA has used
+// the -fshort-wchar GCC command line option to force it to 16 bit.
+// If you know that the compiler is set to use a wchar_t of other than
+// the default, you need to manually define CC_WCHAR_SIZE for the build.
+#        define CC_WCHAR_SIZE 4
+#    else
+    // It is standard on Windows to have wchar_t be uint16_t.  GCC
+// defines wchar_t as int by default.  Electronic Arts has
+// standardized on wchar_t being an unsigned 16 bit value on all
+// console platforms. Given that there is currently no known way to
+// tell at preprocessor time what the size of wchar_t is, we declare
+// it to be 2, as this is the Electronic Arts standard. If you have
+// CC_WCHAR_SIZE != sizeof(wchar_t), then your code might not be
+// broken, but it also won't work with wchar libraries and data from
+// other parts of EA. Under GCC, you can force wchar_t to two bytes
+// with the -fshort-wchar compiler argument.
+#        define CC_WCHAR_SIZE 2
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1069,23 +1066,23 @@ namespace ncore
 //    void DoSomething(char* CC_RESTRICT p1, char* CC_RESTRICT p2);
 //
 #ifndef CC_RESTRICT
-    #if defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION >= 1400)  // If VC8 (VS2005) or later...
-        #define CC_RESTRICT __restrict
-    #elif defined(CC_COMPILER_CLANG)
-        #define CC_RESTRICT __restrict
-    #elif defined(CC_COMPILER_GNUC)     // Includes GCC and other compilers emulating GCC.
-        #define CC_RESTRICT __restrict  // GCC defines 'restrict' (as opposed to __restrict) in C99 mode only.
-    #elif defined(CC_COMPILER_ARM)
-        #define CC_RESTRICT __restrict
-    #elif defined(CC_COMPILER_IS_C99)
-        #define CC_RESTRICT restrict
-    #else
-            // If the compiler didn't support restricted pointers, defining CC_RESTRICT
-        // away would result in compiling and running fine but you just wouldn't
-        // the same level of optimization. On the other hand, all the major compilers
-        // support restricted pointers.
-        #define CC_RESTRICT
-    #endif
+#    if defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION >= 1400)  // If VC8 (VS2005) or later...
+#        define CC_RESTRICT __restrict
+#    elif defined(CC_COMPILER_CLANG)
+#        define CC_RESTRICT __restrict
+#    elif defined(CC_COMPILER_GNUC)     // Includes GCC and other compilers emulating GCC.
+#        define CC_RESTRICT __restrict  // GCC defines 'restrict' (as opposed to __restrict) in C99 mode only.
+#    elif defined(CC_COMPILER_ARM)
+#        define CC_RESTRICT __restrict
+#    elif defined(CC_COMPILER_IS_C99)
+#        define CC_RESTRICT restrict
+#    else
+    // If the compiler didn't support restricted pointers, defining CC_RESTRICT
+// away would result in compiling and running fine but you just wouldn't
+// the same level of optimization. On the other hand, all the major compilers
+// support restricted pointers.
+#        define CC_RESTRICT
+#    endif
 #endif
 
     // ------------------------------------------------------------------------
@@ -1098,26 +1095,25 @@ namespace ncore
     //
 
 #ifndef CC_DEPRECATED
-    #if defined(CC_COMPILER_CPP14_ENABLED)
-        #define CC_DEPRECATED [[deprecated]]
-    #elif defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION > 1300)  // If VC7 (VS2003) or later...
-        #define CC_DEPRECATED __declspec(deprecated)
-    #elif defined(CC_COMPILER_MSVC)
-        #define CC_DEPRECATED
-    #else
-        #define CC_DEPRECATED __attribute__((deprecated))
-    #endif
+#    if defined(CC_COMPILER_CPP14_ENABLED)
+#        define CC_DEPRECATED [[deprecated]]
+#    elif defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION > 1300)  // If VC7 (VS2003) or later...
+#        define CC_DEPRECATED __declspec(deprecated)
+#    elif defined(CC_COMPILER_MSVC)
+#        define CC_DEPRECATED
+#    else
+#        define CC_DEPRECATED __attribute__((deprecated))
+#    endif
 #endif
 
 #ifndef CC_DEPRECATED_MESSAGE
-    #if defined(CC_COMPILER_CPP14_ENABLED)
-        #define CC_DEPRECATED_MESSAGE(msg) [[deprecated(#msg)]]
-    #else
-            // Compiler does not support depreaction messages, explicitly drop the msg but still mark the function as deprecated
-        #define CC_DEPRECATED_MESSAGE(msg) CC_DEPRECATED
-    #endif
+#    if defined(CC_COMPILER_CPP14_ENABLED)
+#        define CC_DEPRECATED_MESSAGE(msg) [[deprecated(#msg)]]
+#    else
+    // Compiler does not support depreaction messages, explicitly drop the msg but still mark the function as deprecated
+#        define CC_DEPRECATED_MESSAGE(msg) CC_DEPRECATED
+#    endif
 #endif
-
 
 // ------------------------------------------------------------------------
 // CC_INLINE
@@ -1126,26 +1122,26 @@ namespace ncore
 //     CC_INLINE void Foo() { ..... }
 //
 #ifndef CC_INLINE
-    #if defined(CC_COMPILER_MSVC)
-        #define CC_INLINE inline
-        #define D_INLINE inline
-    #elif defined(CC_COMPILER_GNUC) && (((__GNUC__ * 100) + __GNUC_MINOR__) >= 301) || defined(CC_COMPILER_CLANG)
-        #if defined(__cplusplus)
-            #define CC_INLINE inline
-            #define D_INLINE inline
-        #else
-            #define CC_INLINE __inline__
-            #define D_INLINE __inline__
-        #endif
-    #else
-        #if defined(__cplusplus)
-            #define CC_INLINE inline
-            #define D_INLINE inline
-        #else
-            #define CC_INLINE __inline
-            #define D_INLINE __inline
-        #endif
-    #endif
+#    if defined(CC_COMPILER_MSVC)
+#        define CC_INLINE inline
+#        define D_INLINE  inline
+#    elif defined(CC_COMPILER_GNUC) && (((__GNUC__ * 100) + __GNUC_MINOR__) >= 301) || defined(CC_COMPILER_CLANG)
+#        if defined(__cplusplus)
+#            define CC_INLINE inline
+#            define D_INLINE  inline
+#        else
+#            define CC_INLINE __inline__
+#            define D_INLINE  __inline__
+#        endif
+#    else
+#        if defined(__cplusplus)
+#            define CC_INLINE inline
+#            define D_INLINE  inline
+#        else
+#            define CC_INLINE __inline
+#            define D_INLINE  __inline
+#        endif
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1166,21 +1162,21 @@ namespace ncore
 // The CodeWarrior compiler doesn't have the concept of forcing inlining per function.
 //
 #ifndef CC_FORCE_INLINE
-    #if defined(CC_COMPILER_MSVC)
-        #define CC_FORCE_INLINE __forceinline
-    #elif defined(CC_COMPILER_GNUC) && (((__GNUC__ * 100) + __GNUC_MINOR__) >= 301) || defined(CC_COMPILER_CLANG)
-        #if defined(__cplusplus)
-            #define CC_FORCE_INLINE inline __attribute__((always_inline))
-        #else
-            #define CC_FORCE_INLINE __inline__ __attribute__((always_inline))
-        #endif
-    #else
-        #if defined(__cplusplus)
-            #define CC_FORCE_INLINE inline
-        #else
-            #define CC_FORCE_INLINE __inline
-        #endif
-    #endif
+#    if defined(CC_COMPILER_MSVC)
+#        define CC_FORCE_INLINE __forceinline
+#    elif defined(CC_COMPILER_GNUC) && (((__GNUC__ * 100) + __GNUC_MINOR__) >= 301) || defined(CC_COMPILER_CLANG)
+#        if defined(__cplusplus)
+#            define CC_FORCE_INLINE inline __attribute__((always_inline))
+#        else
+#            define CC_FORCE_INLINE __inline__ __attribute__((always_inline))
+#        endif
+#    else
+#        if defined(__cplusplus)
+#            define CC_FORCE_INLINE inline
+#        else
+#            define CC_FORCE_INLINE __inline
+#        endif
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1200,11 +1196,11 @@ namespace ncore
 //		};
 //
 #ifndef CC_FORCE_INLINE_LAMBDA
-    #if defined(CC_COMPILER_GNUC) || defined(CC_COMPILER_CLANG)
-        #define CC_FORCE_INLINE_LAMBDA __attribute__((always_inline))
-    #else
-        #define CC_FORCE_INLINE_LAMBDA
-    #endif
+#    if defined(CC_COMPILER_GNUC) || defined(CC_COMPILER_CLANG)
+#        define CC_FORCE_INLINE_LAMBDA __attribute__((always_inline))
+#    else
+#        define CC_FORCE_INLINE_LAMBDA
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1227,13 +1223,13 @@ namespace ncore
 // functions individually with CC_FORCE_INLINE.
 //
 #ifndef CC_NO_INLINE
-    #if defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION >= 1400)  // If VC8 (VS2005) or later...
-        #define CC_NO_INLINE __declspec(noinline)
-    #elif defined(CC_COMPILER_MSVC)
-        #define CC_NO_INLINE
-    #else
-        #define CC_NO_INLINE __attribute__((noinline))
-    #endif
+#    if defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION >= 1400)  // If VC8 (VS2005) or later...
+#        define CC_NO_INLINE __declspec(noinline)
+#    elif defined(CC_COMPILER_MSVC)
+#        define CC_NO_INLINE
+#    else
+#        define CC_NO_INLINE __attribute__((noinline))
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1249,13 +1245,13 @@ namespace ncore
 //     };
 //
 #ifdef CC_COMPILER_MSVC
-    #define CC_NO_VTABLE           __declspec(novtable)
-    #define CC_CLASS_NO_VTABLE(x)  class __declspec(novtable) x
-    #define CC_STRUCT_NO_VTABLE(x) struct __declspec(novtable) x
+#    define CC_NO_VTABLE           __declspec(novtable)
+#    define CC_CLASS_NO_VTABLE(x)  class __declspec(novtable) x
+#    define CC_STRUCT_NO_VTABLE(x) struct __declspec(novtable) x
 #else
-    #define CC_NO_VTABLE
-    #define CC_CLASS_NO_VTABLE(x)  class x
-    #define CC_STRUCT_NO_VTABLE(x) struct x
+#    define CC_NO_VTABLE
+#    define CC_CLASS_NO_VTABLE(x)  class x
+#    define CC_STRUCT_NO_VTABLE(x) struct x
 #endif
 
 // ------------------------------------------------------------------------
@@ -1275,30 +1271,30 @@ namespace ncore
 // CC_SSE4_2) to detect what specific support is available.  CC_SSE being
 // equal to 3 really only indicates that SSE3 or greater is supported.
 #ifndef CC_SSE
-    #if defined(CC_COMPILER_GNUC) || defined(CC_COMPILER_CLANG)
-        #if defined(__SSE3__)
-            #define CC_SSE 3
-        #elif defined(__SSE2__)
-            #define CC_SSE 2
-        #elif defined(__SSE__) && __SSE__
-            #define CC_SSE 1
-        #else
-            #define CC_SSE 0
-        #endif
-    #elif (defined(CC_SSE3) && CC_SSE3) || defined CC_PLATFORM_XBOXONE || defined CS_UNDEFINED_STRING
-        #define CC_SSE 3
-    #elif defined(CC_SSE2) && CC_SSE2
-        #define CC_SSE 2
-    #elif defined(CC_PROCESSOR_X86) && defined(_MSC_FULL_VER) && !defined(__NOSSE__) && defined(_M_IX86_FP)
-        #define CC_SSE _M_IX86_FP
-    #elif defined(CC_PROCESSOR_X86) && defined(CC_COMPILER_INTEL) && !defined(__NOSSE__)
-        #define CC_SSE 1
-    #elif defined(CC_PROCESSOR_X86_64)
-            // All x64 processors support SSE2 or higher
-        #define CC_SSE 2
-    #else
-        #define CC_SSE 0
-    #endif
+#    if defined(CC_COMPILER_GNUC) || defined(CC_COMPILER_CLANG)
+#        if defined(__SSE3__)
+#            define CC_SSE 3
+#        elif defined(__SSE2__)
+#            define CC_SSE 2
+#        elif defined(__SSE__) && __SSE__
+#            define CC_SSE 1
+#        else
+#            define CC_SSE 0
+#        endif
+#    elif (defined(CC_SSE3) && CC_SSE3) || defined CC_PLATFORM_XBOXONE || defined CS_UNDEFINED_STRING
+#        define CC_SSE 3
+#    elif defined(CC_SSE2) && CC_SSE2
+#        define CC_SSE 2
+#    elif defined(CC_PROCESSOR_X86) && defined(_MSC_FULL_VER) && !defined(__NOSSE__) && defined(_M_IX86_FP)
+#        define CC_SSE _M_IX86_FP
+#    elif defined(CC_PROCESSOR_X86) && defined(CC_COMPILER_INTEL) && !defined(__NOSSE__)
+#        define CC_SSE 1
+#    elif defined(CC_PROCESSOR_X86_64)
+    // All x64 processors support SSE2 or higher
+#        define CC_SSE 2
+#    else
+#        define CC_SSE 0
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1310,46 +1306,46 @@ namespace ncore
 // feature/level of SSE is not supported, and 1 indicates support is
 // available.
 #ifndef CC_SSE2
-    #if CC_SSE >= 2
-        #define CC_SSE2 1
-    #else
-        #define CC_SSE2 0
-    #endif
+#    if CC_SSE >= 2
+#        define CC_SSE2 1
+#    else
+#        define CC_SSE2 0
+#    endif
 #endif
 #ifndef CC_SSE3
-    #if CC_SSE >= 3
-        #define CC_SSE3 1
-    #else
-        #define CC_SSE3 0
-    #endif
+#    if CC_SSE >= 3
+#        define CC_SSE3 1
+#    else
+#        define CC_SSE3 0
+#    endif
 #endif
 #ifndef CC_SSSE3
-    #if defined __SSSE3__ || defined CC_PLATFORM_XBOXONE || defined CS_UNDEFINED_STRING
-        #define CC_SSSE3 1
-    #else
-        #define CC_SSSE3 0
-    #endif
+#    if defined __SSSE3__ || defined CC_PLATFORM_XBOXONE || defined CS_UNDEFINED_STRING
+#        define CC_SSSE3 1
+#    else
+#        define CC_SSSE3 0
+#    endif
 #endif
 #ifndef CC_SSE4_1
-    #if defined __SSE4_1__ || defined CC_PLATFORM_XBOXONE || defined CS_UNDEFINED_STRING
-        #define CC_SSE4_1 1
-    #else
-        #define CC_SSE4_1 0
-    #endif
+#    if defined __SSE4_1__ || defined CC_PLATFORM_XBOXONE || defined CS_UNDEFINED_STRING
+#        define CC_SSE4_1 1
+#    else
+#        define CC_SSE4_1 0
+#    endif
 #endif
 #ifndef CC_SSE4_2
-    #if defined __SSE4_2__ || defined CC_PLATFORM_XBOXONE || defined CS_UNDEFINED_STRING
-        #define CC_SSE4_2 1
-    #else
-        #define CC_SSE4_2 0
-    #endif
+#    if defined __SSE4_2__ || defined CC_PLATFORM_XBOXONE || defined CS_UNDEFINED_STRING
+#        define CC_SSE4_2 1
+#    else
+#        define CC_SSE4_2 0
+#    endif
 #endif
 #ifndef CC_SSE4A
-    #if defined __SSE4A__ || defined CC_PLATFORM_XBOXONE || defined CS_UNDEFINED_STRING
-        #define CC_SSE4A 1
-    #else
-        #define CC_SSE4A 0
-    #endif
+#    if defined __SSE4A__ || defined CC_PLATFORM_XBOXONE || defined CS_UNDEFINED_STRING
+#        define CC_SSE4A 1
+#    else
+#        define CC_SSE4A 0
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1361,41 +1357,41 @@ namespace ncore
 //  1 indicates AVX1 is supported
 //  2 indicates AVX2 is supported
 #ifndef CC_AVX
-    #if defined __AVX2__
-        #define CC_AVX 2
-    #elif defined __AVX__ || defined CC_PLATFORM_XBOXONE || defined CS_UNDEFINED_STRING
-        #define CC_AVX 1
-    #else
-        #define CC_AVX 0
-    #endif
+#    if defined __AVX2__
+#        define CC_AVX 2
+#    elif defined __AVX__ || defined CC_PLATFORM_XBOXONE || defined CS_UNDEFINED_STRING
+#        define CC_AVX 1
+#    else
+#        define CC_AVX 0
+#    endif
 #endif
 #ifndef CC_AVX2
-    #if CC_AVX >= 2
-        #define CC_AVX2 1
-    #else
-        #define CC_AVX2 0
-    #endif
+#    if CC_AVX >= 2
+#        define CC_AVX2 1
+#    else
+#        define CC_AVX2 0
+#    endif
 #endif
 
 // CC_FP16C may be used to determine the existence of float <-> half conversion operations on an x86 CPU.
 // (For example to determine if _mm_cvtph_ps or _mm_cvtps_ph could be used.)
 #ifndef CC_FP16C
-    #if defined __F16C__ || defined CC_PLATFORM_XBOXONE || defined CS_UNDEFINED_STRING
-        #define CC_FP16C 1
-    #else
-        #define CC_FP16C 0
-    #endif
+#    if defined __F16C__ || defined CC_PLATFORM_XBOXONE || defined CS_UNDEFINED_STRING
+#        define CC_FP16C 1
+#    else
+#        define CC_FP16C 0
+#    endif
 #endif
 
 // CC_FP128 may be used to determine if __float128 is a supported type for use. This type is enabled by a GCC extension (_GLIBCXX_USE_FLOAT128)
 // but has support by some implementations of clang (__FLOAT128__)
 // PS4 does not support __float128 as of SDK 5.500 https://ps4.siedev.net/resources/documents/SDK/5.500/CPU_Compiler_ABI-Overview/0003.html
 #ifndef CC_FP128
-    #if (defined __FLOAT128__ || defined _GLIBCXX_USE_FLOAT128) && !defined(CC_PLATFORM_SONY)
-        #define CC_FP128 1
-    #else
-        #define CC_FP128 0
-    #endif
+#    if (defined __FLOAT128__ || defined _GLIBCXX_USE_FLOAT128) && !defined(CC_PLATFORM_SONY)
+#        define CC_FP128 1
+#    else
+#        define CC_FP128 0
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1403,22 +1399,22 @@ namespace ncore
 // CC_ABM may be used to determine if Advanced Bit Manipulation sets are available for the target architecture (POPCNT, LZCNT)
 //
 #ifndef CC_ABM
-    #if defined(__ABM__) || defined(CC_PLATFORM_XBOXONE) || defined(CC_PLATFORM_SONY) || defined(CS_UNDEFINED_STRING)
-        #define CC_ABM 1
-    #else
-        #define CC_ABM 0
-    #endif
+#    if defined(__ABM__) || defined(CC_PLATFORM_XBOXONE) || defined(CC_PLATFORM_SONY) || defined(CS_UNDEFINED_STRING)
+#        define CC_ABM 1
+#    else
+#        define CC_ABM 0
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
 // CC_NEON
 // CC_NEON may be used to determine if NEON is supported.
 #ifndef CC_NEON
-    #if defined(__ARM_NEON__) || defined(__ARM_NEON)
-        #define CC_NEON 1
-    #else
-        #define CC_NEON 0
-    #endif
+#    if defined(__ARM_NEON__) || defined(__ARM_NEON)
+#        define CC_NEON 1
+#    else
+#        define CC_NEON 0
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1430,20 +1426,20 @@ namespace ncore
 //  1 indicates BMI1 is supported
 //  2 indicates BMI2 is supported
 #ifndef CC_BMI
-    #if defined(__BMI2__)
-        #define CC_BMI 2
-    #elif defined(__BMI__) || defined(CC_PLATFORM_XBOXONE) || defined(CS_UNDEFINED_STRING)
-        #define CC_BMI 1
-    #else
-        #define CC_BMI 0
-    #endif
+#    if defined(__BMI2__)
+#        define CC_BMI 2
+#    elif defined(__BMI__) || defined(CC_PLATFORM_XBOXONE) || defined(CS_UNDEFINED_STRING)
+#        define CC_BMI 1
+#    else
+#        define CC_BMI 0
+#    endif
 #endif
 #ifndef CC_BMI2
-    #if CC_BMI >= 2
-        #define CC_BMI2 1
-    #else
-        #define CC_BMI2 0
-    #endif
+#    if CC_BMI >= 2
+#        define CC_BMI2 1
+#    else
+#        define CC_BMI2 0
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1457,22 +1453,22 @@ namespace ncore
 //  0 indicates no FMA3 support
 //  1 indicates FMA3 is supported
 #ifndef CC_FMA3
-    #if defined(__FMA__) || CC_AVX2 >= 1
-        #define CC_FMA3 1
-    #else
-        #define CC_FMA3 0
-    #endif
+#    if defined(__FMA__) || CC_AVX2 >= 1
+#        define CC_FMA3 1
+#    else
+#        define CC_FMA3 0
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
 // CC_TBM
 // CC_TBM may be used to determine if Trailing Bit Manipulation instructions are available for the target architecture
 #ifndef CC_TBM
-    #if defined(__TBM__)
-        #define CC_TBM 1
-    #else
-        #define CC_TBM 0
-    #endif
+#    if defined(__TBM__)
+#        define CC_TBM 1
+#    else
+#        define CC_TBM 0
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1480,11 +1476,11 @@ namespace ncore
 // import declaration specification
 // specifies that the declared symbol is imported from another dynamic library.
 #ifndef CC_IMPORT
-    #if defined(CC_COMPILER_MSVC)
-        #define CC_IMPORT __declspec(dllimport)
-    #else
-        #define CC_IMPORT
-    #endif
+#    if defined(CC_COMPILER_MSVC)
+#        define CC_IMPORT __declspec(dllimport)
+#    else
+#        define CC_IMPORT
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1494,11 +1490,11 @@ namespace ncore
 // this is not the same as the C++ export keyword. The C++ export keyword has been
 // removed from the language as of C++11.
 #ifndef CC_EXPORT
-    #if defined(CC_COMPILER_MSVC)
-        #define CC_EXPORT __declspec(dllexport)
-    #else
-        #define CC_EXPORT
-    #endif
+#    if defined(CC_COMPILER_MSVC)
+#        define CC_EXPORT __declspec(dllexport)
+#    else
+#        define CC_EXPORT
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1527,8 +1523,8 @@ namespace ncore
 //    #endif
 //
 #if defined(_MSC_VER) || defined(__GNUC__) || defined(__EDG__) || defined(__APPLE__)
-    #define CC_PRAGMA_ONCE_SUPPORTED 1
-    #define USE_PRAGMA_ONCE
+#    define CC_PRAGMA_ONCE_SUPPORTED 1
+#    define USE_PRAGMA_ONCE
 #endif
 
 // ------------------------------------------------------------------------
@@ -1545,13 +1541,11 @@ namespace ncore
 //    #endif
 //
 #if defined(CC_PRAGMA_ONCE_SUPPORTED)
-    #if defined(_MSC_VER)
-        #define CC_INCLUDE_ONCE __pragma(once)
-    #elif defined(__clang__)
-        #define CC_INCLUDE_ONCE #pragma once
-    #else
-        #define CC_INCLUDE_ONCE  // _Pragma("once")   It turns out that _Pragma("once") isn't supported by many compilers.
-    #endif
+#    if defined(_MSC_VER)
+#        define CC_INCLUDE_ONCE __pragma(once)
+#    else
+#        define CC_INCLUDE_ONCE  // _Pragma("once")   It turns out that _Pragma("once") isn't supported by many compilers.
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1566,11 +1560,11 @@ namespace ncore
 //        struct D : B { void f(int) CC_OVERRIDE; };
 //
 #ifndef CC_OVERRIDE
-    #if defined(CC_COMPILER_NO_OVERRIDE)
-        #define CC_OVERRIDE
-    #else
-        #define CC_OVERRIDE override
-    #endif
+#    if defined(CC_COMPILER_NO_OVERRIDE)
+#        define CC_OVERRIDE
+#    else
+#        define CC_OVERRIDE override
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1584,13 +1578,13 @@ namespace ncore
 //     struct B { virtual void f() CC_FINAL; };
 //
 #ifndef CC_FINAL
-    #if defined(CC_COMPILER_NO_INHERITANCE_FINAL)
-        #define CC_FINAL
-    #elif (defined(_MSC_VER) && (CC_COMPILER_VERSION < 1700))  // Pre-VS2012
-        #define CC_FINAL sealed
-    #else
-        #define CC_FINAL final
-    #endif
+#    if defined(CC_COMPILER_NO_INHERITANCE_FINAL)
+#        define CC_FINAL
+#    elif (defined(_MSC_VER) && (CC_COMPILER_VERSION < 1700))  // Pre-VS2012
+#        define CC_FINAL sealed
+#    else
+#        define CC_FINAL final
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1603,7 +1597,7 @@ namespace ncore
 //     struct B : public A { virtual void f() CC_FINAL_OVERRIDE; };
 //
 #ifndef CC_FINAL_OVERRIDE
-    #define CC_FINAL_OVERRIDE CC_OVERRIDE CC_FINAL
+#    define CC_FINAL_OVERRIDE CC_OVERRIDE CC_FINAL
 #endif
 
 // ------------------------------------------------------------------------
@@ -1618,19 +1612,19 @@ namespace ncore
 //     CC_CONSTEXPR_OR_CONST double gValue = std::sin(kTwoPi);
 //
 #if !defined(CC_CONSTEXPR)
-    #if defined(CC_COMPILER_NO_CONSTEXPR)
-        #define CC_CONSTEXPR
-    #else
-        #define CC_CONSTEXPR constexpr
-    #endif
+#    if defined(CC_COMPILER_NO_CONSTEXPR)
+#        define CC_CONSTEXPR
+#    else
+#        define CC_CONSTEXPR constexpr
+#    endif
 #endif
 
 #if !defined(CC_CONSTEXPR_OR_CONST)
-    #if defined(CC_COMPILER_NO_CONSTEXPR)
-        #define CC_CONSTEXPR_OR_CONST const
-    #else
-        #define CC_CONSTEXPR_OR_CONST constexpr
-    #endif
+#    if defined(CC_COMPILER_NO_CONSTEXPR)
+#        define CC_CONSTEXPR_OR_CONST const
+#    else
+#        define CC_CONSTEXPR_OR_CONST constexpr
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1646,11 +1640,11 @@ namespace ncore
 // 	{ ... }
 //
 #if !defined(CC_CONSTEXPR_IF)
-    #if defined(CC_COMPILER_NO_CONSTEXPR_IF)
-        #define CC_CONSTEXPR_IF(predicate) if ((predicate))
-    #else
-        #define CC_CONSTEXPR_IF(predicate) if constexpr ((predicate))
-    #endif
+#    if defined(CC_COMPILER_NO_CONSTEXPR_IF)
+#        define CC_CONSTEXPR_IF(predicate) if ((predicate))
+#    else
+#        define CC_CONSTEXPR_IF(predicate) if constexpr ((predicate))
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1662,11 +1656,11 @@ namespace ncore
 //     CC_EXTERN_TEMPLATE(class basic_string<char>);
 //
 #if !defined(CC_EXTERN_TEMPLATE)
-    #if defined(CC_COMPILER_NO_EXTERN_TEMPLATE)
-        #define CC_EXTERN_TEMPLATE(declaration)
-    #else
-        #define CC_EXTERN_TEMPLATE(declaration) extern template declaration
-    #endif
+#    if defined(CC_COMPILER_NO_EXTERN_TEMPLATE)
+#        define CC_EXTERN_TEMPLATE(declaration)
+#    else
+#        define CC_EXTERN_TEMPLATE(declaration) extern template declaration
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1693,15 +1687,15 @@ namespace ncore
 //         { T t; }
 //
 #if !defined(CC_NOEXCEPT)
-    #if defined(CC_COMPILER_NO_NOEXCEPT)
-        #define CC_NOEXCEPT
-        #define CC_NOEXCEPT_IF(predicate)
-        #define CC_NOEXCEPT_EXPR(expression) false
-    #else
-        #define CC_NOEXCEPT                  noexcept
-        #define CC_NOEXCEPT_IF(predicate)    noexcept((predicate))
-        #define CC_NOEXCEPT_EXPR(expression) noexcept((expression))
-    #endif
+#    if defined(CC_COMPILER_NO_NOEXCEPT)
+#        define CC_NOEXCEPT
+#        define CC_NOEXCEPT_IF(predicate)
+#        define CC_NOEXCEPT_EXPR(expression) false
+#    else
+#        define CC_NOEXCEPT                  noexcept
+#        define CC_NOEXCEPT_IF(predicate)    noexcept((predicate))
+#        define CC_NOEXCEPT_EXPR(expression) noexcept((expression))
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1717,13 +1711,13 @@ namespace ncore
 //         { throw "error"; }
 //
 #if !defined(CC_NORETURN)
-    #if defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION >= 1300)  // VS2003 (VC7) and later
-        #define CC_NORETURN __declspec(noreturn)
-    #elif defined(CC_COMPILER_NO_NORETURN)
-        #define CC_NORETURN
-    #else
-        #define CC_NORETURN [[noreturn]]
-    #endif
+#    if defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION >= 1300)  // VS2003 (VC7) and later
+#        define CC_NORETURN __declspec(noreturn)
+#    elif defined(CC_COMPILER_NO_NORETURN)
+#        define CC_NORETURN
+#    else
+#        define CC_NORETURN [[noreturn]]
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1739,11 +1733,11 @@ namespace ncore
 //
 //
 #if !defined(CC_CARRIES_DEPENDENCY)
-    #if defined(CC_COMPILER_NO_CARRIES_DEPENDENCY)
-        #define CC_CARRIES_DEPENDENCY
-    #else
-        #define CC_CARRIES_DEPENDENCY [[carries_dependency]]
-    #endif
+#    if defined(CC_COMPILER_NO_CARRIES_DEPENDENCY)
+#        define CC_CARRIES_DEPENDENCY
+#    else
+#        define CC_CARRIES_DEPENDENCY [[carries_dependency]]
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1774,11 +1768,11 @@ namespace ncore
 // 		}
 //
 #if !defined(CC_FALLTHROUGH)
-    #if defined(CC_COMPILER_NO_FALLTHROUGH)
-        #define CC_FALLTHROUGH
-    #else
-        #define CC_FALLTHROUGH [[fallthrough]]
-    #endif
+#    if defined(CC_COMPILER_NO_FALLTHROUGH)
+#        define CC_FALLTHROUGH
+#    else
+#        define CC_FALLTHROUGH [[fallthrough]]
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1804,11 +1798,11 @@ namespace ncore
 //     }
 //
 #if !defined(CC_NODISCARD)
-    #if defined(CC_COMPILER_NO_NODISCARD)
-        #define CC_NODISCARD
-    #else
-        #define CC_NODISCARD [[nodiscard]]
-    #endif
+#    if defined(CC_COMPILER_NO_NODISCARD)
+#        define CC_NODISCARD
+#    else
+#        define CC_NODISCARD [[nodiscard]]
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1826,11 +1820,11 @@ namespace ncore
 //    }
 //
 #if !defined(CC_MAYBE_UNUSED)
-    #if defined(CC_COMPILER_NO_MAYBE_UNUSED)
-        #define CC_MAYBE_UNUSED
-    #else
-        #define CC_MAYBE_UNUSED [[maybe_unused]]
-    #endif
+#    if defined(CC_COMPILER_NO_MAYBE_UNUSED)
+#        define CC_MAYBE_UNUSED
+#    else
+#        define CC_MAYBE_UNUSED [[maybe_unused]]
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1844,11 +1838,11 @@ namespace ncore
 //     CC_NO_UBSAN int SomeFunction() { ... }
 //
 #ifndef CC_NO_UBSAN
-    #if defined(CC_COMPILER_CLANG)
-        #define CC_NO_UBSAN __attribute__((no_sanitize("undefined")))
-    #else
-        #define CC_NO_UBSAN
-    #endif
+#    if defined(CC_COMPILER_CLANG)
+#        define CC_NO_UBSAN __attribute__((no_sanitize("undefined")))
+#    else
+#        define CC_NO_UBSAN
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1862,11 +1856,11 @@ namespace ncore
 //     CC_NO_ASAN int SomeFunction() { ... }
 //
 #ifndef CC_NO_ASAN
-    #if defined(CC_COMPILER_CLANG)
-        #define CC_NO_ASAN __attribute__((no_sanitize("address")))
-    #else
-        #define CC_NO_ASAN
-    #endif
+#    if defined(CC_COMPILER_CLANG)
+#        define CC_NO_ASAN __attribute__((no_sanitize("address")))
+#    else
+#        define CC_NO_ASAN
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1876,13 +1870,13 @@ namespace ncore
 // Specifies whether the code is being built with Clang's Address Sanitizer.
 //
 #if defined(__has_feature)
-    #if __has_feature(address_sanitizer)
-        #define CC_ASAN_ENABLED 1
-    #else
-        #define CC_ASAN_ENABLED 0
-    #endif
+#    if __has_feature(address_sanitizer)
+#        define CC_ASAN_ENABLED 1
+#    else
+#        define CC_ASAN_ENABLED 0
+#    endif
 #else
-    #define CC_ASAN_ENABLED 0
+#    define CC_ASAN_ENABLED 0
 #endif
 
 // ------------------------------------------------------------------------
@@ -1913,20 +1907,20 @@ namespace ncore
 //    };
 //
 #if !defined(CC_NON_COPYABLE)
-    #if defined(CC_COMPILER_NO_DELETED_FUNCTIONS)
-        #define CC_NON_COPYABLE(ClassName)                                                      \
+#    if defined(CC_COMPILER_NO_DELETED_FUNCTIONS)
+#        define CC_NON_COPYABLE(ClassName)                                                      \
         private:                                                                                \
             CC_DISABLE_VC_WARNING(4822); /* local class member function does not have a body	*/ \
             ClassName(const ClassName&);                                                        \
             void operator=(const ClassName&);                                                   \
             CC_RESTORE_VC_WARNING();
-    #else
-        #define CC_NON_COPYABLE(ClassName)                                                      \
+#    else
+#        define CC_NON_COPYABLE(ClassName)                                                      \
             CC_DISABLE_VC_WARNING(4822); /* local class member function does not have a body	*/ \
             ClassName(const ClassName&)      = delete;                                          \
             void operator=(const ClassName&) = delete;                                          \
             CC_RESTORE_VC_WARNING();
-    #endif
+#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -1950,9 +1944,9 @@ namespace ncore
 // which you can do in the associated source file for the class.
 //
 #if defined(CC_COMPILER_NO_DELETED_FUNCTIONS)
-    #define CC_FUNCTION_DELETE
+#    define CC_FUNCTION_DELETE
 #else
-    #define CC_FUNCTION_DELETE = delete
+#    define CC_FUNCTION_DELETE = delete
 #endif
 
 // ------------------------------------------------------------------------
@@ -2064,33 +2058,33 @@ namespace ncore
 //     CC_OPTIMIZE_ON()
 //
 #if !defined(CC_OPTIMIZE_OFF)
-    #if defined(CC_COMPILER_MSVC)
-        #define CC_OPTIMIZE_OFF() __pragma(optimize("", off))
-    #elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION > 4004) && (defined(__i386__) || defined(__x86_64__))
-        // GCC 4.4+ - Seems to work only on x86/Linux so far. However, GCC 4.4 itself appears broken and screws up parameter passing conventions.
-        #define CC_OPTIMIZE_OFF() _Pragma("GCC push_options") _Pragma("GCC optimize 0")
-    #elif defined(CC_COMPILER_CLANG) && (!defined(CC_PLATFORM_ANDROID) || (CC_COMPILER_VERSION >= 380))
-        #define CC_OPTIMIZE_OFF()                         \
+#    if defined(CC_COMPILER_MSVC)
+#        define CC_OPTIMIZE_OFF() __pragma(optimize("", off))
+#    elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION > 4004) && (defined(__i386__) || defined(__x86_64__))
+// GCC 4.4+ - Seems to work only on x86/Linux so far. However, GCC 4.4 itself appears broken and screws up parameter passing conventions.
+#        define CC_OPTIMIZE_OFF() _Pragma("GCC push_options") _Pragma("GCC optimize 0")
+#    elif defined(CC_COMPILER_CLANG) && (!defined(CC_PLATFORM_ANDROID) || (CC_COMPILER_VERSION >= 380))
+#        define CC_OPTIMIZE_OFF()                         \
             CC_DISABLE_CLANG_WARNING(-Wunknown - pragmas) \
             _Pragma("clang optimize off") CC_RESTORE_CLANG_WARNING()
-    #else
-        #define CC_OPTIMIZE_OFF()
-    #endif
+#    else
+#        define CC_OPTIMIZE_OFF()
+#    endif
 #endif
 
 #if !defined(CC_OPTIMIZE_ON)
-    #if defined(CC_COMPILER_MSVC)
-        #define CC_OPTIMIZE_ON() __pragma(optimize("", on))
-    #elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION > 4004) && (defined(__i386__) || defined(__x86_64__))
-        // GCC 4.4+ - Seems to work only on x86/Linux so far. However, GCC 4.4 itself appears broken and screws up parameter passing conventions.
-        #define CC_OPTIMIZE_ON() _Pragma("GCC pop_options")
-    #elif defined(CC_COMPILER_CLANG) && (!defined(CC_PLATFORM_ANDROID) || (CC_COMPILER_VERSION >= 380))
-        #define CC_OPTIMIZE_ON()                          \
+#    if defined(CC_COMPILER_MSVC)
+#        define CC_OPTIMIZE_ON() __pragma(optimize("", on))
+#    elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION > 4004) && (defined(__i386__) || defined(__x86_64__))
+// GCC 4.4+ - Seems to work only on x86/Linux so far. However, GCC 4.4 itself appears broken and screws up parameter passing conventions.
+#        define CC_OPTIMIZE_ON() _Pragma("GCC pop_options")
+#    elif defined(CC_COMPILER_CLANG) && (!defined(CC_PLATFORM_ANDROID) || (CC_COMPILER_VERSION >= 380))
+#        define CC_OPTIMIZE_ON()                          \
             CC_DISABLE_CLANG_WARNING(-Wunknown - pragmas) \
             _Pragma("clang optimize on") CC_RESTORE_CLANG_WARNING()
-    #else
-        #define CC_OPTIMIZE_ON()
-    #endif
+#    else
+#        define CC_OPTIMIZE_ON()
+#    endif
 #endif
 
 };  // namespace ncore

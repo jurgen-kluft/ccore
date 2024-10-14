@@ -1,6 +1,6 @@
 #include "ccore/c_memory.h"
 
-#ifdef TARGET_CPU_ARM
+#if 0
 
 #    include <arm_neon.h>
 

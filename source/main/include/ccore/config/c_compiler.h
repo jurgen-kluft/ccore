@@ -192,11 +192,11 @@ namespace ncore
     // ---------------------------------------------------------------------------*/
 
 // Note: This is used to generate the CC_COMPILER_STRING macros
-#ifndef INTERNAL_STRINGIZE
-    #define INTERNAL_STRINGIZE(x) INTERNAL_PRIMITIVE_STRINGIZE(x)
+#ifndef CC_INTERNAL_STRINGIZE
+    #define CC_INTERNAL_STRINGIZE(x) CC_INTERNAL_PRIMITIVE_STRINGIZE(x)
 #endif
-#ifndef INTERNAL_PRIMITIVE_STRINGIZE
-    #define INTERNAL_PRIMITIVE_STRINGIZE(x) #x
+#ifndef CC_INTERNAL_PRIMITIVE_STRINGIZE
+    #define CC_INTERNAL_PRIMITIVE_STRINGIZE(x) #x
 #endif
 
 // CC_COMPILER_HAS_FEATURE
@@ -321,13 +321,15 @@ namespace ncore
     #define CC_COMPILER_VERSION (__clang_major__ * 100 + __clang_minor__)
     #define CC_COMPILER_NAME    "clang"
     #define CC_COMPILER_STRING  CC_COMPILER_NAME __clang_version__
+    #define COMPILER_DEFAULT 1
 
 // GCC (a.k.a. GNUC)
 #elif defined(__GNUC__)  // GCC compilers exist for many platforms.
     #define CC_COMPILER_GNUC    1
     #define CC_COMPILER_VERSION (__GNUC__ * 1000 + __GNUC_MINOR__)
     #define CC_COMPILER_NAME    "GCC"
-    #define CC_COMPILER_STRING  CC_COMPILER_NAME " compiler, version " INTERNAL_STRINGIZE(__GNUC__) "." INTERNAL_STRINGIZE(__GNUC_MINOR__)
+    #define CC_COMPILER_STRING  CC_COMPILER_NAME " compiler, version " CC_INTERNAL_STRINGIZE(__GNUC__) "." CC_INTERNAL_STRINGIZE(__GNUC_MINOR__)
+    #define COMPILER_DEFAULT 1
 
     #if (__GNUC__ == 2) && (__GNUC_MINOR__ < 95)  // If GCC < 2.95...
         #define CC_COMPILER_NO_MEMBER_TEMPLATES 1
@@ -380,11 +382,11 @@ namespace ncore
     #endif
     #define CC_COMPILER_NAME "Intel C++"
     #if defined(_MSC_VER)
-        #define CC_COMPILER_STRING CC_COMPILER_NAME " compiler, version " INTERNAL_STRINGIZE(CC_COMPILER_VERSION) ", EDG version " INTERNAL_STRINGIZE(__EDG_VERSION__) ", VC++ version " INTERNAL_STRINGIZE(_MSC_VER)
+        #define CC_COMPILER_STRING CC_COMPILER_NAME " compiler, version " CC_INTERNAL_STRINGIZE(CC_COMPILER_VERSION) ", EDG version " CC_INTERNAL_STRINGIZE(__EDG_VERSION__) ", VC++ version " CC_INTERNAL_STRINGIZE(_MSC_VER)
     #elif defined(__GNUC__)
-        #define CC_COMPILER_STRING CC_COMPILER_NAME " compiler, version " INTERNAL_STRINGIZE(CC_COMPILER_VERSION) ", EDG version " INTERNAL_STRINGIZE(__EDG_VERSION__) ", GCC version " INTERNAL_STRINGIZE(__GNUC__)
+        #define CC_COMPILER_STRING CC_COMPILER_NAME " compiler, version " CC_INTERNAL_STRINGIZE(CC_COMPILER_VERSION) ", EDG version " CC_INTERNAL_STRINGIZE(__EDG_VERSION__) ", GCC version " CC_INTERNAL_STRINGIZE(__GNUC__)
     #else
-        #define CC_COMPILER_STRING CC_COMPILER_NAME " compiler, version " INTERNAL_STRINGIZE(CC_COMPILER_VERSION) ", EDG version " INTERNAL_STRINGIZE(__EDG_VERSION__)
+        #define CC_COMPILER_STRING CC_COMPILER_NAME " compiler, version " CC_INTERNAL_STRINGIZE(CC_COMPILER_VERSION) ", EDG version " CC_INTERNAL_STRINGIZE(__EDG_VERSION__)
     #endif
 
 #elif defined(_MSC_VER)
@@ -393,6 +395,7 @@ namespace ncore
     #define CC_COMPILER_VERSION   _MSC_VER
     #define CC_COMPILER_NAME      "Microsoft Visual C++"
         // #define CC_COMPILER_STRING (defined below)
+    #define COMPILER_DEFAULT 1
 
     #if defined(__clang__)
             // Clang's MSVC-compatible driver.
@@ -508,7 +511,7 @@ namespace ncore
     #define CC_COMPILER_IBM     1
     #define CC_COMPILER_NAME    "IBM XL C"
     #define CC_COMPILER_VERSION __xlC__
-    #define CC_COMPILER_STRING  "IBM XL C compiler, version " INTERNAL_STRINGIZE(__xlC__)
+    #define CC_COMPILER_STRING  "IBM XL C compiler, version " CC_INTERNAL_STRINGIZE(__xlC__)
 
 // Unknown
 #else  // Else the compiler is unknown
@@ -519,7 +522,7 @@ namespace ncore
 #endif
 
 #ifndef CC_COMPILER_STRING
-    #define CC_COMPILER_STRING CC_COMPILER_NAME " compiler, version " INTERNAL_STRINGIZE(CC_COMPILER_VERSION)
+    #define CC_COMPILER_STRING CC_COMPILER_NAME " compiler, version " CC_INTERNAL_STRINGIZE(CC_COMPILER_VERSION)
 #endif
 
 // CC_COMPILER_NO_RTTI

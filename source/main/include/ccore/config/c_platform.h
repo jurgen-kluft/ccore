@@ -578,6 +578,12 @@ namespace ncore
     #endif
 #endif
 
+#ifdef CC_SYSTEM_LITTLE_ENDIAN
+    #define D_LITTLE_ENDIAN
+#elif defined(CC_SYSTEM_BIG_ENDIAN)
+    #define D_BIG_ENDIAN
+#endif
+
 };  // namespace ncore
 
 #endif

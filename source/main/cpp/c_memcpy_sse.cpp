@@ -1,6 +1,6 @@
 #include "ccore/c_memory.h"
 
-#define CC_SSE 2
+//#define CC_SSE 2
 
 #if CC_SSE >= 2
 
