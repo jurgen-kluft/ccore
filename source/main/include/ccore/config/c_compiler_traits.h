@@ -1498,6 +1498,7 @@ namespace ncore
 //
 #if defined(_MSC_VER) || defined(__GNUC__) || defined(__EDG__) || defined(__APPLE__)
     #define CC_PRAGMA_ONCE_SUPPORTED 1
+    #define USE_PRAGMA_ONCE
 #endif
 
 // ------------------------------------------------------------------------

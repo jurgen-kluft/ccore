@@ -1,5 +1,5 @@
-#ifndef __CCORE_TARGET_BASE_V2_H__
-#define __CCORE_TARGET_BASE_V2_H__
+#ifndef __CCORE_TARGET_V2_H__
+#define __CCORE_TARGET_V2_H__
 #pragma once
 
 // Identify the compiler and declare the CC_COMPILER_xxxx defines
@@ -13,12 +13,8 @@
 
 CC_INCLUDE_ONCE
 
-// Always include version header file for backwards compatibility.
-#include "ccore/config/c_version.h"
-
 namespace ncore
 {
-
     // ------------------------------------------------------------------------
     // By default, GCC defines NULL as ((void*)0), which is the
     // C definition. This causes all sort of problems for C++ code, so it is
@@ -892,10 +888,15 @@ namespace ncore
 //          // USER_PROVIDED_FEATURE_DEFINE is disabled
 //      #endif
 //
-#define CC_ENABLED  111 -
-#define CC_DISABLED 333 -
+
+// clang-format off
+#define CC_ENABLED  111-
+#define CC_DISABLED 333-
+
 // NOTE: Numeric values for x will produce a parse error while empty values produce a divide by zero, and the test is a bool for proper negation behavior
 #define CC_IS_ENABLED(x) (333 == 333 * 111 / ((x 0) * (((x 0) == 333 ? 1 : 0) + ((x 0) == 111 ? 1 : 0))))
+
+// clang-format on
 
 };  // namespace ncore
 
