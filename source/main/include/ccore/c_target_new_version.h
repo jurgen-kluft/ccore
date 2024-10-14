@@ -1392,7 +1392,7 @@ namespace ncore
 //
 #ifndef CC_COMPILER_NO_INHERITANCE_FINAL
 #    if defined(CC_COMPILER_CPP11_ENABLED) && defined(_MSC_VER) && (CC_COMPILER_VERSION >= 1500)    // VS2008+, even without C++11 support.
-                                                                                                    // supported, though you need to use CC_INHERITANCE_FINAL for it to work with VS versions prior to 2012.
+                                                                                                    // supported, though you need to use CC_FINAL for it to work with VS versions prior to 2012.
 #    elif defined(CC_COMPILER_CPP11_ENABLED) && defined(__clang__) && (CC_COMPILER_VERSION >= 209)  // Clang 2.9+
        // supported
 #    elif defined(CC_COMPILER_CPP11_ENABLED) && defined(__GNUC__) && (CC_COMPILER_VERSION >= 4007)  // GCC 4.7+
@@ -2251,8 +2251,8 @@ namespace ncore
     //
     //    CC_RESTRICT
     //    CC_DEPRECATED   / CC_PREFIX_DEPRECATED   / CC_POSTFIX_DEPRECATED
-    //    CC_FORCE_INLINE / CC_PREFIX_FORCE_INLINE / CC_POSTFIX_FORCE_INLINE
-    //    CC_NO_INLINE    / CC_PREFIX_NO_INLINE    / CC_POSTFIX_NO_INLINE
+    //    CC_FORCE_INLINE /
+    //    CC_NO_INLINE    /
     //    CC_NO_VTABLE    / CC_CLASS_NO_VTABLE     / CC_STRUCT_NO_VTABLE
     //    CC_PASCAL
     //    CC_PASCAL_FUNC()
@@ -2260,9 +2260,9 @@ namespace ncore
     //    CC_IMPORT
     //    CC_EXPORT
     //    CC_PRAGMA_ONCE_SUPPORTED
-    //    CC_ONCE
+    //    CC_INCLUDE_ONCE
     //    CC_OVERRIDE
-    //    CC_INHERITANCE_FINAL
+    //    CC_FINAL
     //    CC_SEALED
     //    CC_ABSTRACT
     //    CC_CONSTEXPR / CC_CONSTEXPR_OR_CONST
@@ -2581,92 +2581,19 @@ namespace ncore
 #    define CC_ALIGNED(variable_type, variable, n) __align(n) variable_type variable
 #    define CC_PACKED                              __packed
 
-#else  // Unusual compilers
-       // There is nothing we can do about some of these. This is not as bad a problem as it seems.
+// Unusual compilers
+// There is nothing we can do about some of these. This is not as bad a problem as it seems.
 // If the given platform/compiler doesn't support alignment specifications, then it's somewhat
 // likely that alignment doesn't matter for that platform. Otherwise they would have defined
 // functionality to manipulate alignment.
+#else
 #    define CC_ALIGN(n)
 #    define CC_PREFIX_ALIGN(n)
 #    define CC_POSTFIX_ALIGN(n)
 #    define CC_ALIGNED(variable_type, variable, n) variable_type variable
 #    define CC_PACKED
+#    define CC_ALIGN_OF(type) ((size_t)__ALIGNOF__(type))
 
-#    ifdef __cplusplus
-    template <typename T>
-    struct EAAlignOf1
-    {
-        enum
-        {
-            s     = sizeof(T),
-            value = s ^ (s & (s - 1))
-        };
-    };
-    template <typename T>
-    struct EAAlignOf2;
-    template <int size_diff>
-    struct helper
-    {
-        template <typename T>
-        struct Val
-        {
-            enum
-            {
-                value = size_diff
-            };
-        };
-    };
-    template <>
-    struct helper<0>
-    {
-        template <typename T>
-        struct Val
-        {
-            enum
-            {
-                value = EAAlignOf2<T>::value
-            };
-        };
-    };
-    template <typename T>
-    struct EAAlignOf2
-    {
-        struct Big
-        {
-            T    x;
-            char c;
-        };
-        enum
-        {
-            diff  = sizeof(Big) - sizeof(T),
-            value = helper<diff>::template Val<Big>::value
-        };
-    };
-    template <typename T>
-    struct EAAlignof3
-    {
-        enum
-        {
-            x     = EAAlignOf2<T>::value,
-            y     = EAAlignOf1<T>::value,
-            value = x < y ? x : y
-        };
-    };
-#        define CC_ALIGN_OF(type) ((size_t)EAAlignof3<type>::value)
-
-#    else
-       // C implementation of CC_ALIGN_OF
-// This implementation works for most cases, but doesn't directly work
-// for types such as function pointer declarations. To work with those
-// types you need to typedef the type and then use the typedef in CC_ALIGN_OF.
-#        define CC_ALIGN_OF(type) \
-            ((size_t)offsetof(    \
-              struct {            \
-                  char c;         \
-                  type m;         \
-              },                  \
-              m))
-#    endif
 #endif
 
 // CC_PRAGMA_PACK_VC
@@ -2802,75 +2729,6 @@ namespace ncore
 #    else
 #        define CC_INIT_PRIORITY(x)
 #    endif
-#endif
-
-// ------------------------------------------------------------------------
-// CC_INIT_SEG_AVAILABLE
-//
-//
-#if !defined(CC_INIT_SEG_AVAILABLE)
-#    if defined(_MSC_VER)
-#        define CC_INIT_SEG_AVAILABLE 1
-#    endif
-#endif
-
-// ------------------------------------------------------------------------
-// CC_INIT_SEG
-//
-// Specifies a keyword or code section that affects the order in which startup code is executed.
-//
-// https://docs.microsoft.com/en-us/cpp/preprocessor/init-seg?view=vs-2019
-//
-// Example:
-// 		CC_INIT_SEG(compiler) MyType gMyTypeGlobal;
-// 		CC_INIT_SEG("my_section") MyOtherType gMyOtherTypeGlobal;
-//
-#if !defined(CC_INIT_SEG)
-#    if defined(CC_INIT_SEG_AVAILABLE)
-#        define CC_INIT_SEG(x) __pragma(warning(push)) __pragma(warning(disable : 4074)) __pragma(warning(disable : 4075)) __pragma(init_seg(x)) __pragma(warning(pop))
-#    else
-#        define CC_INIT_SEG(x)
-#    endif
-#endif
-
-// ------------------------------------------------------------------------
-// CC_MAY_ALIAS_AVAILABLE
-//
-// Defined as 0, 1, or 2.
-// Defines if the GCC attribute may_alias is supported by the compiler.
-// Consists of a value 0 (unsupported, shouldn't be used), 1 (some support),
-// or 2 (full proper support).
-//
-#ifndef CC_MAY_ALIAS_AVAILABLE
-#    if defined(__GNUC__) && (((__GNUC__ * 100) + __GNUC_MINOR__) >= 303)
-#        if !defined(__EDG__)  // define it as 1 while defining GCC's support as 2.
-#            define CC_MAY_ALIAS_AVAILABLE 2
-#        else
-#            define CC_MAY_ALIAS_AVAILABLE 0
-#        endif
-#    else
-#        define CC_MAY_ALIAS_AVAILABLE 0
-#    endif
-#endif
-
-// CC_MAY_ALIAS
-//
-// Defined as a macro that wraps the GCC may_alias attribute. This attribute
-// has no significance for VC++ because VC++ doesn't support the concept of
-// strict aliasing. Users should avoid writing code that breaks strict
-// aliasing rules; CC_MAY_ALIAS is for cases with no alternative.
-//
-// Example usage:
-//    void* CC_MAY_ALIAS gPtr = NULL;
-//
-// Example usage:
-//    typedef void* CC_MAY_ALIAS pvoid_may_alias;
-//    pvoid_may_alias gPtr = NULL;
-//
-#if CC_MAY_ALIAS_AVAILABLE
-#    define CC_MAY_ALIAS __attribute__((__may_alias__))
-#else
-#    define CC_MAY_ALIAS
 #endif
 
 // ------------------------------------------------------------------------
@@ -3129,87 +2987,6 @@ namespace ncore
 #endif
 
 // ------------------------------------------------------------------------
-// CC_DISABLE_SN_WARNING / CC_RESTORE_SN_WARNING
-//
-// Note that we define this macro specifically for the SN compiler instead of
-// having a generic one for EDG-based compilers. The reason for this is that
-// while SN is indeed based on EDG, SN has different warning value mappings
-// and thus warning 1234 for SN is not the same as 1234 for all other EDG compilers.
-//
-// Example usage:
-//     // Currently we are limited to one warning per line.
-//     CC_DISABLE_SN_WARNING(1787)
-//     CC_DISABLE_SN_WARNING(552)
-//     <code>
-//     CC_RESTORE_SN_WARNING()
-//     CC_RESTORE_SN_WARNING()
-//
-#ifndef CC_DISABLE_SN_WARNING
-#    define CC_DISABLE_SN_WARNING(w)
-#endif
-
-#ifndef CC_RESTORE_SN_WARNING
-#    define CC_RESTORE_SN_WARNING()
-#endif
-
-// ------------------------------------------------------------------------
-// CC_DISABLE_ALL_SN_WARNINGS / CC_RESTORE_ALL_SN_WARNINGS
-//
-// Example usage:
-//     CC_DISABLE_ALL_SN_WARNINGS()
-//     <code>
-//     CC_RESTORE_ALL_SN_WARNINGS()
-//
-#ifndef CC_DISABLE_ALL_SN_WARNINGS
-#    define CC_DISABLE_ALL_SN_WARNINGS()
-#endif
-
-#ifndef CC_RESTORE_ALL_SN_WARNINGS
-#    define CC_RESTORE_ALL_SN_WARNINGS()
-#endif
-
-// ------------------------------------------------------------------------
-// CC_DISABLE_GHS_WARNING / CC_RESTORE_GHS_WARNING
-//
-// Disable warnings from the Green Hills compiler.
-//
-// Example usage:
-//     CC_DISABLE_GHS_WARNING(193)
-//     CC_DISABLE_GHS_WARNING(236, 5323)
-//     <code>
-//     CC_RESTORE_GHS_WARNING()
-//     CC_RESTORE_GHS_WARNING()
-//
-#ifndef CC_DISABLE_GHS_WARNING
-#    define CC_DISABLE_GHS_WARNING(w)
-#endif
-
-#ifndef CC_RESTORE_GHS_WARNING
-#    define CC_RESTORE_GHS_WARNING()
-#endif
-
-// ------------------------------------------------------------------------
-// CC_DISABLE_ALL_GHS_WARNINGS / CC_RESTORE_ALL_GHS_WARNINGS
-//
-// #ifndef CC_DISABLE_ALL_GHS_WARNINGS
-//     #if defined(CC_COMPILER_GREEN_HILLS)
-//         #define CC_DISABLE_ALL_GHS_WARNINGS(w)  \_
-//             _Pragma("_________")
-//     #else
-//         #define CC_DISABLE_ALL_GHS_WARNINGS(w)
-//     #endif
-// #endif
-//
-// #ifndef CC_RESTORE_ALL_GHS_WARNINGS
-//     #if defined(CC_COMPILER_GREEN_HILLS)
-//         #define CC_RESTORE_ALL_GHS_WARNINGS()   \_
-//             _Pragma("_________")
-//     #else
-//         #define CC_RESTORE_ALL_GHS_WARNINGS()
-//     #endif
-// #endif
-
-// ------------------------------------------------------------------------
 // CC_DISABLE_EDG_WARNING / CC_RESTORE_EDG_WARNING
 //
 // Example usage:
@@ -3299,34 +3076,6 @@ namespace ncore
 #endif
 
 // ------------------------------------------------------------------------
-// CC_PURE
-//
-// This acts the same as the GCC __attribute__ ((pure)) directive and is
-// implemented simply as a wrapper around it to allow portable usage of
-// it and to take advantage of it if and when it appears in other compilers.
-//
-// A "pure" function is one that has no effects except its return value and
-// its return value is a function of only the function's parameters or
-// non-volatile global variables. Any parameter or global variable access
-// must be read-only. Loop optimization and subexpression elimination can be
-// applied to such functions. A common example is strlen(): Given identical
-// inputs, the function's return value (its only effect) is invariant across
-// multiple invocations and thus can be pulled out of a loop and called but once.
-//
-// Example usage:
-//    CC_PURE void Function();
-//
-#ifndef CC_PURE
-#    if defined(CC_COMPILER_GNUC)
-#        define CC_PURE __attribute__((pure))
-#    elif defined(CC_COMPILER_ARM)  // Arm brand compiler for ARM CPU
-#        define CC_PURE __pure
-#    else
-#        define CC_PURE
-#    endif
-#endif
-
-// ------------------------------------------------------------------------
 // CC_WEAK
 // CC_WEAK_SUPPORTED -- defined as 0 or 1.
 //
@@ -3380,34 +3129,18 @@ namespace ncore
 // can be used, and requires the type x to be usable as a functions reference argument.
 #    if defined(__cplusplus) && defined(__EDG__)
     template <typename T>
-    inline void EABaseUnused(T const volatile& x)
+    inline void CCoreUnused(T const volatile& x)
     {
         (void)x;
     }
-#        define CC_UNUSED(x) EABaseUnused(x)
+#        define CC_UNUSED(x) CCoreUnused(x)
 #    else
 #        define CC_UNUSED(x) (void)x
 #    endif
 #endif
 
 // ------------------------------------------------------------------------
-// CC_EMPTY
-//
-// Allows for a null statement, usually for the purpose of avoiding compiler warnings.
-//
-// Example usage:
-//    #ifdef CC_DEBUG
-//        #define MyDebugPrintf(x, y) printf(x, y)
-//    #else
-//        #define MyDebugPrintf(x, y)  CC_EMPTY
-//    #endif
-//
-#ifndef CC_EMPTY
-#    define CC_EMPTY (void)0
-#endif
-
-// ------------------------------------------------------------------------
-// CC_CURRENT_FUNCTION
+// CC__FUNCTION__
 //
 // Provides a consistent way to get the current function name as a macro
 // like the __FILE__ and __LINE__ macros work. The C99 standard specifies
@@ -3415,23 +3148,23 @@ namespace ncore
 // follow that convention. However, many compilers have an alternative.
 //
 // We also define CC_CURRENT_FUNCTION_SUPPORTED for when it is not possible
-// to have CC_CURRENT_FUNCTION work as expected.
+// to have CC__FUNCTION__ work as expected.
 //
 // Defined inside a function because otherwise the macro might not be
 // defined and code below might not compile. This happens with some
 // compilers.
 //
-#ifndef CC_CURRENT_FUNCTION
+#ifndef CC__FUNCTION__
 #    if defined __GNUC__ || (defined __ICC && __ICC >= 600)
-#        define CC_CURRENT_FUNCTION __PRETTY_FUNCTION__
+#        define CC__FUNCTION__ __PRETTY_FUNCTION__
 #    elif defined(__FUNCSIG__)
-#        define CC_CURRENT_FUNCTION __FUNCSIG__
+#        define CC__FUNCTION__ __FUNCSIG__
 #    elif (defined __INTEL_COMPILER && __INTEL_COMPILER >= 600) || (defined __IBMCPP__ && __IBMCPP__ >= 500) || (defined CS_UNDEFINED_STRING && CS_UNDEFINED_STRING >= 0x4200)
-#        define CC_CURRENT_FUNCTION __FUNCTION__
+#        define CC__FUNCTION__ __FUNCTION__
 #    elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901
-#        define CC_CURRENT_FUNCTION __func__
+#        define CC__FUNCTION__ __func__
 #    else
-#        define CC_CURRENT_FUNCTION "(unknown function)"
+#        define CC__FUNCTION__ "(unknown function)"
 #    endif
 #endif
 
@@ -3460,7 +3193,8 @@ namespace ncore
 #        ifndef _NATIVE_WCHAR_T_DEFINED
 #            define CC_WCHAR_T_NON_NATIVE 1
 #        endif
-#    elif defined(__EDG_VERSION__) && (!defined(_WCHAR_T) && (__EDG_VERSION__ < 400))  // EDG prior to v4 uses _WCHAR_T to indicate if wchar_t is native. v4+ may define something else, but we're not currently aware of it.
+#    elif defined(__EDG_VERSION__) && (!defined(_WCHAR_T) && (__EDG_VERSION__ < 400))
+// EDG prior to v4 uses _WCHAR_T to indicate if wchar_t is native. v4+ may define something else, but we're not currently aware of it.
 #        define CC_WCHAR_T_NON_NATIVE 1
 #    endif
 #endif
@@ -3560,16 +3294,11 @@ namespace ncore
 
     // ------------------------------------------------------------------------
     // CC_DEPRECATED            // Used as a prefix.
-    // CC_PREFIX_DEPRECATED     // You should need this only for unusual compilers.
-    // CC_POSTFIX_DEPRECATED    // You should need this only for unusual compilers.
     // CC_DEPRECATED_MESSAGE    // Used as a prefix and provides a deprecation message.
     //
     // Example usage:
     //    CC_DEPRECATED void Function();
     //    CC_DEPRECATED_MESSAGE("Use 1.0v API instead") void Function();
-    //
-    // or for maximum portability:
-    //    CC_PREFIX_DEPRECATED void Function() CC_POSTFIX_DEPRECATED;
     //
 
 #ifndef CC_DEPRECATED
@@ -3584,22 +3313,6 @@ namespace ncore
 #    endif
 #endif
 
-#ifndef CC_PREFIX_DEPRECATED
-#    if defined(CC_COMPILER_CPP14_ENABLED)
-#        define CC_PREFIX_DEPRECATED [[deprecated]]
-#        define CC_POSTFIX_DEPRECATED
-#    elif defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION > 1300)  // If VC7 (VS2003) or later...
-#        define CC_PREFIX_DEPRECATED __declspec(deprecated)
-#        define CC_POSTFIX_DEPRECATED
-#    elif defined(CC_COMPILER_MSVC)
-#        define CC_PREFIX_DEPRECATED
-#        define CC_POSTFIX_DEPRECATED
-#    else
-#        define CC_PREFIX_DEPRECATED
-#        define CC_POSTFIX_DEPRECATED __attribute__((deprecated))
-#    endif
-#endif
-
 #ifndef CC_DEPRECATED_MESSAGE
 #    if defined(CC_COMPILER_CPP14_ENABLED)
 #        define CC_DEPRECATED_MESSAGE(msg) [[deprecated(#msg)]]
@@ -3611,12 +3324,9 @@ namespace ncore
 
 // ------------------------------------------------------------------------
 // CC_FORCE_INLINE              // Used as a prefix.
-// CC_PREFIX_FORCE_INLINE       // You should need this only for unusual compilers.
-// CC_POSTFIX_FORCE_INLINE      // You should need this only for unusual compilers.
 //
 // Example usage:
 //     CC_FORCE_INLINE void Foo();                                // Implementation elsewhere.
-//     CC_PREFIX_FORCE_INLINE void Foo() CC_POSTFIX_FORCE_INLINE; // Implementation elsewhere.
 //
 // Note that when the prefix version of this function is used, it replaces
 // the regular C++ 'inline' statement. Thus you should not use both the
@@ -3647,14 +3357,6 @@ namespace ncore
 #    endif
 #endif
 
-#if defined(CC_COMPILER_GNUC) && (((__GNUC__ * 100) + __GNUC_MINOR__) >= 301) || defined(CC_COMPILER_CLANG)
-#    define CC_PREFIX_FORCE_INLINE  inline
-#    define CC_POSTFIX_FORCE_INLINE __attribute__((always_inline))
-#else
-#    define CC_PREFIX_FORCE_INLINE inline
-#    define CC_POSTFIX_FORCE_INLINE
-#endif
-
 // ------------------------------------------------------------------------
 // CC_FORCE_INLINE_LAMBDA
 //
@@ -3681,12 +3383,9 @@ namespace ncore
 
 // ------------------------------------------------------------------------
 // CC_NO_INLINE             // Used as a prefix.
-// CC_PREFIX_NO_INLINE      // You should need this only for unusual compilers.
-// CC_POSTFIX_NO_INLINE     // You should need this only for unusual compilers.
 //
 // Example usage:
 //     CC_NO_INLINE        void Foo();                       // Implementation elsewhere.
-//     CC_PREFIX_NO_INLINE void Foo() CC_POSTFIX_NO_INLINE;  // Implementation elsewhere.
 //
 // That this declaration is incompatbile with C++ 'inline' and any
 // variant of CC_FORCE_INLINE.
@@ -3711,17 +3410,6 @@ namespace ncore
 #    endif
 #endif
 
-#if defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION >= 1400)  // If VC8 (VS2005) or later...
-#    define CC_PREFIX_NO_INLINE __declspec(noinline)
-#    define CC_POSTFIX_NO_INLINE
-#elif defined(CC_COMPILER_MSVC)
-#    define CC_PREFIX_NO_INLINE
-#    define CC_POSTFIX_NO_INLINE
-#else
-#    define CC_PREFIX_NO_INLINE
-#    define CC_POSTFIX_NO_INLINE __attribute__((noinline))
-#endif
-
 // ------------------------------------------------------------------------
 // CC_NO_VTABLE
 //
@@ -3742,46 +3430,6 @@ namespace ncore
 #    define CC_NO_VTABLE
 #    define CC_CLASS_NO_VTABLE(x)  class x
 #    define CC_STRUCT_NO_VTABLE(x) struct x
-#endif
-
-// ------------------------------------------------------------------------
-// CC_PASCAL
-//
-// Also known on PC platforms as stdcall.
-// This convention causes the compiler to assume that the called function
-// will pop off the stack space used to pass arguments, unless it takes a
-// variable number of arguments.
-//
-// Example usage:
-//    this:
-//       void DoNothing(int x);
-//       void DoNothing(int x){}
-//    would be written as this:
-//       void CC_PASCAL_FUNC(DoNothing(int x));
-//       void CC_PASCAL_FUNC(DoNothing(int x)){}
-//
-#ifndef CC_PASCAL
-#    if defined(CC_COMPILER_MSVC)
-#        define CC_PASCAL __stdcall
-#    elif defined(CC_COMPILER_GNUC) && defined(CC_PROCESSOR_X86)
-#        define CC_PASCAL __attribute__((stdcall))
-#    else
-       // Some compilers simply don't support pascal calling convention.
-// As a result, there isn't an issue here, since the specification of
-// pascal calling convention is for the purpose of disambiguating the
-// calling convention that is applied.
-#        define CC_PASCAL
-#    endif
-#endif
-
-#ifndef CC_PASCAL_FUNC
-#    if defined(CC_COMPILER_MSVC)
-#        define CC_PASCAL_FUNC(funcname_and_paramlist) __stdcall funcname_and_paramlist
-#    elif defined(CC_COMPILER_GNUC) && defined(CC_PROCESSOR_X86)
-#        define CC_PASCAL_FUNC(funcname_and_paramlist) __attribute__((stdcall)) funcname_and_paramlist
-#    else
-#        define CC_PASCAL_FUNC(funcname_and_paramlist) funcname_and_paramlist
-#    endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -4057,13 +3705,13 @@ namespace ncore
 #endif
 
 // ------------------------------------------------------------------------
-// CC_ONCE
+// CC_INCLUDE_ONCE
 //
 // Example usage (which includes traditional header guards for portability):
 //    #ifndef SOMEPACKAGE_SOMEHEADER_H
 //    #define SOMEPACKAGE_SOMEHEADER_H
 //
-//    CC_ONCE()
+//    CC_INCLUDE_ONCE
 //
 //    <user code>
 //
@@ -4071,9 +3719,11 @@ namespace ncore
 //
 #if defined(CC_PRAGMA_ONCE_SUPPORTED)
 #    if defined(_MSC_VER)
-#        define CC_ONCE() __pragma(once)
+#        define CC_INCLUDE_ONCE __pragma(once)
+#    elif defined(__clang__)
+#        define CC_INCLUDE_ONCE #pragma once
 #    else
-#        define CC_ONCE()  // _Pragma("once")   It turns out that _Pragma("once") isn't supported by many compilers.
+#        define CC_INCLUDE_ONCE  // _Pragma("once")   It turns out that _Pragma("once") isn't supported by many compilers.
 #    endif
 #endif
 
@@ -4082,7 +3732,7 @@ namespace ncore
 //
 // C++11 override
 // See http://msdn.microsoft.com/en-us/library/jj678987.aspx for more information.
-// You can use CC_FINAL_OVERRIDE to combine usage of CC_OVERRIDE and CC_INHERITANCE_FINAL in a single statement.
+// You can use CC_FINAL_OVERRIDE to combine usage of CC_OVERRIDE and CC_FINAL in a single statement.
 //
 // Example usage:
 //        struct B     { virtual void f(int); };
@@ -4097,23 +3747,22 @@ namespace ncore
 #endif
 
 // ------------------------------------------------------------------------
-// CC_INHERITANCE_FINAL
+// CC_FINAL
 //
 // Portably wraps the C++11 final specifier.
 // See http://msdn.microsoft.com/en-us/library/jj678985.aspx for more information.
-// You can use CC_FINAL_OVERRIDE to combine usage of CC_OVERRIDE and CC_INHERITANCE_FINAL in a single statement.
-// This is not called CC_FINAL because that term is used within EA to denote debug/release/final builds.
+// You can use CC_FINAL_OVERRIDE to combine usage of CC_OVERRIDE and CC_FINAL in a single statement.
 //
 // Example usage:
-//     struct B { virtual void f() CC_INHERITANCE_FINAL; };
+//     struct B { virtual void f() CC_FINAL; };
 //
-#ifndef CC_INHERITANCE_FINAL
+#ifndef CC_FINAL
 #    if defined(CC_COMPILER_NO_INHERITANCE_FINAL)
-#        define CC_INHERITANCE_FINAL
+#        define CC_FINAL
 #    elif (defined(_MSC_VER) && (CC_COMPILER_VERSION < 1700))  // Pre-VS2012
-#        define CC_INHERITANCE_FINAL sealed
+#        define CC_FINAL sealed
 #    else
-#        define CC_INHERITANCE_FINAL final
+#        define CC_FINAL final
 #    endif
 #endif
 
@@ -4127,39 +3776,7 @@ namespace ncore
 //     struct B : public A { virtual void f() CC_FINAL_OVERRIDE; };
 //
 #ifndef CC_FINAL_OVERRIDE
-#    define CC_FINAL_OVERRIDE CC_OVERRIDE CC_INHERITANCE_FINAL
-#endif
-
-// ------------------------------------------------------------------------
-// CC_SEALED
-//
-// This is deprecated, as the C++11 Standard has final (CC_INHERITANCE_FINAL) instead.
-// See http://msdn.microsoft.com/en-us/library/0w2w91tf.aspx for more information.
-// Example usage:
-//     struct B { virtual void f() CC_SEALED; };
-//
-#ifndef CC_SEALED
-#    if defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION >= 1400)  // VS2005 (VC8) and later
-#        define CC_SEALED sealed
-#    else
-#        define CC_SEALED
-#    endif
-#endif
-
-// ------------------------------------------------------------------------
-// CC_ABSTRACT
-//
-// This is a Microsoft language extension.
-// See http://msdn.microsoft.com/en-us/library/b0z6b513.aspx for more information.
-// Example usage:
-//     struct X CC_ABSTRACT { virtual void f(){} };
-//
-#ifndef CC_ABSTRACT
-#    if defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION >= 1400)  // VS2005 (VC8) and later
-#        define CC_ABSTRACT abstract
-#    else
-#        define CC_ABSTRACT
-#    endif
+#    define CC_FINAL_OVERRIDE CC_OVERRIDE CC_FINAL
 #endif
 
 // ------------------------------------------------------------------------
@@ -4470,17 +4087,17 @@ namespace ncore
 //
 #if !defined(CC_NON_COPYABLE)
 #    if defined(CC_COMPILER_NO_DELETED_FUNCTIONS)
-#        define CC_NON_COPYABLE(EAClass_)                                                       \
+#        define CC_NON_COPYABLE(ClassName)                                                      \
         private:                                                                                \
             CC_DISABLE_VC_WARNING(4822); /* local class member function does not have a body	*/ \
-            EAClass_(const EAClass_&);                                                          \
-            void operator=(const EAClass_&);                                                    \
+            ClassName(const ClassName&);                                                        \
+            void operator=(const ClassName&);                                                   \
             CC_RESTORE_VC_WARNING();
 #    else
-#        define CC_NON_COPYABLE(EAClass_)                                                       \
+#        define CC_NON_COPYABLE(ClassName)                                                      \
             CC_DISABLE_VC_WARNING(4822); /* local class member function does not have a body	*/ \
-            EAClass_(const EAClass_&)       = delete;                                           \
-            void operator=(const EAClass_&) = delete;                                           \
+            ClassName(const ClassName&)      = delete;                                          \
+            void operator=(const ClassName&) = delete;                                          \
             CC_RESTORE_VC_WARNING();
 #    endif
 #endif
@@ -4592,43 +4209,6 @@ namespace ncore
 #define CC_DISABLE_MOVE_OPERATOR(ClassName) ClassName& operator=(ClassName&&) CC_FUNCTION_DELETE
 
 // ------------------------------------------------------------------------
-// EANonCopyable
-//
-// Declares a class as not supporting copy construction or assignment.
-// May be more reliable with some situations that CC_NON_COPYABLE alone,
-// though it may result in more code generation.
-//
-// Note that VC++ will generate warning C4625 and C4626 if you use EANonCopyable
-// and you are compiling with /W4 and /Wall. There is no resolution but
-// to redelare CC_NON_COPYABLE in your subclass or disable the warnings with
-// code like this:
-//     CC_DISABLE_VC_WARNING(4625 4626)
-//     ...
-//     CC_RESTORE_VC_WARNING()
-//
-// Example usage:
-//     struct Widget : EANonCopyable {
-//        . . .
-//     };
-//
-#ifdef __cplusplus
-    struct EANonCopyable
-    {
-#    if defined(CC_COMPILER_NO_DEFAULTED_FUNCTIONS) || defined(__EDG__)
-        // EDG doesn't appear to behave properly for the case of defaulted constructors;
-        // it generates a mistaken warning about missing default constructors.
-        EANonCopyable() {}   // Putting {} here has the downside that it allows a class to create itself,
-        ~EANonCopyable() {}  // but avoids linker errors that can occur with some compilers (e.g. Green Hills).
-#    else
-        EANonCopyable()  = default;
-        ~EANonCopyable() = default;
-#    endif
-
-        CC_NON_COPYABLE(EANonCopyable)
-    };
-#endif
-
-// ------------------------------------------------------------------------
 // CC_OPTIMIZE_OFF / CC_OPTIMIZE_ON
 //
 // Implements portable inline optimization enabling/disabling.
@@ -4659,7 +4239,8 @@ namespace ncore
 #if !defined(CC_OPTIMIZE_OFF)
 #    if defined(CC_COMPILER_MSVC)
 #        define CC_OPTIMIZE_OFF() __pragma(optimize("", off))
-#    elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION > 4004) && (defined(__i386__) || defined(__x86_64__))  // GCC 4.4+ - Seems to work only on x86/Linux so far. However, GCC 4.4 itself appears broken and screws up parameter passing conventions.
+#    elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION > 4004) && (defined(__i386__) || defined(__x86_64__))
+// GCC 4.4+ - Seems to work only on x86/Linux so far. However, GCC 4.4 itself appears broken and screws up parameter passing conventions.
 #        define CC_OPTIMIZE_OFF() _Pragma("GCC push_options") _Pragma("GCC optimize 0")
 #    elif defined(CC_COMPILER_CLANG) && (!defined(CC_PLATFORM_ANDROID) || (CC_COMPILER_VERSION >= 380))
 #        define CC_OPTIMIZE_OFF()                         \
@@ -4673,7 +4254,8 @@ namespace ncore
 #if !defined(CC_OPTIMIZE_ON)
 #    if defined(CC_COMPILER_MSVC)
 #        define CC_OPTIMIZE_ON() __pragma(optimize("", on))
-#    elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION > 4004) && (defined(__i386__) || defined(__x86_64__))  // GCC 4.4+ - Seems to work only on x86/Linux so far. However, GCC 4.4 itself appears broken and screws up parameter passing conventions.
+#    elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION > 4004) && (defined(__i386__) || defined(__x86_64__))
+// GCC 4.4+ - Seems to work only on x86/Linux so far. However, GCC 4.4 itself appears broken and screws up parameter passing conventions.
 #        define CC_OPTIMIZE_ON() _Pragma("GCC pop_options")
 #    elif defined(CC_COMPILER_CLANG) && (!defined(CC_PLATFORM_ANDROID) || (CC_COMPILER_VERSION >= 380))
 #        define CC_OPTIMIZE_ON()                          \
