@@ -390,7 +390,6 @@ namespace ncore
     #endif
 
 #elif defined(_MSC_VER)
-    #define CC_COMPILER_MSVC      1
     #define CC_COMPILER_MICROSOFT 1
     #define CC_COMPILER_VERSION   _MSC_VER
     #define CC_COMPILER_NAME      "Microsoft Visual C++"
