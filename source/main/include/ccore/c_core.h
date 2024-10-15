@@ -757,7 +757,7 @@ namespace ncore
 #endif
 
 // ------------------------------------------------------------------------
-// CCArrayCount
+// DArrayCount
 //
 // Returns the count of items in a built-in C array. This is a common technique
 // which is often used to help properly calculate the number of items in an
@@ -768,8 +768,8 @@ namespace ncore
 //     size_t arrayCount = CCArrayCount(array); // arrayCount is 75.
 //
 #if defined(CC_COMPILER_NO_CONSTEXPR)
-#    ifndef CCArrayCount
-#        define CCArrayCount(x) (sizeof(x) / sizeof(x[0]))
+#    ifndef DArrayCount
+#        define DArrayCount(x) (sizeof(x) / sizeof(x[0]))
 #    endif
 #else
     // This C++11 version is a little smarter than the macro version above;
@@ -782,7 +782,7 @@ namespace ncore
     template <typename T, size_t N>
     char (&CCArraySizeHelper(T (&&x)[N]))[N];
 
-#    define CCArrayCount(x) (sizeof(CCArraySizeHelper(x)))
+#    define DArrayCount(x) (sizeof(CCArraySizeHelper(x)))
 #endif
 
 // ------------------------------------------------------------------------

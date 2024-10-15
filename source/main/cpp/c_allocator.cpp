@@ -3,7 +3,7 @@
 
 namespace ncore
 {
-    alloc_buffer_t::alloc_buffer_t()
+    fixed_buffer_alloc_t::fixed_buffer_alloc_t()
         : m_base(0)
         , m_ptr(0)
         , m_size(0)
@@ -11,7 +11,7 @@ namespace ncore
     {
     }
 
-    void alloc_buffer_t::init(byte* buffer, s32 length)
+    void fixed_buffer_alloc_t::setup(byte* buffer, s32 length)
     {
         m_base = buffer;
         m_ptr  = buffer;
@@ -28,6 +28,8 @@ namespace ncore
         ASSERT(ptr != nullptr && ((ptr_t)ptr & 3) == 0);     // Ensure 4 byte alignment
 
         u32 const minsize = size < new_size ? size : new_size;
+
+        // TODO, use nmem::memcpy
 
         u32*       dstptr = (u32*)newptr;
         u32 const* dstend = dstptr + (minsize >> 2);

@@ -136,6 +136,7 @@ namespace ncore
     };
 
     // The pool allocator interface
+
     template <typename T>
     class pool_t : public fsa_t, public dexer_t
     {
@@ -159,6 +160,7 @@ namespace ncore
         a->destruct(p);
     }
 
+    // Array Size (should we make DArrayCount obsolete?)
     template <typename T, uint_t N>
     constexpr s32 g_array_size(T (&)[N])
     {
@@ -206,26 +208,21 @@ namespace ncore
 
     // helper functions
     template <typename T>
-    inline T* g_advance_ptr(T* ptr, uint_t size)
+    inline T* g_ptr_advance(T* ptr, uint_t size)
     {
         return (T*)((ptr_t)ptr + size);
     }
+
     template <typename T>
-    inline T* g_align_ptr(T* ptr, u32 alignment)
+    inline T* g_ptr_align(T* ptr, u32 alignment)
     {
         return (T*)(((ptr_t)ptr + (alignment - 1)) & ~((ptr_t)alignment - 1));
     }
 
-    inline uint_t g_ptr_diff_bytes(void* ptr, void* next_ptr) { return (uint_t)((ptr_t)next_ptr - (ptr_t)ptr); }
-    inline bool   g_ptr_in_range(void* buffer, uint_t size, void* ptr)
-    {
-        ptr_t begin  = (ptr_t)buffer;
-        ptr_t end    = (ptr_t)((uint_t)begin + size);
-        ptr_t cursor = (ptr_t)ptr;
-        return cursor >= begin && cursor < end;
-    }
+    inline uint_t g_ptr_diff_in_bytes(void* ptr, void* next_ptr) { return (uint_t)((ptr_t)next_ptr - (ptr_t)ptr); }
+    inline bool   g_ptr_inside_range(void* buffer, uint_t size_in_bytes, void* ptr) { return (ptr >= buffer) && g_ptr_diff_in_bytes(buffer, ptr) <= size_in_bytes; }
 
-    class alloc_buffer_t : public alloc_t
+    class fixed_buffer_alloc_t : public alloc_t
     {
         byte* m_base;
         byte* m_ptr;
@@ -233,9 +230,9 @@ namespace ncore
         s32   m_cnt;
 
     public:
-        alloc_buffer_t();
+        fixed_buffer_alloc_t();
 
-        void init(byte* buffer, s32 length);
+        void setup(byte* buffer, s32 length);
 
         inline byte*       data() { return m_base; }
         inline byte const* data() const { return m_base; }
@@ -252,9 +249,9 @@ namespace ncore
     protected:
         virtual void* v_allocate(u32 size, u32 align)
         {
-            if ((g_align_ptr(m_ptr, align) + size) <= (m_base + m_size))
+            if ((g_ptr_align(m_ptr, align) + size) <= (m_base + m_size))
             {
-                u8* ptr = g_align_ptr(m_ptr, align);
+                u8* ptr = g_ptr_align(m_ptr, align);
                 m_ptr   = ptr + size;
                 m_cnt += 1;
                 return ptr;
@@ -266,7 +263,7 @@ namespace ncore
         {
             if (p != nullptr)
             {
-                ASSERT(g_ptr_in_range(m_base, (uint_t)cap(), p));
+                ASSERT(g_ptr_inside_range(m_base, (uint_t)cap(), p));
                 ASSERT(m_cnt > 0);
                 m_cnt -= 1;
                 if (m_cnt == 0)
@@ -274,6 +271,86 @@ namespace ncore
             }
         }
     };
+
+    template <typename T>
+    class fixed_pool_alloc_t : public pool_t<T>
+    {
+        T*  m_base;
+        u32 m_free_head;
+        u32 m_free_index;
+        s32 m_size;
+        s32 m_capacity;
+
+    public:
+        fixed_pool_alloc_t()
+            : m_base(nullptr)
+            , m_free_head(0xFFFFFFFF)
+            , m_free_index(0)
+            , m_size(0)
+            , m_capacity(0)
+        {
+        }
+
+        void setup(T* pool, s32 number_of_elements)
+        {
+            m_base     = pool;
+            m_capacity = number_of_elements;
+            reset();
+        }
+
+        inline T*       data() { return m_base; }
+        inline T const* data() const { return m_base; }
+        inline s32      cap() const { return m_capacity; }
+        inline s32      size() const { return m_size; }
+        inline void     reset()
+        {
+            m_free_head  = 0xFFFFFFFF;
+            m_free_index = 0;
+            m_size       = 0;
+        }
+
+        DCORE_CLASS_PLACEMENT_NEW_DELETE
+
+    protected:
+        virtual u32   v_allocsize() const { return sizeof(T); }
+        virtual void* v_idx2ptr(u32 index) { return m_base + index; }
+        virtual u32   v_ptr2idx(void const* ptr) const { return (u32)((T*)ptr - m_base); }
+
+        virtual void* v_allocate()
+        {
+            if (m_free_head != 0xFFFFFFFF)
+            {
+                u32 const index = m_free_head;
+                m_free_head     = *((u32 const*)m_base[index]);
+                m_size += 1;
+                return v_idx2ptr(index);
+            }
+            else if (m_free_index < m_capacity)
+            {
+                u32 const index = m_free_index;
+                m_free_index += 1;
+                m_size += 1;
+                return v_idx2ptr(index);
+            }
+            return nullptr;
+        }
+
+        virtual void v_deallocate(void* p)
+        {
+            if (p != nullptr)
+            {
+                ASSERT(g_ptr_inside_range(m_base, (uint_t)m_free_index * sizeof(T), p));
+                ASSERT(m_size > 0);
+
+                u32  item_index = v_ptr2idx(p);
+                u32* item_ptr   = (u32*)p;
+                *item_ptr       = m_free_head;
+                m_free_head     = item_index;
+                m_size -= 1;
+            }
+        }
+    };
+
 }  // namespace ncore
 
 #endif  // __CCORE_ALLOCATOR_H__
