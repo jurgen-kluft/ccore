@@ -262,9 +262,10 @@ namespace ncore
 //     size_t n = CC_OFFSETOF(A, y);
 //
 #if defined(__GNUC__)  // We can't use GCC 4's __builtin_offsetof because it mistakenly complains about non-PODs that are really PODs.
-#    define CC_OFFSETOF(struct_, member_) ((size_t)(((uintptr_t)&reinterpret_cast<const volatile char&>((((struct_*)65536)->member_))) - 65536))
+#    define CC_OFFSETOF(struct_, member_) ((size_t)(((uptr_t)&reinterpret_cast<const volatile char&>((((struct_*)65536)->member_))) - 65536))
 #else
-#    define CC_OFFSETOF(struct_, member_) offsetof(struct_, member_)
+//#    define CC_OFFSETOF(struct_, member_) offsetof(struct_, member_)
+#    define CC_OFFSETOF(struct_, member_) ((size_t)(((uptr_t)&reinterpret_cast<const volatile char&>((((struct_*)65536)->member_))) - 65536))
 #endif
 
 // ------------------------------------------------------------------------
