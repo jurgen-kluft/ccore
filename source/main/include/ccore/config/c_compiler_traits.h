@@ -262,10 +262,10 @@ namespace ncore
 //     size_t n = CC_OFFSETOF(A, y);
 //
 #if defined(__GNUC__)  // We can't use GCC 4's __builtin_offsetof because it mistakenly complains about non-PODs that are really PODs.
-#    define CC_OFFSETOF(struct_, member_) ((size_t)(((uptr_t)&reinterpret_cast<const volatile char&>((((struct_*)65536)->member_))) - 65536))
+#    define CC_OFFSETOF(struct_, member_) ((size_t)(((uptr_t) & reinterpret_cast<const volatile char&>((((struct_*)65536)->member_))) - 65536))
 #else
-//#    define CC_OFFSETOF(struct_, member_) offsetof(struct_, member_)
-#    define CC_OFFSETOF(struct_, member_) ((size_t)(((uptr_t)&reinterpret_cast<const volatile char&>((((struct_*)65536)->member_))) - 65536))
+// #    define CC_OFFSETOF(struct_, member_) offsetof(struct_, member_)
+#    define CC_OFFSETOF(struct_, member_) ((size_t)(((uptr_t) & reinterpret_cast<const volatile char&>((((struct_*)65536)->member_))) - 65536))
 #endif
 
 // ------------------------------------------------------------------------
@@ -1165,17 +1165,22 @@ namespace ncore
 #ifndef CC_FORCE_INLINE
 #    if defined(CC_COMPILER_MSVC)
 #        define CC_FORCE_INLINE __forceinline
+#        define D_FORCEINLINE   __forceinline
 #    elif defined(CC_COMPILER_GNUC) && (((__GNUC__ * 100) + __GNUC_MINOR__) >= 301) || defined(CC_COMPILER_CLANG)
 #        if defined(__cplusplus)
 #            define CC_FORCE_INLINE inline __attribute__((always_inline))
+#            define D_FORCEINLINE   inline __attribute__((always_inline))
 #        else
 #            define CC_FORCE_INLINE __inline__ __attribute__((always_inline))
+#            define D_FORCEINLINE   __inline__ __attribute__((always_inline))
 #        endif
 #    else
 #        if defined(__cplusplus)
 #            define CC_FORCE_INLINE inline
+#            define D_FORCEINLINE   inline
 #        else
 #            define CC_FORCE_INLINE __inline
+#            define D_FORCEINLINE   __inline
 #        endif
 #    endif
 #endif
