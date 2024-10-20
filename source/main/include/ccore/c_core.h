@@ -325,40 +325,6 @@ namespace ncore
 #endif
 
     //==============================================================================
-    // Handle type
-    struct handle_t
-    {
-        union handle
-        {
-            struct
-            {
-                u16x4 v16x4;
-            };
-            struct
-            {
-                u32 v32x1;
-                u16 v16x2;
-            };
-            struct
-            {
-                u32 v32x2;
-            };
-            u64 v64x1;
-        };
-
-        handle h;
-
-        inline bool is_valid() const { return h.v64x1 != D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF); }
-        inline bool invalid() const { return h.v64x1 == D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF); }
-        inline bool operator==(handle_t const& other) const { return h.v64x1 == other.h.v64x1; }
-        inline bool operator!=(handle_t const& other) const { return h.v64x1 != other.h.v64x1; }
-        inline bool operator<(handle_t const& other) const { return h.v64x1 < other.h.v64x1; }
-        inline bool operator>(handle_t const& other) const { return h.v64x1 > other.h.v64x1; }
-        inline bool operator<=(handle_t const& other) const { return h.v64x1 <= other.h.v64x1; }
-        inline bool operator>=(handle_t const& other) const { return h.v64x1 >= other.h.v64x1; }
-    };
-
-    //==============================================================================
     // Min/Max values
     //==============================================================================
 
