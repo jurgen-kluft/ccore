@@ -23,6 +23,25 @@ namespace ncore
     //    - TARGET_TEST
     //    - TARGET_PROFILE
 
+#ifdef _DEBUG
+#    if !defined(TARGET_DEBUG)
+#        define TARGET_DEBUG
+#    endif
+#    define D_DEBUG
+#    define D_ASSERT
+#elif defined(NDEBUG)
+#    if !defined(TARGET_DEBUG) && !defined(TARGET_RELEASE) && !defined(TARGET_FINAL)
+#        define TARGET_RELEASE
+#    endif
+#else
+#    if !defined(TARGET_DEBUG) && !defined(TARGET_RELEASE) && !defined(TARGET_FINAL)
+#        define TARGET_RELEASE
+#    endif
+#endif
+
+    // ------------------------------------------------------------------------
+    // Check if the configuration is debug, release or final
+
 // Check if the configuration is debug, release or final
 #if !defined(TARGET_DEV) && !defined(TARGET_RETAIL) && !defined(TARGET_TEST) && !defined(TARGET_PROFILE)
 #    define TARGET_DEV 1
@@ -133,6 +152,45 @@ namespace ncore
     typedef u64 size_t;
     typedef s64 ssize_t;
 #endif
+
+    struct u16x4
+    {
+        u16 v[4];
+    };
+    struct u16x2
+    {
+        u16 v[2];
+    };
+    struct u32x2
+    {
+        u32 v[2];
+    };
+
+    struct f32x2
+    {
+        f32 v[2];
+    };
+    struct f32x3
+    {
+        f32 v[3];
+    };
+    struct f32x4
+    {
+        f32 v[4];
+    };
+
+    struct f64x2
+    {
+        f64 v[2];
+    };
+    struct f64x3
+    {
+        f64 v[3];
+    };
+    struct f64x4
+    {
+        f64 v[4];
+    };
 
     //==============================================================================
     // ASCII, UTF 8, UTF 16, UTF 32
@@ -265,6 +323,40 @@ namespace ncore
 #        endif
 #    endif
 #endif
+
+    //==============================================================================
+    // Handle type
+    struct handle_t
+    {
+        union handle
+        {
+            struct
+            {
+                u16x4 v16x4;
+            };
+            struct
+            {
+                u32 v32x1;
+                u16 v16x2;
+            };
+            struct
+            {
+                u32 v32x2;
+            };
+            u64 v64x1;
+        };
+
+        handle h;
+
+        inline bool is_valid() const { return h.v64x1 != D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF); }
+        inline bool invalid() const { return h.v64x1 == D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF); }
+        inline bool operator==(handle_t const& other) const { return h.v64x1 == other.h.v64x1; }
+        inline bool operator!=(handle_t const& other) const { return h.v64x1 != other.h.v64x1; }
+        inline bool operator<(handle_t const& other) const { return h.v64x1 < other.h.v64x1; }
+        inline bool operator>(handle_t const& other) const { return h.v64x1 > other.h.v64x1; }
+        inline bool operator<=(handle_t const& other) const { return h.v64x1 <= other.h.v64x1; }
+        inline bool operator>=(handle_t const& other) const { return h.v64x1 >= other.h.v64x1; }
+    };
 
     //==============================================================================
     // Min/Max values

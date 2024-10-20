@@ -195,8 +195,8 @@ namespace ncore
 
 #    define DASSERTCT(expr) \
         do                  \
-        {                   \
-        } while (ncore::CompileTimeAssert < (expr) != 0 > ::OK);
+        {        static_assert(expr, "");           \
+        } while (0);
 
 #    define DASSERTSL(level, expr, str)                                                                                       \
         do                                                                                                                    \
