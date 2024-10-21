@@ -162,9 +162,9 @@ namespace ncore
 
     // Array Size (should we make DArrayCount obsolete?)
     template <typename T, uint_t N>
-    constexpr s32 g_array_size(T (&)[N])
+    constexpr u32 g_array_size(T (&)[N])
     {
-        return (s32)N;
+        return (u32)N;
     }
 
     template <typename T>
