@@ -174,7 +174,7 @@ namespace ncore
         return (T*)ptr;
     }
 
-    inline void* g_allocate_and_memset(alloc_t* alloc, u32 size, u32 value = 0xCDCDCDCD)
+    inline void* g_allocate_and_memset(alloc_t* alloc, u32 size, u32 value)
     {
         u32 const memsize = size;
         void*     ptr     = alloc->allocate(memsize);
@@ -191,10 +191,18 @@ namespace ncore
     }
 
     template <typename T>
-    inline T* g_allocate_array_and_memset(alloc_t* a, u32 maxsize, u32 value = 0xCDCDCDCD)
+    inline T* g_allocate_array_and_memset(alloc_t* a, u32 maxsize, u32 value)
     {
         u32 const memsize = maxsize * sizeof(T);
         void*     ptr     = g_allocate_and_memset(a, memsize, value);
+        return (T*)ptr;
+    }
+
+    template <typename T>
+    inline T* g_allocate_array_and_clear(alloc_t* a, u32 maxsize)
+    {
+        u32 const memsize = maxsize * sizeof(T);
+        void*     ptr     = g_allocate_and_memset(a, memsize, 0);
         return (T*)ptr;
     }
 
