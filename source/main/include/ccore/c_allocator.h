@@ -176,6 +176,7 @@ namespace ncore
 
     inline void* g_allocate_and_memset(alloc_t* alloc, u32 size, u32 value)
     {
+        ASSERTS(size > 0, "error: allocation request for an array of size 0");
         u32 const memsize = size;
         void*     ptr     = alloc->allocate(memsize);
         ASSERT(ptr != nullptr && ((ptr_t)ptr & 3) == 0);  // Ensure 4 byte alignment
@@ -193,6 +194,7 @@ namespace ncore
     template <typename T>
     inline T* g_allocate_array_and_memset(alloc_t* a, u32 maxsize, u32 value)
     {
+        ASSERTS(maxsize > 0, "error: allocation request for an array of size 0");
         u32 const memsize = maxsize * sizeof(T);
         void*     ptr     = g_allocate_and_memset(a, memsize, value);
         return (T*)ptr;
@@ -201,6 +203,7 @@ namespace ncore
     template <typename T>
     inline T* g_allocate_array_and_clear(alloc_t* a, u32 maxsize)
     {
+        ASSERTS(maxsize > 0, "error: allocation request for an array of size 0");
         u32 const memsize = maxsize * sizeof(T);
         void*     ptr     = g_allocate_and_memset(a, memsize, 0);
         return (T*)ptr;
