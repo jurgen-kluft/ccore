@@ -7,7 +7,7 @@
 
 namespace ncore
 {
-    /// Stores a callback for a function taking 1 parameters.
+    /// Stores a callback for a function taking N parameters.
     ///\tparam R Callback function return type.
     template <typename R, typename... Args>
     class callback_t
