@@ -5,6 +5,8 @@
 #    pragma once
 #endif
 
+#include "ccore/c_allocator.h"
+
 namespace ncore
 {
     /// Stores a callback for a function taking N parameters.
