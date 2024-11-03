@@ -167,13 +167,6 @@ namespace ncore
         return (u32)N;
     }
 
-    template <typename T>
-    inline T* g_allocate_array(alloc_t* a, u32 maxsize)
-    {
-        void* ptr = a->allocate(maxsize * sizeof(T));
-        return (T*)ptr;
-    }
-
     inline void* g_allocate_and_memset(alloc_t* alloc, u32 size, u32 value)
     {
         ASSERTS(size > 0, "error: allocation request for an array of size 0");
@@ -189,6 +182,33 @@ namespace ncore
         while (clr8 < end8)
             *clr8++ = (u8)value;
         return (void*)ptr;
+    }
+
+    template <typename T>
+    inline T* g_allocate(alloc_t* a)
+    {
+        void* ptr = a->allocate(sizeof(T));
+        return (T*)ptr;
+    }
+
+    template <typename T>
+    inline T* g_allocate_and_clear(alloc_t* a)
+    {
+        void* ptr = g_allocate_and_memset(a, sizeof(T), 0);
+        return (T*)ptr;
+    }
+
+    template <typename T>
+    inline void g_deallocate(alloc_t* a, T* ptr)
+    {
+        a->deallocate(ptr);
+    }
+
+    template <typename T>
+    inline T* g_allocate_array(alloc_t* a, u32 maxsize)
+    {
+        void* ptr = a->allocate(maxsize * sizeof(T));
+        return (T*)ptr;
     }
 
     template <typename T>
