@@ -1,3 +1,5 @@
+#include "ccore/c_allocator.h"
+#include "ccore/c_integer.h"
 #include "ccore/c_duomap.h"
 
 namespace ncore
@@ -14,47 +16,118 @@ namespace ncore
     // 32 * 32 * 32 * 32 * 2048 = 128M, 256M, 512M, 1G, 2G bits max (num binnodes = 32768, num leafnodes = 524288)
 
     // If size <= 128 then only use bintree_t (fully allocated)
-    // Else If size <= (32 * 64 = 2K) then use one binleaf_t (fully allocated)
+    // Else If size <= (32 * 64 = 2K) then use one bitmap_t (fully allocated)
     // Else If size <= (32 * 32 * 2048 = 64K), 2 levels, (can be partially allocated, some children may be null)
     // Else If size <= (32 * 32 * 32 * 2048 = 2M), 3 levels (can be partially allocated, some children may be null)
     // Else If size <= (32 * 32 * 32 * 32 * 2048 = 64M), 4 levels (can be partially allocated, some children may be null)
 
-    // If bin0 = 1 (no zeros) and bin1 = 1 (ones) then the leaf is all 1, so we can delete it
-    // If bin0 = 1 (no zeros) and bin1 = 0 (no ones) then we are uninitialized and the child pointer is not valid
-    // If bin0 = 0 (zeros) and bin1 = 0 (no ones) then the leaf is all 0, so we can delete it
+    // If bin0 = 1 (no   zeros) and bin1 = 1 (some ones) then the leaf is all 1, so we can delete it
+    // If bin0 = 0 (some zeros) and bin1 = 0 (no   ones) then the leaf is all 0, so we can delete it
 
-    const u32 N = 32;
+    struct node_t;
 
-    // N is dynamic: 2(32) / 4(64) / 8(128) / 16(256) / 32(512) nodes
-    struct binnode_t
+    struct tree_t
     {
-        u32        m_bin0[N];  // Track '0' bits
-        u32        m_bin1[N];  // Track '1' bits
-        binnode_t* m_children[N];
+        u32     m_map0;
+        u32     m_map1;
+        node_t* m_children;
     };
 
-    // Can have any number of bins, 4 / 8 / 16 / 32
+    struct node_t
+    {
+        u32     m_map0;
+        u32     m_map1;
+        node_t* m_node;
+    };
+
     struct bitmap_t
     {
-        u64 m_bins[32];
+        u32  m_map0;
+        u32  m_map1;
+        u64* m_bitmap;  // array of N u64 bitmaps (children), 4 / 8 / 12 / 16 / 20 / 24 / 28 / 32
     };
 
-    // We have multiple 'types' 
-    struct duotree1_t
+    void setup(alloc_t* allocator, bintree_t* bt, u32 const maxbits)
     {
-        u32       m_bin0;
-        u32       m_bin1;
-        bitmap_t* m_leaf;
-    };
+        if (maxbits <= 128)
+        {
+            bt->m_bitmap[0] = 0;
+            bt->m_bitmap[1] = 0;
+        }
+        else if (maxbits <= 2048)
+        {
+            bitmap_t* node = (bitmap_t*)bt;
+            node->m_map0   = 0;
+            node->m_map1   = 0;
+            u32 const N    = (((maxbits + 63) >> 6) + 3) >> 2;
+            node->m_bitmap = g_allocate_array_and_clear<u64>(allocator, N * 4);
+        }
+        else if (maxbits <= 65536)
+        {
+            node_t* node = (node_t*)bt;
+            node->m_map0 = 0;
+            node->m_map1 = 0;
+            node->m_node = g_allocate_array_and_clear<bitmap_t>(allocator, 32);
+        }
+        else
+        {
+            node_t* node = (node_t*)bt;
+            node->m_map0 = 0;
+            node->m_map1 = 0;
+            node->m_node = g_allocate_array_and_clear<node_t>(allocator, 32);
+        }
+    }
 
-    // One binnode with N children
-    struct duotree2_t
+    void clear(alloc_t* allocator, bintree_t* bt, u32 const maxbits);
+
+    void set(alloc_t* allocator, bintree_t* bt, u32 const maxbits, u32 bit)
     {
-        u32        m_bin0;
-        u32        m_bin1;
-        binnode_t* m_node;
-    };
+        if (maxbits <= 128)
+        {
+            u32 const index = bit >> 6;
+            u32 const mask  = 1 << (bit & 63);
+            bt->m_bitmap[index] |= mask;
+        }
+        else
+        {
+            node_t* node = (node_t*)bt;
 
+            // 5 : 5 : 5 : 5 : 10
+            s8 levels = (math::mostSignificantBit(maxbits - 1) / 5);
+            if (levels >= 2)
+            {
+                levels -= 2;
 
+                s8 ls[4];
+                s8 l = 0;
+                switch (levels)
+                {
+                    case 3: ls[l++] = bit_range & 31; bit_range >>= 5;  // fall through
+                    case 2: ls[l++] = bit_range & 31; bit_range >>= 5;  // fall through
+                    case 1: ls[l++] = bit_range & 31; bit_range >>= 5;  // fall through
+                    case 0: ls[l++] = bit_range & 31;                   // fall through
+                }
+
+                while (levels > 0)
+                {
+                    u32 const index = ls[levels - 1];
+                    if (node->m_node[index].m_node == nullptr)
+                    {
+                        node->m_node = g_allocate_array_and_clear<node_t>(allocator, 32);
+                    }
+                    node = &((node_t*)node->m_node)[index];
+                    levels -= 1;
+                }
+            }
+
+            bitmap_t* bitmap = (bitmap_t*)node;
+            if (bitmap->m_bitmap == nullptr)
+            {
+                bitmap->m_bitmap = g_allocate_array_and_clear<u64>(allocator, 32);
+            }
+
+            u32 const index = 
+        }
+    }
 
 };  // namespace ncore
