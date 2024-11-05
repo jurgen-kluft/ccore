@@ -4,61 +4,6 @@
 
 using namespace ncore;
 
-static s8 s16_compare(const void* const a, const void* const b, const void*)
-{
-    const ncore::s16* aa = (const ncore::s16*)a;
-    const ncore::s16* bb = (const ncore::s16*)b;
-    if (*aa < *bb)
-        return -1;
-    else if (*aa > *bb)
-        return 1;
-    return 0;
-}
-
-static s8 s32_compare(const void* const a, const void* const b, const void*)
-{
-    const ncore::s32* aa = (const ncore::s32*)a;
-    const ncore::s32* bb = (const ncore::s32*)b;
-    if (*aa < *bb)
-        return -1;
-    else if (*aa > *bb)
-        return 1;
-    return 0;
-}
-
-static s8 s64_compare(const void* const a, const void* const b, const void*)
-{
-    const ncore::s64* aa = (const ncore::s64*)a;
-    const ncore::s64* bb = (const ncore::s64*)b;
-    if (*aa < *bb)
-        return -1;
-    else if (*aa > *bb)
-        return 1;
-    return 0;
-}
-
-static s8 f32_compare(const void* const a, const void* const b, const void*)
-{
-    const ncore::f32* aa = (const ncore::f32*)a;
-    const ncore::f32* bb = (const ncore::f32*)b;
-    if (*aa < *bb)
-        return -1;
-    else if (*aa > *bb)
-        return 1;
-    return 0;
-}
-
-static s8 f64_compare(const void* const a, const void* const b, const void*)
-{
-    const ncore::f64* aa = (const ncore::f64*)a;
-    const ncore::f64* bb = (const ncore::f64*)b;
-    if (*aa < *bb)
-        return -1;
-    else if (*aa > *bb)
-        return 1;
-    return 0;
-}
-
 UNITTEST_SUITE_BEGIN(test_qsort)
 {
     UNITTEST_FIXTURE(main)
@@ -78,7 +23,7 @@ UNITTEST_SUITE_BEGIN(test_qsort)
                                         3062, 6811, 3667, 5498, 2410, 1468, 5090, 7855, 5362, 5508, 1532, 8696, 4644, 1220, 1598, 1491, 7244, 3116, 5621, 3372, 6869, 7087, 6472, 263,  4512, 9385, 1693, 9318, 8505, 4571, 8187, 9396, 2464,
                                         7508, 3353, 4011, 8522, 1652, 1667, 1235, 557,  8133, 1860, 1884, 6452, 6419, 2101, 5942, 7999, 6949, 4348, 1751, 6664, 8516, 1039, 3957, 3743, 8985, 0,    32767};
             s32 const  n             = sizeof(number_list) / sizeof(number_list[0]);
-            g_qsort(number_list, n, s16_compare, nullptr);
+            g_qsort(number_list, n);
             for (s32 i = 0; i < (n - 1); ++i)
                 CHECK_TRUE(number_list[i] <= number_list[i + 1]);
 

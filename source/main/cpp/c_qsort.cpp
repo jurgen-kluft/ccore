@@ -7,7 +7,7 @@ namespace ncore
     namespace __qsort
     {
         template <typename T>
-        static inline T minimum(T a, T b)
+        static inline T sMinimum(T a, T b)
         {
             return (a) < (b) ? a : b;
         }
@@ -17,7 +17,7 @@ namespace ncore
         {
             while (n > 0)
             {
-                T t = *a;
+                T t  = *a;
                 *a++ = *b;
                 *b++ = t;
                 --n;
@@ -28,6 +28,18 @@ namespace ncore
         static inline T* sMed3(T* a, T* b, T* c, s8 (*cmp)(const void* const, const void* const, const void*), const void* data)
         {
             return cmp(a, b, data) < 0 ? (cmp(b, c, data) < 0 ? b : (cmp(a, c, data) < 0 ? c : a)) : (cmp(b, c, data) > 0 ? b : (cmp(a, c, data) < 0 ? a : c));
+        }
+
+        template <typename T>
+        static inline s8 sCmp(T* a, T* b)
+        {
+            return *a < *b ? -1 : *a > *b ? 1 : 0;
+        }
+
+        template <typename T>
+        static inline T* sMed3T(T* a, T* b, T* c)
+        {
+            return sCmp(a, b) < 0 ? (sCmp(b, c) < 0 ? b : (sCmp(a, c) < 0 ? c : a)) : (sCmp(b, c) > 0 ? b : (sCmp(a, c) < 0 ? a : c));
         }
 
     }  // namespace __qsort
@@ -105,10 +117,10 @@ namespace ncore
         }
 
         pn = (u8*)a + n * es;
-        r  = (s32)(__qsort::minimum(pa - (u8*)a, pb - pa));
+        r  = (s32)(__qsort::sMinimum(pa - (u8*)a, pb - pa));
         //__qsort_VecSwap((u8*)a, pb - r, r);
         __qsort::sSwap((u8*)a, pb - r, r);
-        r = (s32)(__qsort::minimum(pd - pc, pn - pd - es));
+        r = (s32)(__qsort::sMinimum(pd - pc, pn - pd - es));
         //__qsort_VecSwap(pb, pn - r, r);
         __qsort::sSwap(pb, pn - r, r);
 
@@ -125,16 +137,16 @@ namespace ncore
     }
 
     template <typename T>
-    void g_qsortT(T* a, s32 n, s8 (*cmp)(const void*, const void*, const void*), const void* user_data)
+    void g_qsortT(T* a, u32 n)
     {
-        T *pa, *pb, *pc, *pd, *pl, *pm, *pn;
-        s32  d, r, swap_cnt;
+        T * pa, *pb, *pc, *pd, *pl, *pm, *pn;
+        s32 d, r, swap_cnt;
     loop:
         swap_cnt = 0;
         if (n < 7)
         {
             for (pm = (T*)a + 1; pm < (T*)a + n * 1; pm += 1)
-                for (pl = pm; pl > (T*)a && cmp(pl - 1, pl, user_data) > 0; pl -= 1)
+                for (pl = pm; pl > (T*)a && __qsort::sCmp(pl - 1, pl) > 0; pl -= 1)
                     __qsort::sSwap(pl, pl - 1, 1);
             return;
         }
@@ -146,18 +158,18 @@ namespace ncore
             if (n > 40)
             {
                 d  = (n / 8) * 1;
-                pl = __qsort::sMed3(pl, pl + d, pl + 2 * d, cmp, user_data);
-                pm = __qsort::sMed3(pm - d, pm, pm + d, cmp, user_data);
-                pn = __qsort::sMed3(pn - 2 * d, pn - d, pn, cmp, user_data);
+                pl = __qsort::sMed3T(pl, pl + d, pl + 2 * d);
+                pm = __qsort::sMed3T(pm - d, pm, pm + d);
+                pn = __qsort::sMed3T(pn - 2 * d, pn - d, pn);
             }
-            pm = __qsort::sMed3(pl, pm, pn, cmp, user_data);
+            pm = __qsort::sMed3T(pl, pm, pn);
         }
         __qsort::sSwap(a, pm, 1);
         pa = pb = a + 1;
         pc = pd = a + (n - 1) * 1;
         for (;;)
         {
-            while (pb <= pc && (r = cmp(pb, a, user_data)) <= 0)
+            while (pb <= pc && (r = __qsort::sCmp(pb, a)) <= 0)
             {
                 if (r == 0)
                 {
@@ -168,7 +180,7 @@ namespace ncore
                 pb += 1;
             }
 
-            while (pb <= pc && (r = cmp(pc, a, user_data)) >= 0)
+            while (pb <= pc && (r = __qsort::sCmp(pc, a)) >= 0)
             {
                 if (r == 0)
                 {
@@ -191,19 +203,19 @@ namespace ncore
         if (swap_cnt == 0)  // Switch to insertion sort
         {
             for (pm = a + 1; pm < a + n * 1; pm += 1)
-                for (pl = pm; pl > a && cmp(pl - 1, pl, user_data) > 0; pl -= 1)
+                for (pl = pm; pl > a && (__qsort::sCmp(pl - 1, pl)) > 0; pl -= 1)
                     __qsort::sSwap(pl, pl - 1, 1);
             return;
         }
 
         pn = a + n * 1;
-        r  = (s32)(__qsort::minimum(pa - a, pb - pa));
+        r  = (s32)(__qsort::sMinimum(pa - a, pb - pa));
         __qsort::sSwap(a, pb - r, r);
-        r = (s32)(__qsort::minimum(pd - pc, pn - pd - 1));
+        r = (s32)(__qsort::sMinimum(pd - pc, pn - pd - 1));
         __qsort::sSwap(pb, pn - r, r);
 
         if ((r = (s32)(pb - pa)) > 1)
-            g_qsortT(a, r / 1, cmp, user_data);
+            g_qsortT(a, r / 1);
 
         if ((r = (s32)(pd - pc)) > 1)
         {
@@ -216,49 +228,23 @@ namespace ncore
 
     // Unsigned 16, 32, 64 bit integer
 
-    void g_qsort(u16* a, s32 n, s8 (*cmp)(const void*, const void*, const void*), const void* user_data)
-    {
-        g_qsortT<u16>(a, n, cmp, user_data);
-    }
-
-    void g_qsort(u32* a, s32 n, s8 (*cmp)(const void*, const void*, const void*), const void* user_data)
-    {
-        g_qsortT<u32>(a, n, cmp, user_data);
-    }
-
-    void g_qsort(u64* a, s32 n, s8 (*cmp)(const void*, const void*, const void*), const void* user_data)
-    {
-        g_qsortT<u64>(a, n, cmp, user_data);
-    }
+    void g_qsort(u16* a, u32 n) { g_qsortT<u16>(a, n); }
+    void g_qsort(u32* a, u32 n) { g_qsortT<u32>(a, n); }
+    void g_qsort(u64* a, u32 n) { g_qsortT<u64>(a, n); }
 
     // Signed 16, 32, 64 bit integer
 
-    void g_qsort(s16* a, s32 n, s8 (*cmp)(const void*, const void*, const void*), const void* user_data)
-    {
-        g_qsortT<s16>(a, n, cmp, user_data);
-    }
+    void g_qsort(s16* a, u32 n) { g_qsortT<s16>(a, n); }
+    void g_qsort(s32* a, u32 n) { g_qsortT<s32>(a, n); }
+    void g_qsort(s64* a, u32 n) { g_qsortT<s64>(a, n); }
 
-    void g_qsort(s32* a, s32 n, s8 (*cmp)(const void*, const void*, const void*), const void* user_data)
-    {
-        g_qsortT<s32>(a, n, cmp, user_data);
-    }
+    // Floating point 32, 64 bit
 
-    void g_qsort(s64* a, s32 n, s8 (*cmp)(const void*, const void*, const void*), const void* user_data)
-    {
-        g_qsortT<s64>(a, n, cmp, user_data);
-    }
+    void g_qsort(f32* a, u32 n) { g_qsortT<f32>(a, n); }
+    void g_qsort(f64* a, u32 n) { g_qsortT<f64>(a, n); }
 
     // Generic QuickSort
 
-    void g_qsort(void* a, s32 n, s32 es, s8 (*cmp)(const void*, const void*, const void*), const void* user_data)
-    {
-        switch (es)
-        {
-            case 2: g_qsort((u16*)a, n, cmp, user_data); break;
-            case 4: g_qsort((u32*)a, n, cmp, user_data); break;
-            case 8: g_qsort((u64*)a, n, cmp, user_data); break;
-            default: g_qsortN((u8*)a, n, es, cmp, user_data); break;
-        }
-    }
+    void g_qsort(void* a, s32 n, s32 es, s8 (*cmp)(const void*, const void*, const void*), const void* user_data) { g_qsortN((u8*)a, n, es, cmp, user_data); }
 
 };  // namespace ncore
