@@ -9,7 +9,7 @@ namespace ncore
     // --------------------------------------------------------------------------------
     // --------------------------------------------------------------------------------
 
-    void setup(binmap8_t* bt, u32 const maxbits)
+    void g_setup(binmap8_t* bt, u32 const maxbits)
     {
         bt->m_bin0[0] = 0;
         bt->m_bin0[1] = 0;
@@ -17,7 +17,7 @@ namespace ncore
         bt->m_bin0[3] = 0;
     }
 
-    void clear(binmap8_t* bt, u32 const maxbits)
+    void g_clear(binmap8_t* bt, u32 const maxbits)
     {
         bt->m_bin0[0] = 0;
         bt->m_bin0[1] = 0;
@@ -25,29 +25,33 @@ namespace ncore
         bt->m_bin0[3] = 0;
     }
 
-    void set(binmap8_t* bt, u32 const maxbits, u32 bit)
+    void g_set(binmap8_t* bt, u32 const maxbits, u32 bit)
     {
+        ASSERT(bit < maxbits && maxbits <= 256);
         u32 const i = bit >> 6;
         u32 const b = bit & 63;
         bt->m_bin0[i] |= (u64)1 << b;
     }
 
-    void clr(binmap8_t* bt, u32 const maxbits, u32 bit)
+    void g_clr(binmap8_t* bt, u32 const maxbits, u32 bit)
     {
+        ASSERT(bit < maxbits && maxbits <= 256);
         u32 const i = bit >> 6;
         u32 const b = bit & 63;
         bt->m_bin0[i] &= ~((u64)1 << b);
     }
 
-    bool get(binmap8_t* bt, u32 const maxbits, u32 bit)
+    bool g_get(binmap8_t* bt, u32 const maxbits, u32 bit)
     {
+        ASSERT(bit < maxbits && maxbits <= 256);
         u32 const i = bit >> 6;
         u32 const b = bit & 63;
         return (bt->m_bin0[i] & ((u64)1 << b)) != 0;
     }
 
-    s32  find(binmap8_t* bt, u32 const maxbits)
+    s32  g_find(binmap8_t* bt, u32 const maxbits)
     {
+        ASSERT(maxbits <= 256);
         for (u32 i = 0; i < 4; ++i)
         {
             if (bt->m_bin0[0] != D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
@@ -56,8 +60,9 @@ namespace ncore
         return -1;
     }
 
-    s32  find_and_set(binmap8_t* bt, u32 const maxbits)
+    s32  g_find_and_set(binmap8_t* bt, u32 const maxbits)
     {
+        ASSERT(maxbits <= 256);
         for (u32 i = 0; i < 4; ++i)
         {
             if (bt->m_bin0[0] != D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
@@ -73,14 +78,17 @@ namespace ncore
     // --------------------------------------------------------------------------------
     // --------------------------------------------------------------------------------
 
-    void setup(alloc_t* allocator, binmap12_t* bt, u32 const maxbits)
+    // @note; we could also have 1 bit in bin0 cover 2 or 4 u64 in bin1, we would get a
+    //        hit on performance but we could handle more bits in bin1.
+
+    void g_setup(alloc_t* allocator, binmap12_t* bt, u32 const maxbits)
     {
         bt->m_bin0  = 0;
         u32 const size = (maxbits + 63) >> 6;
         bt->m_bin1     = g_allocate_array_and_clear<u64>(allocator, size);
     }
 
-    void clear(alloc_t* allocator, binmap12_t* bt, u32 const maxbits)
+    void g_clear(alloc_t* allocator, binmap12_t* bt, u32 const maxbits)
     {
         bt->m_bin0  = 0;
         u32 const size = (maxbits + 63) >> 6;
@@ -88,13 +96,13 @@ namespace ncore
             bt->m_bin1[i] = 0;
     }
 
-    void release(alloc_t* allocator, binmap12_t* bt)
+    void g_release(alloc_t* allocator, binmap12_t* bt)
     {
         allocator->deallocate(bt->m_bin1);
         bt->m_bin1 = nullptr;
     }
 
-    void set(binmap12_t* bt, u32 const maxbits, u32 bit)
+    void g_set(binmap12_t* bt, u32 const maxbits, u32 bit)
     {
         u32 const i   = bit >> 6;
         u32 const b   = bit & 63;
@@ -104,7 +112,7 @@ namespace ncore
             bt->m_bin0 |= (u64)1 << i;
     }
 
-    void clr(binmap12_t* bt, u32 const maxbits, u32 bit)
+    void g_clr(binmap12_t* bt, u32 const maxbits, u32 bit)
     {
         u32 const i   = bit >> 6;
         u32 const b   = bit & 63;
@@ -121,7 +129,7 @@ namespace ncore
         return (bt->m_bin1[i] & ((u64)1 << b)) != 0;
     }
 
-    s32 find(binmap12_t* bt, u32 const maxbits)
+    s32 g_find(binmap12_t* bt, u32 const maxbits)
     {
         if (bt->m_bin0 == D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
             return -1;
@@ -129,7 +137,7 @@ namespace ncore
         return math::findFirstBit(~bt->m_bin1[i]) + (i << 6);
     }
 
-    s32 find_set(binmap12_t* bt, u32 const maxbits)
+    s32 g_find_set(binmap12_t* bt, u32 const maxbits)
     {
         if (bt->m_bin0 == D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
             return -1;
