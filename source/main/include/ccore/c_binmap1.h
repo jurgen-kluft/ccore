@@ -36,9 +36,9 @@ namespace ncore
     void g_setup(alloc_t* allocator, binmap12_t* bt, u32 const maxbits);
 
     void g_setup_free_lazy(alloc_t* allocator, binmap12_t* bt, u32 const maxbits);
-    void g_tick_free_lazy(binmap12_t* bt, u32 bit);
+    void g_tick_free_lazy(binmap12_t* bt, u32 const maxbits, u32 bit);
     void g_setup_used_lazy(alloc_t* allocator, binmap12_t* bt, u32 const maxbits);
-    void g_tick_used_lazy(binmap12_t* bt, u32 bit);
+    void g_tick_used_lazy(binmap12_t* bt, u32 const maxbits, u32 bit);
 
     void g_clear(alloc_t* allocator, binmap12_t* bt, u32 const maxbits);
     void g_release(alloc_t* allocator, binmap12_t* bt);

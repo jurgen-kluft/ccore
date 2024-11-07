@@ -90,26 +90,53 @@ namespace ncore
 
     void g_setup_free_lazy(alloc_t* allocator, binmap12_t* bt, u32 const maxbits)
     {
-        bt->m_bin0     = 0xFFFFFFFFFFFFFFFF;
-        u32 const size = (maxbits + 63) >> 6;
-        bt->m_bin1     = g_allocate_array<u64>(allocator, size);
+        bt->m_bin0 = D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF);
+        bt->m_bin1 = g_allocate_array<u64>(allocator, (maxbits + 63) >> 6);
     }
 
-    void g_tick_free_lazy(binmap12_t* bt, u32 bit)
+    void g_tick_free_lazy(binmap12_t* bt, u32 const maxbits, u32 bit)
     {
-        // Slowly initialize this binmap
+        if (bit < maxbits)
+        {
+            u32 wi = bit;
+
+            // bin1
+            {
+                const u32 bi   = wi & (64 - 1);
+                wi             = wi >> 6;
+                const u64 wd   = (bi == 0) ? D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF) : bt->m_bin1[wi];
+                bt->m_bin1[wi] = wd & ~((u64)1 << bi);
+                if (wd != D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
+                    return;
+            }
+            // bin0
+            {
+                const u32 bi = wi & (64 - 1);
+                const u64 wd = (bi == 0) ? D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF) : bt->m_bin0;
+                bt->m_bin0   = wd & ~((u64)1 << bi);
+            }
+        }
     }
 
     void g_setup_used_lazy(alloc_t* allocator, binmap12_t* bt, u32 const maxbits)
     {
-        bt->m_bin0     = 0;
-        u32 const size = (maxbits + 63) >> 6;
-        bt->m_bin1     = g_allocate_array<u64>(allocator, size);
+        bt->m_bin0 = D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF);
+        bt->m_bin1 = g_allocate_array<u64>(allocator, (maxbits + 63) >> 6);
     }
 
-    void g_tick_used_lazy(binmap12_t* bt, u32 bit)
+    void g_tick_used_lazy(binmap12_t* bt, u32 const maxbits, u32 bit)
     {
-        // Slowly initialize this binmap
+        if (bit < maxbits)
+        {
+            // For '0' bit tracking, we need to slowly '1' out bin 1
+            // Don't touch bin 0
+            u32 wi = bit;
+            if ((wi & 31) == 0)
+            {
+                wi             = wi >> 5;
+                bt->m_bin1[wi] = D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF);
+            }
+        }
     }
 
     void g_clear(alloc_t* allocator, binmap12_t* bt, u32 const maxbits)
