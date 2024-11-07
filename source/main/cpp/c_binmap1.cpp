@@ -49,7 +49,7 @@ namespace ncore
         return (bt->m_bin0[i] & ((u64)1 << b)) != 0;
     }
 
-    s32  g_find(binmap8_t* bt, u32 const maxbits)
+    s32 g_find(binmap8_t* bt, u32 const maxbits)
     {
         ASSERT(maxbits <= 256);
         for (u32 i = 0; i < 4; ++i)
@@ -60,7 +60,7 @@ namespace ncore
         return -1;
     }
 
-    s32  g_find_and_set(binmap8_t* bt, u32 const maxbits)
+    s32 g_find_and_set(binmap8_t* bt, u32 const maxbits)
     {
         ASSERT(maxbits <= 256);
         for (u32 i = 0; i < 4; ++i)
@@ -83,14 +83,38 @@ namespace ncore
 
     void g_setup(alloc_t* allocator, binmap12_t* bt, u32 const maxbits)
     {
-        bt->m_bin0  = 0;
+        bt->m_bin0     = 0;
         u32 const size = (maxbits + 63) >> 6;
         bt->m_bin1     = g_allocate_array_and_clear<u64>(allocator, size);
     }
 
+    void g_setup_free_lazy(alloc_t* allocator, binmap12_t* bt, u32 const maxbits)
+    {
+        bt->m_bin0     = 0xFFFFFFFFFFFFFFFF;
+        u32 const size = (maxbits + 63) >> 6;
+        bt->m_bin1     = g_allocate_array<u64>(allocator, size);
+    }
+
+    void g_tick_free_lazy(binmap12_t* bt, u32 bit)
+    {
+        // Slowly initialize this binmap
+    }
+
+    void g_setup_used_lazy(alloc_t* allocator, binmap12_t* bt, u32 const maxbits)
+    {
+        bt->m_bin0     = 0;
+        u32 const size = (maxbits + 63) >> 6;
+        bt->m_bin1     = g_allocate_array<u64>(allocator, size);
+    }
+
+    void g_tick_used_lazy(binmap12_t* bt, u32 bit)
+    {
+        // Slowly initialize this binmap
+    }
+
     void g_clear(alloc_t* allocator, binmap12_t* bt, u32 const maxbits)
     {
-        bt->m_bin0  = 0;
+        bt->m_bin0     = 0;
         u32 const size = (maxbits + 63) >> 6;
         for (u32 i = 0; i < size; ++i)
             bt->m_bin1[i] = 0;
@@ -137,7 +161,7 @@ namespace ncore
         return math::findFirstBit(~bt->m_bin1[i]) + (i << 6);
     }
 
-    s32 g_find_set(binmap12_t* bt, u32 const maxbits)
+    s32 g_find_and_set(binmap12_t* bt, u32 const maxbits)
     {
         if (bt->m_bin0 == D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
             return -1;
