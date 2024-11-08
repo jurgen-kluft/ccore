@@ -45,7 +45,7 @@ namespace ncore
     }  // namespace __qsort
 
     // Sort routine for element size other than 2, 4, or 8 bytes
-    void g_qsortN(u8* a, s32 n, s32 es, s8 (*cmp)(const void*, const void*, const void*), const void* user_data)
+    void g_qsortN(u8* a, u32 n, u32 es, s8 (*cmp)(const void*, const void*, const void*), const void* user_data)
     {
         u8 *pa, *pb, *pc, *pd, *pl, *pm, *pn;
         s32 d, r, swap_cnt;
@@ -245,6 +245,6 @@ namespace ncore
 
     // Generic QuickSort
 
-    void g_qsort(void* a, s32 n, s32 es, s8 (*cmp)(const void*, const void*, const void*), const void* user_data) { g_qsortN((u8*)a, n, es, cmp, user_data); }
+    void g_qsort(void* a, u32 n, u32 es, s8 (*cmp)(const void*, const void*, const void*), const void* user_data) { g_qsortN((u8*)a, n, es, cmp, user_data); }
 
 };  // namespace ncore
