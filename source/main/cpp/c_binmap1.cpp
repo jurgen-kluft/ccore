@@ -55,7 +55,10 @@ namespace ncore
         for (u32 i = 0; i < 4; ++i)
         {
             if (bt->m_bin0[i] != D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
-                return math::findFirstBit(~bt->m_bin0[i]) + (i << 6);
+            {
+                s32 const bit = math::findFirstBit(~bt->m_bin0[i]) + (i << 6);
+                return bit < (s32)maxbits ? bit : -1;
+            }
         }
         return -1;
     }
@@ -69,7 +72,8 @@ namespace ncore
             {
                 u32 const b = math::findFirstBit(~bt->m_bin0[i]);
                 bt->m_bin0[i] |= (u64)1 << b;
-                return b + (i << 6);
+                s32 const bit = b + (i << 6);
+                return bit < (s32)maxbits ? bit : -1;
             }
         }
         return -1;
@@ -152,6 +156,7 @@ namespace ncore
 
     void g_set(binmap12_t* bt, u32 const maxbits, u32 bit)
     {
+        ASSERT(bit < maxbits);
         u32 const i   = bit >> 6;
         u32 const b   = bit & 63;
         u64 const v   = bt->m_bin1[i];
@@ -162,6 +167,7 @@ namespace ncore
 
     void g_clr(binmap12_t* bt, u32 const maxbits, u32 bit)
     {
+        ASSERT(bit < maxbits);
         u32 const i   = bit >> 6;
         u32 const b   = bit & 63;
         u64 const v   = bt->m_bin1[i];
@@ -172,6 +178,7 @@ namespace ncore
 
     bool g_get(binmap12_t* bt, u32 const maxbits, u32 bit)
     {
+        ASSERT(bit < maxbits);
         u32 const i = bit >> 6;
         u32 const b = bit & 63;
         return (bt->m_bin1[i] & ((u64)1 << b)) != 0;
@@ -182,7 +189,8 @@ namespace ncore
         if (bt->m_bin0 == D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
             return -1;
         s32 const i = math::findFirstBit(~bt->m_bin0);
-        return math::findFirstBit(~bt->m_bin1[i]) + (i << 6);
+        s32 const bit = math::findFirstBit(~bt->m_bin1[i]) + (i << 6);
+        return bit < (s32)maxbits ? bit : -1;
     }
 
     s32 g_find_and_set(binmap12_t* bt, u32 const maxbits)
@@ -197,7 +205,7 @@ namespace ncore
         bt->m_bin1[i] = v;
         if (v == D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
             bt->m_bin0 |= ((u64)1 << i);
-        return b;
+        return b < (s32)maxbits ? b : -1;
     }
 
 };  // namespace ncore
