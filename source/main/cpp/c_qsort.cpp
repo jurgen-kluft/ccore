@@ -124,10 +124,10 @@ namespace ncore
         //__qsort_VecSwap(pb, pn - r, r);
         __qsort::sSwap(pb, pn - r, r);
 
-        if ((r = (s32)(pb - pa)) > es)
+        if ((r = (s32)(pb - pa)) > (s32)es)
             g_qsortN((u8*)a, r / es, es, cmp, user_data);
 
-        if ((r = (s32)(pd - pc)) > es)
+        if ((r = (s32)(pd - pc)) > (s32)es)
         {
             // Iterate rather than recurse to save stack space
             a = pn - r;
