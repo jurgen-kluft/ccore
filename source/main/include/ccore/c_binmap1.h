@@ -5,10 +5,10 @@
 #    pragma once
 #endif
 
-#include "ccore/c_allocator.h"
-
 namespace ncore
 {
+    class alloc_t;
+
     // Note: Size has to be passed to each function since most of the time
 
     // 2^8 binmap, can handle a maximum of 4 * 64 = 256 bits.
