@@ -36,7 +36,7 @@ namespace ncore
     void g_set(binmap8_t* bt, u32 const maxbits, u32 bit)
     {
         ASSERT(bit < maxbits && maxbits <= 256);
-        u32 const i = bit ;6;
+        u32 const i = bit >> 6;
         u32 const b = bit & 63;
         bt->m_bin0[i] |= (u64)1 << b;
     }
@@ -79,7 +79,7 @@ namespace ncore
             if (bt->m_bin0[i] != D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
             {
                 s32 const b = math::findFirstBit(~bt->m_bin0[i]);
-                bt->m_bin0[i] |= (u64)1 << b;
+                bt->m_bin0[i] |= (u64)1 << (b & 63);
                 s32 const bit = b + (i << 6);
                 return bit < (s32)maxbits ? bit : -1;
             }
@@ -196,7 +196,7 @@ namespace ncore
     {
         if (bt->m_bin0 == D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
             return -1;
-        s32 const i = math::findFirstBit(~bt->m_bin0);
+        s32 const i   = math::findFirstBit(~bt->m_bin0);
         s32 const bit = math::findFirstBit(~bt->m_bin1[i]) + (i << 6);
         return bit < (s32)maxbits ? bit : -1;
     }
@@ -212,7 +212,7 @@ namespace ncore
         u64 const v   = bt->m_bin1[i] | ((u64)1 << (b & 63));
         bt->m_bin1[i] = v;
         if (v == D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
-            bt->m_bin0 |= ((u64)1 << i);
+            bt->m_bin0 |= ((u64)1 << (i & 63));
         return b < (s32)maxbits ? b : -1;
     }
 
