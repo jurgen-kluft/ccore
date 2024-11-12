@@ -17,8 +17,9 @@ namespace ncore
         u64 m_bin0[4];
     };
 
-    void g_setup(binmap8_t* bt, u32 const maxbits);
-    void g_clear(binmap8_t* bt, u32 const maxbits);
+    void g_setup_free(binmap8_t* bt);
+    void g_setup_used(binmap8_t* bt);
+    void g_clear(binmap8_t* bt);
 
     void g_set(binmap8_t* bt, u32 const maxbits, u32 bit);
     void g_clr(binmap8_t* bt, u32 const maxbits, u32 bit);

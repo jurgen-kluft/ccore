@@ -9,7 +9,7 @@ namespace ncore
     // --------------------------------------------------------------------------------
     // --------------------------------------------------------------------------------
 
-    void g_setup(binmap8_t* bt, u32 const maxbits)
+    void g_setup_free(binmap8_t* bt)
     {
         bt->m_bin0[0] = 0;
         bt->m_bin0[1] = 0;
@@ -17,7 +17,15 @@ namespace ncore
         bt->m_bin0[3] = 0;
     }
 
-    void g_clear(binmap8_t* bt, u32 const maxbits)
+    void g_setup_used(binmap8_t* bt)
+    {
+        bt->m_bin0[0] = D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF);
+        bt->m_bin0[1] = D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF);
+        bt->m_bin0[2] = D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF);
+        bt->m_bin0[3] = D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF);
+    }
+
+    void g_clear(binmap8_t* bt)
     {
         bt->m_bin0[0] = 0;
         bt->m_bin0[1] = 0;
@@ -70,7 +78,7 @@ namespace ncore
         {
             if (bt->m_bin0[i] != D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
             {
-                u32 const b = math::findFirstBit(~bt->m_bin0[i]);
+                s32 const b = math::findFirstBit(~bt->m_bin0[i]);
                 bt->m_bin0[i] |= (u64)1 << b;
                 s32 const bit = b + (i << 6);
                 return bit < (s32)maxbits ? bit : -1;
