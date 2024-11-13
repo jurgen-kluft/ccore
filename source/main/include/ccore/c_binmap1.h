@@ -1,5 +1,5 @@
-#ifndef __CCORE_DUOMAP_V2_H__
-#define __CCORE_DUOMAP_V2_H__
+#ifndef __CCORE_BINMAP_V2_H__
+#define __CCORE_BINMAP_V2_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
 #    pragma once
