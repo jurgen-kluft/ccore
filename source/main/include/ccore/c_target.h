@@ -157,10 +157,12 @@ namespace ncore
     {
         u16 v[4];
     };
+
     struct u16x2
     {
         u16 v[2];
     };
+
     struct u32x2
     {
         u32 v[2];
@@ -170,10 +172,12 @@ namespace ncore
     {
         f32 v[2];
     };
+
     struct f32x3
     {
         f32 v[3];
     };
+
     struct f32x4
     {
         f32 v[4];
@@ -183,10 +187,12 @@ namespace ncore
     {
         f64 v[2];
     };
+
     struct f64x3
     {
         f64 v[3];
     };
+
     struct f64x4
     {
         f64 v[4];

@@ -64,7 +64,7 @@ namespace ncore
         {
             if (bt->m_bin0[i] != D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
             {
-                s32 const bit = math::findFirstBit(~bt->m_bin0[i]) + (i << 6);
+                s32 const bit = math::g_findFirstBit(~bt->m_bin0[i]) + (i << 6);
                 return bit < (s32)maxbits ? bit : -1;
             }
         }
@@ -78,7 +78,7 @@ namespace ncore
         {
             if (bt->m_bin0[i] != D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
             {
-                s32 const b = math::findFirstBit(~bt->m_bin0[i]);
+                s32 const b = math::g_findFirstBit(~bt->m_bin0[i]);
                 bt->m_bin0[i] |= (u64)1 << (b & 63);
                 s32 const bit = b + (i << 6);
                 return bit < (s32)maxbits ? bit : -1;
@@ -196,8 +196,8 @@ namespace ncore
     {
         if (bt->m_bin0 == D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
             return -1;
-        s32 const i   = math::findFirstBit(~bt->m_bin0);
-        s32 const bit = math::findFirstBit(~bt->m_bin1[i]) + (i << 6);
+        s32 const i   = math::g_findFirstBit(~bt->m_bin0);
+        s32 const bit = math::g_findFirstBit(~bt->m_bin1[i]) + (i << 6);
         return bit < (s32)maxbits ? bit : -1;
     }
 
@@ -206,9 +206,9 @@ namespace ncore
         if (bt->m_bin0 == D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
             return -1;
 
-        s32 const i = math::findFirstBit(~bt->m_bin0);
+        s32 const i = math::g_findFirstBit(~bt->m_bin0);
         ASSERT(bt->m_bin1[i] != D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF));
-        s32       b   = math::findFirstBit(~bt->m_bin1[i]) + (i << 6);
+        s32       b   = math::g_findFirstBit(~bt->m_bin1[i]) + (i << 6);
         u64 const v   = bt->m_bin1[i] | ((u64)1 << (b & 63));
         bt->m_bin1[i] = v;
         if (v == D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF))
