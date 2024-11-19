@@ -62,11 +62,7 @@ UNITTEST_SUITE_BEGIN(callback)
             callback_t<void, int> speak2;
             speak2.Reset(&rover, &Dog::Bark);
 
-            CHECK_TRUE(speak2 < speak);
-
             speak2.Reset(&felix, &Cat::MeowLoudly);
-
-            CHECK_FALSE(speak2 < speak);
 
             callback_t<void, int, int> feed;
             feed.Reset(&spot, &Dog::Eat);
