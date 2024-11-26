@@ -142,8 +142,6 @@ namespace ncore
     {
     public:
         ~pool_t() = default;
-
-        DCORE_CLASS_PLACEMENT_NEW_DELETE
     };
 
     // Construct and destruct

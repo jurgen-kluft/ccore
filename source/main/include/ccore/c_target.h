@@ -228,26 +228,30 @@ namespace ncore
 #    endif
 #    ifndef D_U8
 #        define D_CONSTANT_U8(x) u8(x)
-#    endif
-#    ifndef D_S16
+        #define D_NILL_U8       D_CONSTANT_U8(0xff)
+    #endif
+    #    ifndef D_S16
 #        define D_CONSTANT_S16(x) s16(x)
 #    endif
 #    ifndef D_U16
 #        define D_CONSTANT_U16(x) u16(x)  // Possibly we should make this be u16(x##u). Let's see how compilers react before changing this.
-#    endif
-#    ifndef D_S32
+        #define D_NILL_U16        D_CONSTANT_U16(0xffff)
+    #endif
+    #    ifndef D_S32
 #        define D_CONSTANT_S32(x) x##L
 #    endif
 #    ifndef D_U32
 #        define D_CONSTANT_U32(x) x##UL
-#    endif
+        #define D_NILL_U32        D_CONSTANT_U32(0xffffffff)  
+    #    endif
 #    ifndef D_S64
 #        define D_CONSTANT_S64(x) x##LL  // The way to deal with this is to compare ULONG_MAX to 0xffffffff and if not equal, then remove the L.
 #    endif
 #    ifndef D_U64
 #        define D_CONSTANT_U64(x) x##ULL  // We need to follow a similar approach for LL.
-#    endif
-#    ifndef D_UINTMAX
+        #define D_NILL_U64        D_CONSTANT_U64(0xffffffffffffffff)
+    #endif
+    #    ifndef D_UINTMAX
 #        define D_UINTMAX(x) D_U64(x)
 #    endif
 #endif
