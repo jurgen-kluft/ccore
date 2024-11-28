@@ -107,6 +107,13 @@ namespace ncore
             return ((value + ((u64)alignment - 1)) & (~((u64)alignment - 1)));
         }
 
+        // Return the rounded up value as a power of 2
+        inline u32 g_roundUpPow2(u32 value, u32 alignment)
+        {
+            ASSERTS(g_ispo2(alignment) == true, "Error: alignment value should be a power of 2");
+            return (value + (alignment - 1)) & (~(alignment - 1));
+        }
+
         // Check if value is aligned
         inline bool g_isAligned(s32 value, s32 alignment)
         {
