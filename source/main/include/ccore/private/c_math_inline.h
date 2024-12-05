@@ -241,20 +241,28 @@ namespace ncore
             return (value >> shift) | (value << (32 - shift));
         }
 
-        template <class T>
-        inline T g_align(T addr, u32 alignTo)
+        template <typename T, typename A>
+        inline T g_align(T addr, A alignTo)
         {
-            return T(((addr) & (~(alignTo - 1))));
+            return T((addr) & ~((u32)alignTo - 1));
         }
-        template <class T>
-        inline T g_align_floor(T addr, u32 alignTo)
+
+        template <typename T, typename A>
+        inline T g_align_up(T addr, A alignTo)
         {
-            return T(((((addr))) & (~(alignTo - 1))));
+            return T((addr + ((T)alignTo - 1)) & ~((u32)alignTo - 1));
         }
-        template <class T>
-        inline bool g_aligned(T addr, u32 alignTo)
+
+        template <typename T, typename A>
+        inline T g_align_floor(T addr, A alignTo)
         {
-            return bool(((addr) & (alignTo - 1)) == 0);
+            return T(((addr) & ~((u32)alignTo - 1)));
+        }
+
+        template <typename T, typename A>
+        inline bool g_aligned(T addr, A alignTo)
+        {
+            return bool(((addr) & ((u32)alignTo - 1)) == 0);
         }
     }  // namespace math
 }  // namespace ncore
