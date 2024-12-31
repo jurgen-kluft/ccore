@@ -197,9 +197,13 @@ namespace ncore
     }
 
     template <typename T>
-    inline void g_deallocate(alloc_t* a, T* ptr)
+    inline void g_deallocate(alloc_t* a, T*& ptr)
     {
-        a->deallocate(ptr);
+        if (ptr != nullptr)
+        {
+            a->deallocate(ptr);
+            ptr = nullptr;
+        }
     }
 
     template <typename T>
