@@ -234,9 +234,13 @@ namespace ncore
     void* g_reallocate(alloc_t* alloc, void* ptr, u32 size, u32 new_size);
 
     template <typename T>
-    inline void g_deallocate_array(alloc_t* a, T* array)
+    inline void g_deallocate_array(alloc_t* a, T*& array)
     {
-        a->deallocate(array);
+        if (array != nullptr)
+        {
+            a->deallocate(array);
+            array = nullptr;
+        }
     }
 
     // helper functions
