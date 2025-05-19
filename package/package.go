@@ -15,11 +15,11 @@ func GetPackage() *denv.Package {
 	mainpkg.AddPackage(unittestpkg)
 
 	// 'ccore' library
-	mainlib := denv.SetupDefaultCppLibProject("ccore", "github.com\\jurgen-kluft\\ccore")
+	mainlib := denv.SetupCppLibProject("ccore", "github.com\\jurgen-kluft\\ccore")
 
 	// 'ccore' unittest project
 	maintest := denv.SetupDefaultCppTestProject("ccore_test", "github.com\\jurgen-kluft\\ccore")
-	maintest.Dependencies = append(maintest.Dependencies, unittestpkg.GetMainLib())
+	maintest.AddDependencies(unittestpkg.GetMainLib()...)
 	maintest.Dependencies = append(maintest.Dependencies, mainlib)
 
 	mainpkg.AddMainLib(mainlib)
