@@ -228,30 +228,30 @@ namespace ncore
 #    endif
 #    ifndef D_U8
 #        define D_CONSTANT_U8(x) u8(x)
-        #define D_NILL_U8       D_CONSTANT_U8(0xff)
-    #endif
-    #    ifndef D_S16
+#        define D_NILL_U8        D_CONSTANT_U8(0xff)
+#    endif
+#    ifndef D_S16
 #        define D_CONSTANT_S16(x) s16(x)
 #    endif
 #    ifndef D_U16
 #        define D_CONSTANT_U16(x) u16(x)  // Possibly we should make this be u16(x##u). Let's see how compilers react before changing this.
-        #define D_NILL_U16        D_CONSTANT_U16(0xffff)
-    #endif
-    #    ifndef D_S32
+#        define D_NILL_U16        D_CONSTANT_U16(0xffff)
+#    endif
+#    ifndef D_S32
 #        define D_CONSTANT_S32(x) x##L
 #    endif
 #    ifndef D_U32
 #        define D_CONSTANT_U32(x) x##UL
-        #define D_NILL_U32        D_CONSTANT_U32(0xffffffff)  
-    #    endif
+#        define D_NILL_U32        D_CONSTANT_U32(0xffffffff)
+#    endif
 #    ifndef D_S64
 #        define D_CONSTANT_S64(x) x##LL  // The way to deal with this is to compare ULONG_MAX to 0xffffffff and if not equal, then remove the L.
 #    endif
 #    ifndef D_U64
 #        define D_CONSTANT_U64(x) x##ULL  // We need to follow a similar approach for LL.
-        #define D_NILL_U64        D_CONSTANT_U64(0xffffffffffffffff)
-    #endif
-    #    ifndef D_UINTMAX
+#        define D_NILL_U64        D_CONSTANT_U64(0xffffffffffffffff)
+#    endif
+#    ifndef D_UINTMAX
 #        define D_UINTMAX(x) D_U64(x)
 #    endif
 #endif
@@ -338,32 +338,32 @@ namespace ncore
     // Min/Max values
     //==============================================================================
 
-    const u8 cU8Min = (u8)0x00;   ///< minimum value of a u8.
-    const u8 cU8Max = (u8)0xFF;   ///< maximum value of a u8.
-    const s8 cS8Min = (s8)-0x80;  ///< minimum value of a s8.
-    const s8 cS8Max = (s8)0x7F;   ///< maximum value of a s8.
+    const u8 cU8Min = (u8)0x00;   // minimum value of a u8.
+    const u8 cU8Max = (u8)0xFF;   // maximum value of a u8.
+    const s8 cS8Min = (s8)-0x80;  // minimum value of a s8.
+    const s8 cS8Max = (s8)0x7F;   // maximum value of a s8.
 
-    const u16 cU16Min = (u16)0x0000;   ///< minimum value of a u16
-    const u16 cU16Max = (u16)0xFFFF;   ///< maximum value of a u16.
-    const s16 cS16Min = (s16)-0x8000;  ///< minimum value of a s16.
-    const s16 cS16Max = (s16)0x7FFF;   ///< maximum value of a s16.
+    const u16 cU16Min = (u16)0x0000;   // minimum value of a u16
+    const u16 cU16Max = (u16)0xFFFF;   // maximum value of a u16.
+    const s16 cS16Min = (s16)-0x8000;  // minimum value of a s16.
+    const s16 cS16Max = (s16)0x7FFF;   // maximum value of a s16.
 
-    const u32 cU32Min = (u32)0x00000000;  ///< minimum value of a u32.
-    const u32 cU32Max = (u32)0xFFFFFFFF;  ///< maximum value of a u32.
-    const s32 cS32Min = (s32)0x80000000;  ///< minimum value of a s32.
-    const s32 cS32Max = (s32)0x7FFFFFFF;  ///< maximum value of a s32.
+    const u32 cU32Min = (u32)0x00000000;  // minimum value of a u32.
+    const u32 cU32Max = (u32)0xFFFFFFFF;  // maximum value of a u32.
+    const s32 cS32Min = (s32)0x80000000;  // minimum value of a s32.
+    const s32 cS32Max = (s32)0x7FFFFFFF;  // maximum value of a s32.
 
-    const u64 cU64Min = (u64)0x0000000000000000ull;  ///< minimum value of a u64.
-    const u64 cU64Max = (u64)0xFFFFFFFFFFFFFFFFull;  ///< maximum value of a u64.
-    const s64 cS64Min = (s64)0x8000000000000000ll;   ///< minimum value of a s64.
-    const s64 cS64Max = (s64)0x7FFFFFFFFFFFFFFFll;   ///< maximum value of a s64.
+    const u64 cU64Min = (u64)0x0000000000000000ull;  // minimum value of a u64.
+    const u64 cU64Max = (u64)0xFFFFFFFFFFFFFFFFull;  // maximum value of a u64.
+    const s64 cS64Min = (s64)0x8000000000000000ll;   // minimum value of a s64.
+    const s64 cS64Max = (s64)0x7FFFFFFFFFFFFFFFll;   // maximum value of a s64.
 
-    const f32 cF32Min = (f32)1.175494351e-38f;  ///< minimum value of a f32.
-    const f32 cF32Max = (f32)3.402823466e+38f;  ///< maximum value of a f32.
-    const f32 cF32Eps = (f32)0.0001f;           ///< default epsilon generally good to check values in the range [0 - 1], normalisations, dot products and such.
+    const f32 cF32Min = (f32)1.175494351e-38f;  // minimum value of a f32.
+    const f32 cF32Max = (f32)3.402823466e+38f;  // maximum value of a f32.
+    const f32 cF32Eps = (f32)0.0001f;           // default epsilon generally good to check values in the range [0 - 1], normalisations, dot products and such.
 
-    const f64 cF64Min = (f64)2.2250738585072014e-308;  ///< minimum value of a f64.
-    const f64 cF64Max = (f64)1.7976931348623158e+308;  ///< maximum value of a f64.
+    const f64 cF64Min = (f64)2.2250738585072014e-308;  // minimum value of a f64.
+    const f64 cF64Max = (f64)1.7976931348623158e+308;  // maximum value of a f64.
 
     //==============================================================================
     // KB, MB, GB, TB values
@@ -914,36 +914,31 @@ namespace ncore
     // CC_IS_ENABLED is intended to be used for detecting if compile time features are enabled or disabled.
     //
     // It has some advantages over using a standard #if or #ifdef tests:
-    //	1) Fails to compile when passes numeric macro values. Valid options are strictly enabled or disabled.
-    //	2) Fails to compile when passed undefined macro values rather than disabling by default
-    //	3) Fails to compile when the passed macro is defined to but empty
+    //	1) Fails to compile when given numeric macro values, valid options are strictly CC_ENABLED or CC_DISABLED.
+    //	2) Fails to compile when given an undefined macro value rather than disabling by default
+    //	3) Fails to compile when the passed macro is defined but has no value
     //
-    // To use the macro, the calling code should create a define for the feature to enable or disable.  This feature define
-    // must be set to either CC_ENABLED or CC_DISABLED.  (Do not try to set the feature define directly to some other
-    // value.)
-    //
-    // Note: These macros are analogous to the Frostbite macro FB_USING used in combination with FB_OFF / FB_ON and are
-    // designed to be compatible to support gradual migration.
+    // To use this macro, the calling code should create a define for the feature to enable or disable. This define
+    // must be set to either CC_ENABLED or CC_DISABLED, any other value will result in a compile error.
     //
     // Example usage:
     //
-    //      // The USER_PROVIDED_FEATURE_DEFINE should be defined as either
     //      // CC_ENABLED or CC_DISABLED.
-    //      #define USER_PROVIDED_FEATURE_DEFINE CC_ENABLED
+    //      #define USER_FEATURE_DEFINE CC_ENABLED
     //
-    //      #if CC_IS_ENABLED(USER_PROVIDED_FEATURE_DEFINE)
-    //          // USER_PROVIDED_FEATURE_DEFINE is enabled
+    //      #if CC_IS_ENABLED(USER_FEATURE_DEFINE)
+    //          // USER_FEATURE_DEFINE is enabled
     //      #else
-    //          // USER_PROVIDED_FEATURE_DEFINE is disabled
+    //          // USER_FEATURE_DEFINE is disabled
     //      #endif
     //
 
     // clang-format off
-#define CC_ENABLED  111-
-#define CC_DISABLED 333-
+    #define CC_ENABLED  64-
+    #define CC_DISABLED 32-
 
-// NOTE: Numeric values for x will produce a parse error while empty values produce a divide by zero, and the test is a bool for proper negation behavior
-#define CC_IS_ENABLED(x) (333 == 333 * 111 / ((x 0) * (((x 0) == 333 ? 1 : 0) + ((x 0) == 111 ? 1 : 0))))
+    #define CC_IS_ENABLED(x) (32 == 32 * 64 / ((x 0) * (((x 0) == 32 ? 1 : 0) + ((x 0) == 64 ? 1 : 0))))
+    #define CC_IS_DISABLED(x) (64 == 32 * 64 / ((x 0) * (((x 0) == 32 ? 1 : 0) + ((x 0) == 64 ? 1 : 0))))
 
     // clang-format on
 
