@@ -368,10 +368,10 @@ namespace ncore
     //==============================================================================
     // KB, MB, GB, TB values
     //==============================================================================
-    const u64 cKB = (u64)1024;
-    const u64 cMB = (u64)1024 * 1024;
-    const u64 cGB = (u64)1024 * 1024 * 1024;
-    const u64 cTB = (u64)1024 * 1024 * 1024 * 1024;
+    const s64 cKB = (s64)1024;
+    const s64 cMB = (s64)1024 * 1024;
+    const s64 cGB = (s64)1024 * 1024 * 1024;
+    const s64 cTB = (s64)1024 * 1024 * 1024 * 1024;
 
 #if defined(CC_COMPILER_HAS_INTTYPES) && (!defined(CC_COMPILER_MSVC) || (defined(CC_COMPILER_MSVC) && CC_COMPILER_VERSION >= 1800))
 #    define CC_COMPILER_HAS_C99_FORMAT_MACROS
