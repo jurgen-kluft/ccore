@@ -21,21 +21,25 @@ namespace ncore
         const error_t cError           = -1;   // Generic error.
         const error_t cNotFound        = -2;   // Not found error.
         const error_t cInvalidArgument = -3;   // Invalid argument error.
-        const error_t cCoreMaxError    = -10;  // Maximum error code for core errors.
+        const error_t cMaximumReached  = -4;   // Maximum reached error
+        const error_t cCoreNumErrors   = 100;  // Maximum number of error codes for core errors.
 
         // error to string
         const char* to_string(error_t error);
 
-        // global error management
-        void error(error_t error);
-        error_t last_error();
-        const char* last_error_string();
-
         // to string function object (chained as a list of handlers)
         typedef const char* (*to_string_handler_func_t)(error_t error);
 
-        bool insert_handler(to_string_handler_func_t handler);
+        // insert a handler for converting error codes to strings, it will return the base value to add
+        // to the range of error codes handled by this handler.
+        // @error_count is the number of error codes handled by this handler.
+        s64  insert_handler(to_string_handler_func_t handler, s64 error_count);
         void remove_handler(to_string_handler_func_t handler);
+
+        // global error management
+        void        error(error_t error);
+        error_t     last_error();
+        const char* last_error_string();
 
     }  // namespace nerror
 
