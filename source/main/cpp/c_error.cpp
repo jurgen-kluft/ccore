@@ -5,7 +5,25 @@ namespace ncore
 {
     namespace nerror
     {
-        static s32 gNumErrorToStringHandlers = 0;
+        static error_t g_last_errors[8]  = {cSuccess};
+        static s32     g_num_last_errors = 0;
+
+        void error(error_t error)
+        {
+            if (g_num_last_errors < DArrayCount(g_last_errors))
+            {
+                g_last_errors[g_num_last_errors++] = error;
+            }
+            else
+            {
+                // If we reach the limit, we discard the oldest error
+                for (s32 i = 1; i < DArrayCount(g_last_errors); ++i)
+                    g_last_errors[i - 1] = g_last_errors[i];
+                g_last_errors[DArrayCount(g_last_errors) - 1] = error;
+            }
+        }
+
+        static s32                      gNumErrorToStringHandlers  = 0;
         static to_string_handler_func_t gErrorToStringHandlers[32] = {nullptr};
 
         static const char* s_error_to_string(error_t error)
@@ -59,6 +77,20 @@ namespace ncore
                 }
             }
         }
+
+        error_t last_error()
+        {
+            if (g_num_last_errors > 0)
+                return g_last_errors[g_num_last_errors - 1];
+            return cSuccess;  // No errors recorded
+        }
+
+        const char* last_error_string()
+        {
+            if (g_num_last_errors > 0)
+                return s_error_to_string(g_last_errors[g_num_last_errors - 1]);
+            return nullptr;
+        }
+
     }  // namespace nerror
 }  // namespace ncore
-

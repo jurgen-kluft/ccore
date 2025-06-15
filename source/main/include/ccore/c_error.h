@@ -12,7 +12,7 @@ namespace ncore
     //
     // This is a type that is used to represent error codes
 
-    typedef s32 error_t;
+    typedef s64 error_t;
 
     namespace nerror
     {
@@ -25,6 +25,11 @@ namespace ncore
 
         // error to string
         const char* to_string(error_t error);
+
+        // global error management
+        void error(error_t error);
+        error_t last_error();
+        const char* last_error_string();
 
         // to string function object (chained as a list of handlers)
         typedef const char* (*to_string_handler_func_t)(error_t error);
