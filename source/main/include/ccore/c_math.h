@@ -49,38 +49,38 @@ namespace ncore
             g_clamp(subto, enfrom, ento);
         }
 
-        inline u32  g_align(u32 integer, u32 alignment);      // Return the aligned value of integer
-        inline u32  g_align(u32 integer, s32 alignment);      // Return the aligned value of integer
-        inline u32  g_alignDown(u32 integer, u32 alignment);  // Return the aligned value of integer
-        inline u32  g_alignDown(u32 integer, s32 alignment);  // Return the aligned value of integer
-        inline s32  g_alignUp(s32 integer, s32 alignment);    // Return the aligned value of integer
-        inline u32  g_alignUp(u32 integer, u32 alignment);    // Return the aligned value of integer
-        inline u32  g_alignUp(u32 integer, s32 alignment);    // Return the aligned value of integer
-        inline u64  g_alignUp(u64 integer, u32 alignment);    // Return the aligned value of integer
-        inline u64  g_alignUp(u64 integer, s32 alignment);    // Return the aligned value of integer
-        inline bool g_isAligned(u32 integer, u32 alignment);  // Return True if integer is aligned
-        inline bool g_isAligned(u32 integer, s32 alignment);  // Return True if integer is aligned
-        inline bool g_isAligned(u64 integer, u32 alignment);  // Return True if integer is aligned
-        inline bool g_isAligned(u64 integer, s32 alignment);  // Return True if integer is aligned
+        template <typename T>
+        inline T g_align(T integer, T alignment);  // Return the aligned value of integer
+        template <typename T>
+        inline T g_alignDown(T integer, T alignment);  // Return the aligned value of integer
+        template <typename T>
+        inline T g_alignUp(T integer, T alignment);  // Return the aligned value of integer
+        template <typename T>
+        inline bool g_isAligned(T integer, T alignment);  // Return True if integer is aligned
 
-        inline s32  g_abs(s32 integer);                      // Return the absolute value of integer
-        inline s32  g_neg(s32 integer, bool inDoNotNegate);  // Return the conditionally negated value of integer
-        inline s32  g_sqr(s32 integer);                      // Return the square of integer
-        inline u32  g_sqr(u32 integer);                      // Return the unsigned square of integer
-        inline s32  g_mod(s32 integer, s32 inModuloValue);   // Return the modulo of integer using inModuloValue
-        inline s32  g_gcd(s32 inIntegerA, s32 integerB);     // Greatest common denominator (biggest modulo value of both integers)
-        inline s32  g_average(s32 integerA, s32 integerB);   // Calculate average of A & B without overflow or s64 use
-        inline bool g_ispo2(s32 integer);                    // Check if integer is a power-of-two
-        inline bool g_ispo2(u32 integer);                    // Check if integer is a power-of-two
-        inline bool g_ispo2(u64 integer);                    // Check if integer is a power-of-two
-        inline u32  g_ceilpo2(u32 integer);                  // Return the smallest power-of-two larger than integer
-        inline u32  g_floorpo2(u32 integer);                 // Return the biggest power-of-two smaller than integer
-        inline u32  g_next_power_of_two(u32 val) { return g_ceilpo2(val); }
-        inline u32  g_bitReverse(u32 integer);  // Reverse bits in 32 bit word
-        inline s8   g_countBits(u8 integer);    // count one bits in 8 bit word
-        inline s8   g_countBits(u16 integer);   // count one bits in 16 bit word
-        inline s8   g_countBits(u32 integer);   // count one bits in 32 bit word
-        inline s8   g_countBits(u64 integer);   // count one bits in 32 bit word
+        template <typename T>
+        inline T g_abs(T integer);  // Return the absolute value of integer
+        template <typename T>
+        inline T g_neg(T integer, bool inDoNotNegate);  // Return the conditionally negated value of integer
+        template <typename T>
+        inline T g_sqr(T integer);  // Return the square of integer
+        template <typename T>
+        inline T g_mod(T integer, T inModuloValue);  // Return the modulo of integer using inModuloValue
+        template <typename T>
+        inline T g_gcd(T inIntegerA, T integerB);  // Greatest common denominator (biggest modulo value of both integers)
+        template <typename T>
+        inline T g_average(T integerA, T integerB);  // Calculate average of A & B without overflow or s64 use
+        template <typename T>
+        inline bool g_ispo2(T integer);  // Check if integer is a power-of-two
+
+        inline u32 g_ceilpo2(u32 integer);   // Return the smallest power-of-two larger than integer
+        inline u32 g_floorpo2(u32 integer);  // Return the biggest power-of-two smaller than integer
+        inline u32 g_next_power_of_two(u32 val) { return g_ceilpo2(val); }
+        inline u32 g_bitReverse(u32 integer);  // Reverse bits in 32 bit word
+        inline s8  g_countBits(u8 integer);    // count one bits in 8 bit word
+        inline s8  g_countBits(u16 integer);   // count one bits in 16 bit word
+        inline s8  g_countBits(u32 integer);   // count one bits in 32 bit word
+        inline s8  g_countBits(u64 integer);   // count one bits in 32 bit word
 
         inline s8 g_ilog2(u32 integer);  // Log2 of a 32-bit integer
         inline s8 g_ilog2(s32 integer) { return g_ilog2((u32)integer); }
