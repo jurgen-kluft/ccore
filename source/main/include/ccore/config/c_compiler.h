@@ -404,6 +404,7 @@ namespace ncore
     #define CC_STANDARD_LIBRARY_MSVC      1
     #define CC_STANDARD_LIBRARY_MICROSOFT 1
 
+    // Note: Reference: https://en.wikipedia.org/wiki/Microsoft_Visual_C++
     #if (_MSC_VER <= 1200)  // If VC6.x and earlier...
         #if (_MSC_VER < 1200)
             #define CC_COMPILER_MSVCOLD 1
@@ -484,17 +485,17 @@ namespace ncore
         #define CC_COMPILER_MSVC_2015    1
         #define CC_COMPILER_MSVC14_0     1
 
-    #elif (_MSC_VER < 1920)  // VS2017       _MSC_VER of 1910 means VS2017
+    #elif (_MSC_VER < 1910)  // VS2017       _MSC_VER of 1910 means VS2017
         #define CC_COMPILER_MSVC
         #define CC_COMPILER_MSVC_VERSION 2017
         #define CC_COMPILER_MSVC_2017    1
         #define CC_COMPILER_MSVC15_0     1
-    #elif (_MSC_VER < 1930)  // VS2019       _MSC_VER of 1920 means VS2019
+    #elif (_MSC_VER < 1920)  // VS2019       _MSC_VER of 1920 means VS2019
         #define CC_COMPILER_MSVC
         #define CC_COMPILER_MSVC_VERSION 2019
         #define CC_COMPILER_MSVC_2019    1
         #define CC_COMPILER_MSVC16_0     1
-    #elif (_MSC_VER < 1942)  // VS2022       _MSC_VER of 1930 means VS2022
+    #elif (_MSC_VER < 1930)  // VS2022       _MSC_VER of 1930 means VS2022
         #define CC_COMPILER_MSVC
         #define CC_COMPILER_MSVC_VERSION 2022
         #define CC_COMPILER_MSVC_2022    1
