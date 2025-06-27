@@ -53,13 +53,12 @@ namespace ncore
             if (handler == nullptr || gNumErrorToStringHandlers >= DArrayCount(gErrorToStringHandlers))
                 return cMaximumReached;
 
-            const s64 error_base                                      = gErrorBase - error_count;
+            gErrorBase -= error_count;
             gErrorToStringHandlers[gNumErrorToStringHandlers].handler = handler;
-            gErrorToStringHandlers[gNumErrorToStringHandlers].begin   = error_base;
-            gErrorToStringHandlers[gNumErrorToStringHandlers].end     = error_base + error_count;
-
-            gErrorBase = error_base;
-            return error_base;
+            gErrorToStringHandlers[gNumErrorToStringHandlers].begin   = gErrorBase;
+            gErrorToStringHandlers[gNumErrorToStringHandlers].end     = gErrorBase + error_count;
+            gNumErrorToStringHandlers += 1;
+            return gErrorBase;
         }
 
         void remove_handler(to_string_handler_func_t handler)

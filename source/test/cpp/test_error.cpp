@@ -27,7 +27,7 @@ UNITTEST_SUITE_BEGIN(error)
             cTestErrorCount,
         };
 
-        static s64         gTestErrorBase      = -1;
+        static s64         gTestErrorBase      = 0;
         static const char* gTestErrorStrings[] = {
           "Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6", "Error 7", "Error 8", "Error 9",
         };
@@ -49,8 +49,7 @@ UNITTEST_SUITE_BEGIN(error)
 
             for (s64 i = 0; i < cTestErrorCount; ++i)
             {
-                error_t     error_code = gTestErrorBase + i;
-                const char* error_str  = nerror::to_string(error_code);
+                const char* error_str  = nerror::to_string(gTestErrorBase + i);
                 CHECK_EQUAL(gTestErrorStrings[i], error_str);
             }
         }
