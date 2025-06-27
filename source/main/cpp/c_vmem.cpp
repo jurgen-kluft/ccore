@@ -20,20 +20,20 @@ namespace ncore
 
     static bool v_alloc_commit(void *addr, int_t size)
     {
-        void *result = VirtualAlloc(addr, total_size, MEM_COMMIT, PAGE_READWRITE);
-        return result ? true : false;
+        void *result = VirtualAlloc(addr, size, MEM_COMMIT, PAGE_READWRITE);
+        return result != nullptr;
     }
 
-    static bool v_alloc_decommit(void *addr, int_t extra_size)
+    static bool v_alloc_decommit(void *addr, int_t size)
     {
-        // VirtualFree(base_addr + 1MB, MEM_DECOMMIT, extra_size);
+        // VirtualFree(base_addr + 1MB, MEM_DECOMMIT, size);
         /*
             "The VirtualFree function can decommit a range of pages that are in
             different states, some committed and some uncommitted. This means
             that you can decommit a range of pages without first determining
             the current commitment state of each page."
         */
-        BOOL success = VirtualFree(addr, MEM_DECOMMIT, (DWORD)extra_size);
+        BOOL success = VirtualFree(addr, MEM_DECOMMIT, (DWORD)size);
         return success ? true : false;
     }
     static bool v_alloc_release(void *addr, int_t size)
@@ -52,7 +52,7 @@ namespace ncore
 {
     static s32 v_alloc_get_page_size()
     {
-        s32 page_size = sysconf(_SC_PAGESIZE);
+        const s32 page_size = sysconf(_SC_PAGESIZE);
         if (page_size <= 0)
         {
             return 0;
@@ -78,7 +78,7 @@ namespace ncore
         }
         return result == 0;
     }
-    static bool v_alloc_release(void *addr, int_t size) { return munmap(addr, size) == 0 ? true : false; }
+    static bool v_alloc_release(void *addr, int_t size) { return munmap(addr, size) == 0; }
 }  // namespace ncore
 
 #else
@@ -146,6 +146,35 @@ namespace ncore
         }
         void *ptr = m_base + m_pos;
         m_pos += size_in_bytes;
+        return ptr;
+    }
+
+    void* vmem_allocator_t::commit(int_t size, s32 alignment)
+    {
+        if (size == 0 || alignment <= 0)
+        {
+            return nullptr;
+        }
+
+        alignment = math::g_max(alignment, m_alignment);
+
+        // ensure alignment is a power of two
+        ASSERTS(math::g_ispo2(alignment), "Error: alignment value should be a power of 2");
+
+        // align the size to the default alignment
+        size = math::g_alignUp(size, (int_t)m_alignment);
+
+        // align the position to the given alignment
+        const int_t pos = math::g_alignUp(m_pos, (int_t)alignment);
+
+        void* ptr = commit(size + (pos - m_pos));
+
+        // align the pointer to the given alignment
+        if (ptr != nullptr)
+        {
+            ptr = (void*)((byte*)ptr + (pos - m_pos));
+        }
+
         return ptr;
     }
 
