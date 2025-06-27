@@ -28,16 +28,7 @@ namespace ncore
         bool  release();                          // release the virtual memory region
     };
 
-    // Example:
-    //    vmem_allocator_t arena = {0};
-    //    // reserve 8 GB, if you don't call this, then when calling commit, it will reserve
-    //    // the default arena capacity of 1 GB.
-    //    arena.reserve(8 * cGB);
-    //    int_t save = arena.save();      // save a restore point
-    //    void* ptr = arena.commit(1024); // allocate 1 KB
-    //    ...                             // commit some more
-    //    ...                             // do some more work and commit more memory
-    //    arena.restore(save);            // restore the size
+    // Example: see source/test/test_vmem.cpp
 
 }  // namespace ncore
 

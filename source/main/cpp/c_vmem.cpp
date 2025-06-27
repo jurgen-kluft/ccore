@@ -1,8 +1,6 @@
 #include "ccore/c_vmem.h"
 #include "ccore/c_math.h"
 
-// https://github.com/jamesnolanverran/v_alloc/blob/main/v_alloc.c
-
 #if defined(TARGET_PC)
 #    define WIN32_LEAN_AND_MEAN
 #    include <windows.h>
