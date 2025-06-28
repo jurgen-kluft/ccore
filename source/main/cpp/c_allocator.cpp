@@ -1,31 +1,16 @@
 #include "ccore/c_target.h"
 #include "ccore/c_allocator.h"
+#include "ccore/c_vmem.h"
 
 namespace ncore
 {
-    fixed_buffer_alloc_t::fixed_buffer_alloc_t()
-        : m_base(0)
-        , m_ptr(0)
-        , m_size(0)
-        , m_cnt(0)
-    {
-    }
-
-    void fixed_buffer_alloc_t::setup(byte* buffer, s32 length)
-    {
-        m_base = buffer;
-        m_ptr  = buffer;
-        m_size = length;
-        m_cnt  = 0;
-    }
-
     void* g_reallocate(alloc_t* alloc, void* ptr, u32 size, u32 new_size)
     {
         void* newptr = alloc->allocate(new_size, sizeof(void*));
 
         // copy the old data to the new memory, manually
-        ASSERT(newptr != nullptr && ((ptr_t)newptr & 3) == 0); // Ensure 4 byte alignment
-        ASSERT(ptr != nullptr && ((ptr_t)ptr & 3) == 0);     // Ensure 4 byte alignment
+        ASSERT(newptr != nullptr && ((ptr_t)newptr & 3) == 0);  // Ensure 4 byte alignment
+        ASSERT(ptr != nullptr && ((ptr_t)ptr & 3) == 0);        // Ensure 4 byte alignment
 
         u32 const minsize = size < new_size ? size : new_size;
 
@@ -47,4 +32,4 @@ namespace ncore
         return newptr;
     }
 
-}; // namespace ncore
+};  // namespace ncore

@@ -14,11 +14,11 @@ UNITTEST_SUITE_BEGIN(vmem)
 
 		UNITTEST_TEST(init)
 		{
-            vmem_allocator_t arena = {0};
+            vmem_arena_t arena;
 
             // reserve 8 GB, if you don't call this, then when calling commit, it will reserve
             // the default arena capacity of 1 GB.
-            const bool result = arena.reserve(8 * cGB);
+            const bool result = arena.reserved(8 * cGB);
             CHECK_TRUE(result);
 
             int_t save = arena.save();      // save a restore point

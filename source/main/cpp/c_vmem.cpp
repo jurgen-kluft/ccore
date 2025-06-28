@@ -1,5 +1,6 @@
 #include "ccore/c_vmem.h"
 #include "ccore/c_math.h"
+#include "ccore/c_memory.h"
 
 #if defined(TARGET_PC)
 #    define WIN32_LEAN_AND_MEAN
@@ -85,7 +86,7 @@ namespace ncore
 
 namespace ncore
 {
-    bool vmem_allocator_t::reserve(int_t reserve_size)
+    bool vmem_arena_t::reserved(int_t reserve_size)
     {
         const s32 page_size = v_alloc_get_page_size();
         reserve_size        = math::g_alignUp(reserve_size, (int_t)page_size);
@@ -104,11 +105,43 @@ namespace ncore
         return false;  // reserve failed
     }
 
-    int_t vmem_allocator_t::save() const { return m_pos; }
+    void vmem_arena_t::committed(int_t committed_size_in_bytes)
+    {
+        if (m_base == nullptr)
+        {
+            return;  // no reserved memory, cannot commit
+        }
+
+        const int_t size_in_bytes = math::g_alignUp(committed_size_in_bytes, (int_t)(1 << m_page_size_shift));
+        const int_t size_in_pages = size_in_bytes >> m_page_size_shift;
+
+        if (size_in_pages > m_committed_pages)
+        {
+            const int_t extra_needed_pages = math::g_max(size_in_pages - m_committed_pages, (int_t)m_pages_commit_min);
+            const bool  result             = v_alloc_commit(m_base + (m_committed_pages << m_page_size_shift), extra_needed_pages << m_page_size_shift);
+            if (!result)
+            {
+                return;  // failed commit
+            }
+            m_committed_pages += extra_needed_pages;
+        }
+        else if (size_in_pages < m_committed_pages)
+        {
+            // decommit the extra pages
+            const int_t decommit_size_in_bytes = (m_committed_pages - size_in_pages) << m_page_size_shift;
+            byte       *decommit_start         = m_base + (size_in_pages << m_page_size_shift);
+            if (v_alloc_decommit(decommit_start, decommit_size_in_bytes))
+            {
+                m_committed_pages = size_in_pages;
+            }
+        }
+    }
+
+    int_t vmem_arena_t::save() const { return m_pos; }
 
     // commits (allocate) size number of bytes and possibly grows the committed region.
     // returns a pointer to the allocated memory or nullptr if allocation failed.
-    void *vmem_allocator_t::commit(int_t size)
+    void *vmem_arena_t::commit(int_t size)
     {
         if (size == 0)
         {
@@ -123,7 +156,7 @@ namespace ncore
         {
             if (m_base == nullptr)
             {
-                if (!reserve(cDEFAULT_ARENA_CAPACITY))
+                if (!reserved(cDEFAULT_ARENA_CAPACITY))
                 {
                     return nullptr;
                 }
@@ -147,7 +180,7 @@ namespace ncore
         return ptr;
     }
 
-    void* vmem_allocator_t::commit(int_t size, s32 alignment)
+    void *vmem_arena_t::commit(int_t size, s32 alignment)
     {
         if (size == 0 || alignment <= 0)
         {
@@ -165,20 +198,34 @@ namespace ncore
         // align the position to the given alignment
         const int_t pos = math::g_alignUp(m_pos, (int_t)alignment);
 
-        void* ptr = commit(size + (pos - m_pos));
+        void *ptr = commit(size + (pos - m_pos));
 
         // align the pointer to the given alignment
         if (ptr != nullptr)
         {
-            ptr = (void*)((byte*)ptr + (pos - m_pos));
+            ptr = (void *)((byte *)ptr + (pos - m_pos));
         }
 
         return ptr;
     }
 
-    void vmem_allocator_t::restore(int_t size) { m_pos = size; }
+    void *vmem_arena_t::commit_and_zero(int_t size)
+    {
+        void *ptr = commit(size);
+        nmem::memset(ptr, 0, size);
+        return ptr;
+    }
 
-    void vmem_allocator_t::shrink()
+    void *vmem_arena_t::commit_and_zero(int_t size, s32 alignment)
+    {
+        void *ptr = commit(size, alignment);
+        nmem::memset(ptr, 0, size);
+        return ptr;
+    }
+
+    void vmem_arena_t::restore(int_t size) { m_pos = size; }
+
+    void vmem_arena_t::shrink()
     {
         // ensure current used memory is aligned up to page size
         const int_t used_in_bytes = math::g_alignUp(m_pos, (int_t)(1 << m_page_size_shift));
@@ -195,9 +242,9 @@ namespace ncore
         }
     }
 
-    void vmem_allocator_t::reset() { m_pos = 0; }
+    void vmem_arena_t::reset() { m_pos = 0; }
 
-    bool vmem_allocator_t::release()
+    bool vmem_arena_t::release()
     {
         if (m_base == nullptr)
             return true;
