@@ -67,6 +67,7 @@ namespace ncore
     class alloc_scope_t
     {
         alloc_tracker_t* m_tracker;
+
     public:
         alloc_scope_t(const char* file, int_t line)
         {
@@ -193,13 +194,16 @@ namespace ncore
     inline uint_t g_ptr_diff_in_bytes(void* ptr, void* next_ptr) { return (uint_t)((ptr_t)next_ptr - (ptr_t)ptr); }
     inline bool   g_ptr_inside_range(void* buffer, uint_t size_in_bytes, void* ptr) { return (ptr >= buffer) && g_ptr_diff_in_bytes(buffer, ptr) <= size_in_bytes; }
 
+    struct global_new_t
+    {
+    };
+
 }  // namespace ncore
 
-template <typename T>
 inline void* operator new(ncore::uint_t num_bytes, ncore::alloc_t* alloc)
 {
     ASSERT(num_bytes < (ncore::uint_t)2 * 1024 * 1024 * 1024);
-    void* ptr = alloc->allocate((ncore::u32)num_bytes, alignof(T));
+    void* ptr = alloc->allocate((ncore::u32)num_bytes, alignof(void*));
     return ptr;
 }
 

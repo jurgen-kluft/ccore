@@ -120,11 +120,11 @@ namespace ncore
         //     return ((value + ((u64)alignment - 1)) & (~((u64)alignment - 1)));
         // }
 
-        template <typename T>
-        inline T g_alignUp(T value, T alignment)
+        template <typename T, typename U>
+        inline T g_alignUp(T value, U alignment)
         {
             ASSERTS(g_ispo2(alignment) == true, "Error: alignment value should be a power of 2");
-            return (value + (alignment - 1)) & (~(alignment - 1));
+            return (value + (T)(alignment - 1)) & (~(T)(alignment - 1));
         }
 
         // Return the rounded up value as a power of 2
@@ -250,6 +250,7 @@ namespace ncore
 
         // Return the power-of-two smaller than or equal to value
         inline u32 g_floorpo2(u32 value) { return 1 << (31 - g_countLeadingZeros(value)); }
+        inline u64 g_floorpo2(u64 value) { return 1 << (63 - g_countLeadingZeros(value)); }
 
         // Reverse bits in 32 bit word
         inline u32 g_bitReverse(u32 value)
