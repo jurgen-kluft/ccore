@@ -53,8 +53,8 @@ namespace ncore
         inline T g_align(T integer, T alignment);  // Return the aligned value of integer
         template <typename T>
         inline T g_alignDown(T integer, T alignment);  // Return the aligned value of integer
-        template <typename T>
-        inline T g_alignUp(T integer, T alignment);  // Return the aligned value of integer
+        template <typename T, typename U>
+        inline T g_alignUp(T integer, U alignment);  // Return the aligned value of integer
         template <typename T>
         inline bool g_isAligned(T integer, T alignment);  // Return True if integer is aligned
 

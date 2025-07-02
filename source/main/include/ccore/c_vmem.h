@@ -23,7 +23,7 @@ namespace ncore
         s16   m_page_size_shift;                           // page size in shift, used for alignment and memory operations
         s16   m_pages_commit_min;                          // when increasing committed size, this is the minimum amount of pages to commit
         bool  reserved(int_t reserved_size);               // set reserved size of virtual memory region
-        void  committed(int_t committed_size_in_bytes);    // set committed size of the allocator, this will not change 'pos'
+        bool  committed(int_t committed_size_in_bytes);    // set committed size of the allocator, this will not change 'pos'
         int_t save() const;                                // current used size of the allocator
         void* commit(int_t size);                          // allocate 'size' from the reserved region
         void* commit(int_t size, s32 alignment);           // allocate 'size' from the reserved region with the given alignment

@@ -16,7 +16,7 @@ namespace ncore
     void* operator new(ncore::uint_t num_bytes, void* mem) { return mem; }   \
     void  operator delete(void* mem, void*) {}                               \
     void* operator new(ncore::uint_t num_bytes) noexcept { return nullptr; } \
-    void  operator delete(void* mem) {}
+    void  operator delete(void* mem) {} \
 
 #define DCORE_CLASS_NEW_DELETE(get_allocator_func, align)                  \
     void* operator new(ncore::uint_t num_bytes, void* mem) { return mem; } \
@@ -84,7 +84,7 @@ namespace ncore
     template <typename T>
     inline T* g_construct(alloc_t* a)
     {
-        return new (a) T();
+        return new (a->allocate(sizeof(T))) T();
     }
 
     template <typename T>
@@ -200,21 +200,5 @@ namespace ncore
 
 }  // namespace ncore
 
-inline void* operator new(ncore::uint_t num_bytes, ncore::alloc_t* alloc)
-{
-    ASSERT(num_bytes < (ncore::uint_t)2 * 1024 * 1024 * 1024);
-    void* ptr = alloc->allocate((ncore::u32)num_bytes, alignof(void*));
-    return ptr;
-}
-
-template <typename T>
-void operator delete(void* ptr, ncore::alloc_t* allocator)
-{
-    if (ptr != nullptr)
-    {
-        ((T*)ptr)->~T();  // Call destructor if T is a class type
-        allocator->deallocate(ptr);
-    }
-}
 
 #endif  // __CCORE_ALLOCATOR_H__
