@@ -210,15 +210,15 @@ namespace ncore
 
         // align the position to the given alignment
         const int_t pos = math::g_alignUp(m_pos, (int_t)alignment);
+        const int_t aligning = (pos - m_pos);
 
-        void *ptr = commit(size + (pos - m_pos));
+        void *ptr = commit(size + aligning);
 
         // align the pointer to the given alignment
-        if (ptr != nullptr)
-        {
-            ptr = (void *)((byte *)ptr + (pos - m_pos));
-        }
+        if (ptr == nullptr)
+            return nullptr;
 
+        ptr = (void *)((byte *)ptr + aligning);
         return ptr;
     }
 
@@ -261,6 +261,12 @@ namespace ncore
     {
         if (m_base == nullptr)
             return true;
+
+        const bool partof_vmem = ((byte* )this >= m_base && (byte* )this < (m_base + (m_reserved_pages << m_page_size_shift)));
+        if (partof_vmem)
+        {
+            return v_alloc_release(m_base, m_reserved_pages << m_page_size_shift);
+        }
 
         if (v_alloc_release(m_base, m_reserved_pages << m_page_size_shift))
         {
