@@ -172,18 +172,18 @@ namespace ncore
 
 #ifdef D_ASSERT
 
-#    define DVERIFY(lhs, rhs)                                                                    \
-        do                                                                                   \
-        {                                                                                    \
-            if (!((lhs) == rhs) && ncore::gAssertHandler(__FILE__, __LINE__, #lhs"=="#rhs, nullptr)) \
-                D_BREAK;                                                                     \
+#    define DVERIFY(expr, result)                                                                 \
+        do                                                                                        \
+        {                                                                                         \
+            if (!((expr) == result) && ncore::gAssertHandler(__FILE__, __LINE__, #expr, nullptr)) \
+                D_BREAK;                                                                          \
         } while (0)
 
-#    define DVERIFYS(lhs, rhs, str)                                                          \
-        do                                                                               \
-        {                                                                                \
-            if (!((lhs) == rhs) && ncore::gAssertHandler(__FILE__, __LINE__, #lhs"=="#rhs, str)) \
-                D_BREAK;                                                                 \
+#    define DVERIFYS(expr, result, str)                                                       \
+        do                                                                                    \
+        {                                                                                     \
+            if (!((expr) == result) && ncore::gAssertHandler(__FILE__, __LINE__, #expr, str)) \
+                D_BREAK;                                                                      \
         } while (0)
 
 #    define DBOUNDS(v, l, h)                                                                                                     \
@@ -193,9 +193,10 @@ namespace ncore
                 D_BREAK;                                                                                                         \
         } while (0)
 
-#    define DASSERTCT(expr) \
-        do                  \
-        {        static_assert(expr, "");           \
+#    define DASSERTCT(expr)          \
+        do                           \
+        {                            \
+            static_assert(expr, ""); \
         } while (0);
 
 #    define DASSERTSL(level, expr, str)                                                                                       \
@@ -247,8 +248,8 @@ namespace ncore
 #    define ASSERTSL(level, expr, str)        (void(0))
 #    define ASSERTL(level, expr)              (void(0))
 
-#    define DVERIFY(lhs, rhs)       (lhs)
-#    define DVERIFYS(lhs, rhs, str) (lhs)
+#    define DVERIFY(expr, result)       (expr)
+#    define DVERIFYS(expr, result, str) (expr)
 #    define DBOUNDS(v, l, h)
 
 #endif

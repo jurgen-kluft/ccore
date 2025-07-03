@@ -84,7 +84,8 @@ namespace ncore
     template <typename T>
     inline T* g_construct(alloc_t* a)
     {
-        return new (a->allocate(sizeof(T))) T();
+        void* mem = a->allocate(sizeof(T));
+        return new (mem) T();
     }
 
     template <typename T>
