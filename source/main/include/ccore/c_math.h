@@ -76,7 +76,6 @@ namespace ncore
         inline u32 g_ceilpo2(u32 integer);   // Return the smallest power-of-two larger than integer
         inline u32 g_floorpo2(u32 integer);  // Return the biggest power-of-two smaller than integer
         inline u32 g_next_power_of_two(u32 val) { return g_ceilpo2(val); }
-        inline u32 g_bitReverse(u32 integer);  // Reverse bits in 32 bit word
         inline s8  g_countBits(u8 integer);    // count one bits in 8 bit word
         inline s8  g_countBits(u16 integer);   // count one bits in 16 bit word
         inline s8  g_countBits(u32 integer);   // count one bits in 32 bit word

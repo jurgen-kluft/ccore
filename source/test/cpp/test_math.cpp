@@ -180,13 +180,6 @@ UNITTEST_SUITE_BEGIN(integer)
 			CHECK_EQUAL(64, math::g_floorpo2(b));
 		}
 
-		UNITTEST_TEST(BitReverse)
-		{
-			u32 a = 13, b = 64;
-			CHECK_EQUAL(D_CONSTANT_U32(2952790016), math::g_bitReverse(a));
-			CHECK_EQUAL(33554432, math::g_bitReverse(b));
-		}
-
 		UNITTEST_TEST(CountBits)
 		{
 			u32 a = 13, b = 64;
