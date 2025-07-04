@@ -97,7 +97,7 @@ namespace ncore
         {
             m_pos              = 0;
             m_alignment        = 16;  // default alignment
-            m_reserved_pages   = (reserve_size >> m_page_size_shift);
+            m_reserved_pages   = (s32)(reserve_size >> m_page_size_shift);
             m_committed_pages  = 0;
             m_pages_commit_min = 4;
             return true;
@@ -112,7 +112,7 @@ namespace ncore
             return false;
         }
 
-        const int_t size_in_bytes = math::g_alignUp(committed_size_in_bytes, (int_t)(1 << m_page_size_shift));
+        const int_t size_in_bytes = math::g_alignUp(committed_size_in_bytes, ((int_t)1 << m_page_size_shift));
         const int_t size_in_pages = size_in_bytes >> m_page_size_shift;
 
         if (size_in_pages > m_committed_pages)
@@ -124,23 +124,23 @@ namespace ncore
                 return false;
             }
 
-            const bool result = v_alloc_commit(m_base + (m_committed_pages << m_page_size_shift), extra_needed_pages << m_page_size_shift);
+            const bool result = v_alloc_commit(m_base + ((int_t)m_committed_pages << m_page_size_shift), extra_needed_pages << m_page_size_shift);
             if (!result)
             {
                 return false;
             }
-            m_committed_pages += extra_needed_pages;
+            m_committed_pages += (s32)extra_needed_pages;
         }
         else if (size_in_pages < m_committed_pages)
         {
             // decommit the extra pages
-            const int_t decommit_size_in_bytes = (m_committed_pages - size_in_pages) << m_page_size_shift;
+            const int_t decommit_size_in_bytes = ((int_t)m_committed_pages - size_in_pages) << m_page_size_shift;
             byte       *decommit_start         = m_base + (size_in_pages << m_page_size_shift);
             if (!v_alloc_decommit(decommit_start, decommit_size_in_bytes))
             {
                 return false;
             }
-            m_committed_pages = size_in_pages;
+            m_committed_pages = (s32)size_in_pages;
         }
         return true;
     }
@@ -182,10 +182,10 @@ namespace ncore
                 if ((m_committed_pages + extra_needed_pages) > m_reserved_pages)
                     return nullptr;
 
-                const bool result = v_alloc_commit(m_base + (m_committed_pages << m_page_size_shift), extra_needed_pages << m_page_size_shift);
+                const bool result = v_alloc_commit(m_base + ((int_t)m_committed_pages << m_page_size_shift), extra_needed_pages << m_page_size_shift);
                 if (!result)
                     return nullptr;
-                m_committed_pages += extra_needed_pages;
+                m_committed_pages += (s32)extra_needed_pages;
             }
         }
         void *ptr = m_base + m_pos;
@@ -241,7 +241,7 @@ namespace ncore
     void vmem_arena_t::shrink()
     {
         // ensure current used memory is aligned up to page size
-        const int_t used_in_bytes = math::g_alignUp(m_pos, (int_t)(1 << m_page_size_shift));
+        const int_t used_in_bytes = math::g_alignUp(m_pos, ((int_t)1 << m_page_size_shift));
         const int_t used_in_pages = used_in_bytes >> m_page_size_shift;
 
         byte       *decommit_start         = m_base + used_in_bytes;
@@ -250,7 +250,7 @@ namespace ncore
         {
             if (v_alloc_decommit(decommit_start, decommit_size_in_bytes))
             {
-                m_committed_pages = used_in_pages;
+                m_committed_pages = (s32)used_in_pages;
             }
         }
     }
