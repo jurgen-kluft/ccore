@@ -12,7 +12,6 @@ namespace ncore
     const int_t cDEFAULT_ARENA_CAPACITY = 1 * cGB;
 
     // TODO Investigate the use of madvise(MADV_FREE) to decommit memory on Mac, madvise(MADV_DONTNEED) on Linux, and VirtualAlloc(MEM_RESET)
-
     struct vmem_arena_t
     {
         byte* m_base;                                      // base address of the reserved memory region
@@ -40,6 +39,7 @@ namespace ncore
     class vmem_alloc_t : public alloc_t
     {
     public:
+        inline vmem_alloc_t(vmem_arena_t* vmem) : m_vmem(vmem) {}
         vmem_arena_t* m_vmem = nullptr;  // virtual memory arena used for allocations
 
         DCORE_CLASS_PLACEMENT_NEW_DELETE
