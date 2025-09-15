@@ -218,4 +218,4 @@ namespace ncore
     };
 }  // namespace ncore
 
-#endif  // __CCORE_ALLOCATOR_H__
+#endif  // __CCORE_CALLBACK_DELEGATE_H__
