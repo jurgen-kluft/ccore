@@ -2,6 +2,7 @@ package ccore
 
 import (
 	denv "github.com/jurgen-kluft/ccode/denv"
+	csdk "github.com/jurgen-kluft/csdk/package"
 	cunittest "github.com/jurgen-kluft/cunittest/package"
 )
 
@@ -12,28 +13,29 @@ const (
 
 // GetPackage returns the package object of 'ccore'
 func GetPackage() *denv.Package {
-	name := repo_name
-
 	// Dependencies
-	unittestpkg := cunittest.GetPackage()
+	sdk_pkg := csdk.GetPackage()
+	unittest_pkg := cunittest.GetPackage()
 
 	// The main (ccore) package
-	mainpkg := denv.NewPackage(repo_path, repo_name)
-	mainpkg.AddPackage(unittestpkg)
+	main_pkg := denv.NewPackage(repo_path, repo_name)
+	main_pkg.AddPackage(sdk_pkg)
+	main_pkg.AddPackage(unittest_pkg)
 
 	// 'ccore' library
-	mainlib := denv.SetupCppLibProject(mainpkg, name)
+	mainlib := denv.SetupCppLibProject(main_pkg, repo_name)
+	mainlib.AddDependencies(sdk_pkg.GetMainLib())
 
 	// 'ccore' library for unittest
-	testLib := denv.SetupCppTestLibProject(mainpkg, name)
+	testlib := denv.SetupCppTestLibProject(main_pkg, repo_name)
 
 	// 'ccore' unittest project
-	maintest := denv.SetupCppTestProject(mainpkg, name)
-	maintest.AddDependencies(unittestpkg.GetMainLib()...)
-	maintest.AddDependency(testLib)
+	maintest := denv.SetupCppTestProject(main_pkg, repo_name)
+	maintest.AddDependencies(unittest_pkg.GetMainLib())
+	maintest.AddDependency(testlib)
 
-	mainpkg.AddMainLib(mainlib)
-	mainpkg.AddTestLib(testLib)
-	mainpkg.AddUnittest(maintest)
-	return mainpkg
+	main_pkg.AddMainLib(mainlib)
+	main_pkg.AddTestLib(testlib)
+	main_pkg.AddUnittest(maintest)
+	return main_pkg
 }

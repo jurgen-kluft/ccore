@@ -21,6 +21,18 @@ namespace ncore
         s32   m_committed_pages;                           // (unit = pages) total committed memory size in pages
         s16   m_page_size_shift;                           // page size in shift, used for alignment and memory operations
         s16   m_pages_commit_min;                          // when increasing committed size, this is the minimum amount of pages to commit
+
+        vmem_arena_t()
+            : m_base(nullptr)
+            , m_pos(0)
+            , m_alignment(16)
+            , m_reserved_pages(0)
+            , m_committed_pages(0)
+            , m_page_size_shift(0)
+            , m_pages_commit_min(4)
+        {
+        }
+
         bool  reserved(int_t reserved_size);               // set reserved size of virtual memory region
         bool  committed(int_t committed_size_in_bytes);    // set committed size of the allocator, this will not change 'pos'
         int_t save() const;                                // current used size of the allocator
@@ -39,13 +51,14 @@ namespace ncore
     class vmem_alloc_t : public alloc_t
     {
     public:
+        inline vmem_alloc_t() : m_vmem(nullptr) {}
         inline vmem_alloc_t(vmem_arena_t* vmem) : m_vmem(vmem) {}
         vmem_arena_t* m_vmem = nullptr;  // virtual memory arena used for allocations
 
         DCORE_CLASS_PLACEMENT_NEW_DELETE
 
         virtual void* v_allocate(u32 size, u32 alignment) { return m_vmem->commit((int_t)size, alignment); }
-        virtual void  v_deallocate(void* ptr) {}
+        virtual void  v_deallocate(void*) {}
     };
 
 }  // namespace ncore

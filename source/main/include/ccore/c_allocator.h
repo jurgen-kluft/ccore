@@ -12,20 +12,32 @@ namespace ncore
     struct vmem_arena_t;
 
     // class new and delete
-#define DCORE_CLASS_PLACEMENT_NEW_DELETE                                     \
-    void* operator new(ncore::uint_t num_bytes, void* mem) { return mem; }   \
-    void  operator delete(void* mem, void*) {}                               \
-    void* operator new(ncore::uint_t num_bytes) noexcept { return nullptr; } \
-    void  operator delete(void* mem) {} \
+#define DCORE_CLASS_PLACEMENT_NEW_DELETE                   \
+    void* operator new(ncore::uint_t num_bytes, void* mem) \
+    {                                                      \
+        CC_UNUSED(num_bytes);                              \
+        return mem;                                        \
+    }                                                      \
+    void  operator delete(void*, void*) {}                 \
+    void* operator new(ncore::uint_t num_bytes) noexcept   \
+    {                                                      \
+        CC_UNUSED(num_bytes);                              \
+        return nullptr;                                    \
+    }                                                      \
+    void operator delete(void*) {}
 
-#define DCORE_CLASS_NEW_DELETE(get_allocator_func, align)                  \
-    void* operator new(ncore::uint_t num_bytes, void* mem) { return mem; } \
-    void  operator delete(void* mem, void*) {}                             \
-    void* operator new(ncore::uint_t num_bytes)                            \
-    {                                                                      \
-        ASSERT(num_bytes < (ncore::uint_t)2 * 1024 * 1024 * 1024);         \
-        return get_allocator_func()->allocate((u32)num_bytes, align);      \
-    }                                                                      \
+#define DCORE_CLASS_NEW_DELETE(get_allocator_func, align)             \
+    void* operator new(ncore::uint_t num_bytes, void* mem)            \
+    {                                                                 \
+        CC_UNUSED(num_bytes);                                         \
+        return mem;                                                   \
+    }                                                                 \
+    void  operator delete(void*, void*) {}                            \
+    void* operator new(ncore::uint_t num_bytes)                       \
+    {                                                                 \
+        ASSERT(num_bytes < (ncore::uint_t)2 * 1024 * 1024 * 1024);    \
+        return get_allocator_func()->allocate((u32)num_bytes, align); \
+    }                                                                 \
     void operator delete(void* mem) { get_allocator_func()->deallocate(mem); }
 
 #define DCORE_CLASS_ARRAY_NEW_DELETE(get_allocator_func, align)       \
@@ -200,6 +212,5 @@ namespace ncore
     };
 
 }  // namespace ncore
-
 
 #endif  // __CCORE_ALLOCATOR_H__

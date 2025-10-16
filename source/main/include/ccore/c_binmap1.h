@@ -40,7 +40,7 @@ namespace ncore
         void setup_used_lazy(alloc_t *allocator, u32 const maxbits);
         void tick_used_lazy(u32 const maxbits, u32 bit);
 
-        void clear(alloc_t *allocator, u32 const maxbits);
+        void clear(u32 const maxbits);
         void release(alloc_t *allocator);
 
         void set(u32 const maxbits, u32 bit);

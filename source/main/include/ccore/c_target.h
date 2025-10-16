@@ -245,7 +245,7 @@ namespace ncore
 #        define D_NILL_U32        D_CONSTANT_U32(0xffffffff)
 #    endif
 #    ifndef D_S64
-#        define D_CONSTANT_S64(x) x##LL  // The way to deal with this is to compare ULONG_MAX to 0xffffffff and if not equal, then remove the L.
+#        define D_CONSTANT_S64(x) (s64)x##LL  // The way to deal with this is to compare ULONG_MAX to 0xffffffff and if not equal, then remove the L.
 #    endif
 #    ifndef D_U64
 #        define D_CONSTANT_U64(x) x##ULL  // We need to follow a similar approach for LL.
@@ -939,7 +939,6 @@ namespace ncore
 
     #define CC_IS_ENABLED(x) (32 == 32 * 64 / ((x 0) * (((x 0) == 32 ? 1 : 0) + ((x 0) == 64 ? 1 : 0))))
     #define CC_IS_DISABLED(x) (64 == 32 * 64 / ((x 0) * (((x 0) == 32 ? 1 : 0) + ((x 0) == 64 ? 1 : 0))))
-
     // clang-format on
 
 };  // namespace ncore

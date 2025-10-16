@@ -148,7 +148,7 @@ namespace ncore
         }
     }
 
-    void binmap12_t::clear(alloc_t* allocator, u32 const maxbits)
+    void binmap12_t::clear(u32 const maxbits)
     {
         m_bin0     = 0;
         u32 const size = (maxbits + 63) >> 6;
