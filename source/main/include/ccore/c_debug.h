@@ -79,6 +79,12 @@ namespace ncore
         }
 #endif
 
+#if defined(TARGET_ARDUINO) && defined(COMPILER_DEFAULT)
+#    define D_BREAK           \
+        {                     \
+        }
+#endif
+
 #if !defined(D_BREAK)
 #    error Unknown Platform/Compiler configuration for D_BREAK
 #endif
@@ -110,6 +116,10 @@ namespace ncore
 #endif
 
 #if defined(TARGET_LINUX) && defined(COMPILER_DEFAULT)
+#    define D_NOP {__asm nop}
+#endif
+
+#if defined(TARGET_ARDUINO) && defined(COMPILER_DEFAULT)
 #    define D_NOP {__asm nop}
 #endif
 

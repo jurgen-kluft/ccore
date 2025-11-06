@@ -135,10 +135,12 @@ namespace ncore
     static_assert(sizeof(u64) == 8, "s64 must be 64 bits");
 #    endif
 #endif
+    
     typedef s64 i64;
 
 #if (CC_PLATFORM_PTR_SIZE == 4)
     typedef s32 ptr_t;
+    typedef s32 ptrdiff_t;
     typedef u32 uptr_t;
     typedef s32 int_t;
     typedef u32 uint_t;
@@ -146,6 +148,7 @@ namespace ncore
     typedef s32 ssize_t;
 #elif (CC_PLATFORM_PTR_SIZE == 8)
     typedef s64 ptr_t;
+    typedef s64 ptrdiff_t;
     typedef u64 uptr_t;
     typedef s64 int_t;
     typedef u64 uint_t;
@@ -368,10 +371,10 @@ namespace ncore
     //==============================================================================
     // KB, MB, GB, TB values
     //==============================================================================
-    const s64 cKB = (s64)1024;
-    const s64 cMB = (s64)1024 * 1024;
-    const s64 cGB = (s64)1024 * 1024 * 1024;
-    const s64 cTB = (s64)1024 * 1024 * 1024 * 1024;
+    const u64 cKB = (u64)1024;
+    const u64 cMB = (u64)1024 * 1024;
+    const u64 cGB = (u64)1024 * 1024 * 1024;
+    const u64 cTB = (u64)1024 * 1024 * 1024 * 1024;
 
 #if defined(CC_COMPILER_HAS_INTTYPES) && (!defined(CC_COMPILER_MSVC) || (defined(CC_COMPILER_MSVC) && CC_COMPILER_VERSION >= 1800))
 #    define CC_COMPILER_HAS_C99_FORMAT_MACROS
@@ -513,24 +516,6 @@ namespace ncore
 #        define SCNoPTR SCNo64
 #        define SCNuPTR SCNu64
 #        define SCNxPTR SCNx64
-#    endif
-#endif
-
-// ------------------------------------------------------------------------
-// bool8_t
-// The definition of a bool8_t is controversial with some, as it doesn't
-// act just like built-in bool. For example, you can assign -100 to it.
-//
-#ifndef BOOL8_T_DEFINED  // If the user hasn't already defined this...
-#    define BOOL8_T_DEFINED
-#    if defined(CC_COMPILER_MSVC) || (defined(CC_COMPILER_INTEL) && defined(CC_PLATFORM_WINDOWS))
-#        if defined(__cplusplus)
-    typedef bool bool8_t;
-#        else
-    typedef s8 bool8_t;
-#        endif
-#    else  // CC_COMPILER_GNUC generally uses 4 bytes per bool.
-    typedef s8 bool8_t;
 #    endif
 #endif
 
@@ -850,7 +835,7 @@ namespace ncore
     template <typename T, size_t N>
     char (&CCArraySizeHelper(T (&&x)[N]))[N];
 
-#    define DArrayCount(x) (sizeof(CCArraySizeHelper(x)))
+#    define DARRAYSIZE(x) (sizeof(CCArraySizeHelper(x)))
 #endif
 
 // ------------------------------------------------------------------------

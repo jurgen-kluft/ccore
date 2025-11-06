@@ -81,8 +81,38 @@ namespace ncore
 }  // namespace ncore
 
 #else
-#    error "Unsupported platform"
+
+namespace ncore
+{
+    static s32   v_alloc_get_page_size() { return 0; }
+    static void *v_alloc_reserve(int_t size)
+    {
+        CC_UNUSED(size);
+        return nullptr;
+    }
+    static bool v_alloc_commit(void *addr, int_t size)
+    {
+        CC_UNUSED(addr);
+        CC_UNUSED(size);
+        return false;
+    }
+    static bool v_alloc_decommit(void *addr, int_t extra_size)
+    {
+        CC_UNUSED(addr);
+        CC_UNUSED(extra_size);
+        return false;
+    }
+    static bool v_alloc_release(void *addr, int_t size)
+    {
+        CC_UNUSED(addr);
+        CC_UNUSED(size);
+        return false;
+    }
+}  // namespace ncore
+
 #endif
+
+#if defined(TARGET_MAC) || defined(TARGET_LINUX) || defined(TARGET_PC)
 
 namespace ncore
 {
@@ -178,7 +208,7 @@ namespace ncore
                     return nullptr;
 
                 int_t extra_needed_pages = math::g_max((used_committed_pages + size_request_in_pages) - m_committed_pages, (int_t)m_pages_commit_min);
-                extra_needed_pages = math::g_min(extra_needed_pages, (int_t)(m_reserved_pages - m_committed_pages));
+                extra_needed_pages       = math::g_min(extra_needed_pages, (int_t)(m_reserved_pages - m_committed_pages));
                 if ((m_committed_pages + extra_needed_pages) > m_reserved_pages)
                     return nullptr;
 
@@ -209,7 +239,7 @@ namespace ncore
         size = math::g_alignUp(size, (int_t)m_alignment);
 
         // align the position to the given alignment
-        const int_t pos = math::g_alignUp(m_pos, (int_t)alignment);
+        const int_t pos      = math::g_alignUp(m_pos, (int_t)alignment);
         const int_t aligning = (pos - m_pos);
 
         void *ptr = commit(size + aligning);
@@ -262,7 +292,7 @@ namespace ncore
         if (m_base == nullptr)
             return true;
 
-        const bool partof_vmem = ((byte* )this >= m_base && (byte* )this < (m_base + (m_reserved_pages << m_page_size_shift)));
+        const bool partof_vmem = ((byte *)this >= m_base && (byte *)this < (m_base + (m_reserved_pages << m_page_size_shift)));
         if (partof_vmem)
         {
             return v_alloc_release(m_base, m_reserved_pages << m_page_size_shift);
@@ -281,5 +311,58 @@ namespace ncore
         }
         return false;
     }
-
 }  // namespace ncore
+
+#else
+
+namespace ncore
+{
+    bool vmem_arena_t::reserved(int_t reserve_size)
+    {
+        CC_UNUSED(reserve_size);
+        return false;  // reserve failed
+    }
+
+    bool vmem_arena_t::committed(int_t committed_size_in_bytes)
+    {
+        CC_UNUSED(committed_size_in_bytes);
+        return false;
+    }
+
+    int_t vmem_arena_t::save() const { return m_pos; }
+
+    // commits (allocate) size number of bytes and possibly grows the committed region.
+    // returns a pointer to the allocated memory or nullptr if allocation failed.
+    void *vmem_arena_t::commit(int_t size)
+    {
+        CC_UNUSED(size);
+        return nullptr;  // we will consider this an error
+    }
+
+    void *vmem_arena_t::commit(int_t size, s32 alignment)
+    {
+        CC_UNUSED(size);
+        CC_UNUSED(alignment);
+        return nullptr;
+    }
+
+    void *vmem_arena_t::commit_and_zero(int_t size)
+    {
+        CC_UNUSED(size);
+        return nullptr;
+    }
+
+    void *vmem_arena_t::commit_and_zero(int_t size, s32 alignment)
+    {
+        CC_UNUSED(size);
+        CC_UNUSED(alignment);
+        return nullptr;
+    }
+
+    void vmem_arena_t::restore(int_t size) { m_pos = size; }
+    void vmem_arena_t::shrink() {}
+    void vmem_arena_t::reset() { m_pos = 0; }
+    bool vmem_arena_t::release() { return true; }
+}  // namespace ncore
+
+#endif

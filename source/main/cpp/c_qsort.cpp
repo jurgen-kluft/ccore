@@ -124,7 +124,7 @@ namespace ncore
             r = (s32)(__qsort::sMinimum(pa - (u8 *)a, pb - pa));
             //__qsort_VecSwap((u8*)a, pb - r, r);
             __qsort::sSwap((u8 *)a, pb - r, r);
-            r = (s32)(__qsort::sMinimum(pd - pc, pn - pd - es));
+            r = (s32)(__qsort::sMinimum((uptr_t)(pd - pc), (uptr_t)(pn - pd - es)));
             //__qsort_VecSwap(pb, pn - r, r);
             __qsort::sSwap(pb, pn - r, r);
 

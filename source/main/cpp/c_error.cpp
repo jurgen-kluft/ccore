@@ -50,7 +50,7 @@ namespace ncore
 
         s64 insert_handler(to_string_handler_func_t handler, s64 error_count)
         {
-            if (handler == nullptr || gNumErrorToStringHandlers >= s32(DArrayCount(gErrorToStringHandlers)))
+            if (handler == nullptr || gNumErrorToStringHandlers >= s32(DARRAYSIZE(gErrorToStringHandlers)))
                 return cMaximumReached;
 
             gErrorBase -= error_count;
@@ -83,16 +83,16 @@ namespace ncore
 
         void error(error_t error)
         {
-            if (g_num_last_errors < s32(DArrayCount(g_last_errors)))
+            if (g_num_last_errors < s32(DARRAYSIZE(g_last_errors)))
             {
                 g_last_errors[g_num_last_errors++] = error;
             }
             else
             {
                 // If we reach the limit, we discard the oldest error
-                for (s32 i = 1; i < s32(DArrayCount(g_last_errors)); ++i)
+                for (s32 i = 1; i < s32(DARRAYSIZE(g_last_errors)); ++i)
                     g_last_errors[i - 1] = g_last_errors[i];
-                g_last_errors[DArrayCount(g_last_errors) - 1] = error;
+                g_last_errors[DARRAYSIZE(g_last_errors) - 1] = error;
             }
         }
 
