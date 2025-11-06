@@ -8,22 +8,22 @@
 
 namespace ncore
 {
-    static s32 v_alloc_get_page_size()
+    s32 v_alloc_get_page_size()
     {
         SYSTEM_INFO sys_info;
         GetSystemInfo(&sys_info);
         return sys_info.dwPageSize;
     }
 
-    static void *v_alloc_reserve(int_t size) { return VirtualAlloc(nullptr, size, MEM_RESERVE, PAGE_NOACCESS); }
+    void *v_alloc_reserve(int_t size) { return VirtualAlloc(nullptr, size, MEM_RESERVE, PAGE_NOACCESS); }
 
-    static bool v_alloc_commit(void *addr, int_t size)
+    bool v_alloc_commit(void *addr, int_t size)
     {
         void *result = VirtualAlloc(addr, size, MEM_COMMIT, PAGE_READWRITE);
         return result != nullptr;
     }
 
-    static bool v_alloc_decommit(void *addr, int_t size)
+    bool v_alloc_decommit(void *addr, int_t size)
     {
         // VirtualFree(base_addr + 1MB, MEM_DECOMMIT, size);
         /*
@@ -35,7 +35,7 @@ namespace ncore
         BOOL success = VirtualFree(addr, MEM_DECOMMIT, (DWORD)size);
         return success ? true : false;
     }
-    static bool v_alloc_release(void *addr, int_t size)
+    bool v_alloc_release(void *addr, int_t size)
     {
         (void)size;
         return VirtualFree(addr, 0, MEM_RELEASE);
@@ -49,7 +49,7 @@ namespace ncore
 
 namespace ncore
 {
-    static s32 v_alloc_get_page_size()
+    s32 v_alloc_get_page_size()
     {
         const s32 page_size = sysconf(_SC_PAGESIZE);
         if (page_size <= 0)
@@ -58,17 +58,17 @@ namespace ncore
         }
         return page_size;
     }
-    static void *v_alloc_reserve(int_t size)
+    void *v_alloc_reserve(int_t size)
     {
         void *ptr = mmap(nullptr, size, PROT_NONE, MAP_PRIVATE | MAP_ANON, -1, 0);
         return ptr == MAP_FAILED ? nullptr : ptr;
     }
-    static bool v_alloc_commit(void *addr, int_t size)
+    bool v_alloc_commit(void *addr, int_t size)
     {
         const s32 result = mprotect(addr, size, PROT_READ | PROT_WRITE);
         return result == 0;
     }
-    static bool v_alloc_decommit(void *addr, int_t extra_size)
+    bool v_alloc_decommit(void *addr, int_t extra_size)
     {
         s32 result = madvise(addr, extra_size, MADV_DONTNEED);
         if (result == 0)
@@ -77,32 +77,32 @@ namespace ncore
         }
         return result == 0;
     }
-    static bool v_alloc_release(void *addr, int_t size) { return munmap(addr, size) == 0; }
+    bool v_alloc_release(void *addr, int_t size) { return munmap(addr, size) == 0; }
 }  // namespace ncore
 
 #else
 
 namespace ncore
 {
-    static s32   v_alloc_get_page_size() { return 0; }
-    static void *v_alloc_reserve(int_t size)
+    s32   v_alloc_get_page_size() { return 0; }
+    void *v_alloc_reserve(int_t size)
     {
         CC_UNUSED(size);
         return nullptr;
     }
-    static bool v_alloc_commit(void *addr, int_t size)
+    bool v_alloc_commit(void *addr, int_t size)
     {
         CC_UNUSED(addr);
         CC_UNUSED(size);
         return false;
     }
-    static bool v_alloc_decommit(void *addr, int_t extra_size)
+    bool v_alloc_decommit(void *addr, int_t extra_size)
     {
         CC_UNUSED(addr);
         CC_UNUSED(extra_size);
         return false;
     }
-    static bool v_alloc_release(void *addr, int_t size)
+    bool v_alloc_release(void *addr, int_t size)
     {
         CC_UNUSED(addr);
         CC_UNUSED(size);

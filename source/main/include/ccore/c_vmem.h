@@ -11,16 +11,23 @@ namespace ncore
 {
     const int_t cDEFAULT_ARENA_CAPACITY = 1 * cGB;
 
+    // Platform specific virtual memory functions
+    s32   v_alloc_get_page_size();
+    void* v_alloc_reserve(int_t size);
+    bool  v_alloc_commit(void* addr, int_t size);
+    bool  v_alloc_decommit(void* addr, int_t extra_size);
+    bool  v_alloc_release(void* addr, int_t size);
+
     // TODO Investigate the use of madvise(MADV_FREE) to decommit memory on Mac, madvise(MADV_DONTNEED) on Linux, and VirtualAlloc(MEM_RESET)
     struct vmem_arena_t
     {
-        byte* m_base;                                      // base address of the reserved memory region
-        int_t m_pos;                                       // current position in the committed memory region to allocate from
-        s32   m_alignment;                                 // default minimum alignment for allocations (default is 16 bytes)
-        s32   m_reserved_pages;                            // (unit = pages) total reserved memory size in pages
-        s32   m_committed_pages;                           // (unit = pages) total committed memory size in pages
-        s16   m_page_size_shift;                           // page size in shift, used for alignment and memory operations
-        s16   m_pages_commit_min;                          // when increasing committed size, this is the minimum amount of pages to commit
+        byte* m_base;              // base address of the reserved memory region
+        int_t m_pos;               // current position in the committed memory region to allocate from
+        s32   m_alignment;         // default minimum alignment for allocations (default is 16 bytes)
+        s32   m_reserved_pages;    // (unit = pages) total reserved memory size in pages
+        s32   m_committed_pages;   // (unit = pages) total committed memory size in pages
+        s16   m_page_size_shift;   // page size in shift, used for alignment and memory operations
+        s16   m_pages_commit_min;  // when increasing committed size, this is the minimum amount of pages to commit
 
         vmem_arena_t()
             : m_base(nullptr)
@@ -51,8 +58,14 @@ namespace ncore
     class vmem_alloc_t : public alloc_t
     {
     public:
-        inline vmem_alloc_t() : m_vmem(nullptr) {}
-        inline vmem_alloc_t(vmem_arena_t* vmem) : m_vmem(vmem) {}
+        inline vmem_alloc_t()
+            : m_vmem(nullptr)
+        {
+        }
+        inline vmem_alloc_t(vmem_arena_t* vmem)
+            : m_vmem(vmem)
+        {
+        }
         vmem_arena_t* m_vmem = nullptr;  // virtual memory arena used for allocations
 
         DCORE_CLASS_PLACEMENT_NEW_DELETE
