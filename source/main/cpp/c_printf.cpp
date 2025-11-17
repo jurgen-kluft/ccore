@@ -1,7 +1,18 @@
 #include "ccore/c_target.h"
 #include "ccore/c_printf.h"
 
+#ifdef TARGET_MAC
+#    include <stdio.h>
+#endif
+
 // Source: https://github.com/mpaland/printf
+
+namespace ncore
+{
+#ifdef TARGET_MAC
+    void putchar(char character) { fputc(character, stdout); }
+#endif
+}  // namespace ncore
 
 namespace ncore
 {
