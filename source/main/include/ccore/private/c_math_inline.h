@@ -142,6 +142,7 @@ namespace ncore
 
         // Return the power-of-two larger than or equal to value
         inline u32 g_ceilpo2(u32 value) { return 1 << (32 - g_countLeadingZeros(value - 1)); }
+        inline u64 g_ceilpo2(u64 value) { return (u64)1 << (64 - g_countLeadingZeros(value - 1)); }
 
         // Return the power-of-two smaller than or equal to value
         inline u32 g_floorpo2(u32 value) { return (u32)1 << (31 - g_countLeadingZeros(value)); }
@@ -149,6 +150,14 @@ namespace ncore
 
         inline s8 g_ilog2(u32 value) { return 31 - g_countLeadingZeros(value); }
         inline s8 g_ilog2(u64 value) { return 63 - g_countLeadingZeros(value); }
+
+             // Return the mask of the value
+        inline u64 g_getMaskForValue(u64 value)
+        {
+            if (value == 0)
+                return 0;
+            return (value & (value - 1)) == 0 ? value : g_ceilpo2(value);
+        }
 
         // Roll all the bits in value to the left by shift number of bits
         inline u32 g_rol32(u32 value, u32 shift)

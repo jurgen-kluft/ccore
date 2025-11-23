@@ -1,5 +1,5 @@
-#ifndef __CBASE_MATH_AND_BIT_UTILS_H__
-#define __CBASE_MATH_AND_BIT_UTILS_H__
+#ifndef __CCORE_MATH_AND_BIT_UTILS_H__
+#define __CCORE_MATH_AND_BIT_UTILS_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
 #    pragma once
@@ -73,8 +73,17 @@ namespace ncore
         template <typename T>
         inline bool g_ispo2(T integer);  // Check if integer is a power-of-two
 
+        s16 g_sqrt(s16 value);  // Return the square root of value
+        s32 g_sqrt(s32 value);  // Return the square root of value
+        s64 g_sqrt(s64 value);  // Return the square root of value
+
+        f32 g_sqrt(f32 value);  // Return the square root of value
+        f64 g_sqrt(f64 value);  // Return the square root of value
+
         inline u32 g_ceilpo2(u32 integer);   // Return the smallest power-of-two larger than integer
+        inline u64 g_ceilpo2(u64 integer);   // Return the smallest power-of-two larger than integer
         inline u32 g_floorpo2(u32 integer);  // Return the biggest power-of-two smaller than integer
+        inline u64 g_floorpo2(u64 integer);  // Return the biggest power-of-two smaller than integer
         inline u32 g_next_power_of_two(u32 val) { return g_ceilpo2(val); }
         inline s8  g_countBits(u8 integer);    // count one bits in 8 bit word
         inline s8  g_countBits(u16 integer);   // count one bits in 16 bit word
