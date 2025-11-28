@@ -77,6 +77,7 @@ namespace ncore
      * \return The number of characters that are WRITTEN into the buffer, not counting the terminating null character
      */
     s32 vprintf_(const char* format, const va_t* argv, s32 argc);
+    
     template<typename... Args>
     s32 vprintf(const char* format, Args... _args)
     {

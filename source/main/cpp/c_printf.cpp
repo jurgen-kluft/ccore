@@ -971,37 +971,37 @@ namespace ncore
 
     ///////////////////////////////////////////////////////////////////////////////
 
-    int printf_(const char* format, const va_t* argv, s32 argc)
+    s32 printf_(const char* format, const va_t* argv, s32 argc)
     {
         char      buffer[1];
-        const int ret = _vsnprintf(_out_char, buffer, (size_t)-1, format, argv, argc);
+        const s32 ret = _vsnprintf(_out_char, buffer, (size_t)-1, format, argv, argc);
         return ret;
     }
 
-    int sprintf_(char* buffer, const char* format, const va_t* argv, s32 argc)
+    s32 sprintf_(char* buffer, const char* format, const va_t* argv, s32 argc)
     {
-        const int ret = _vsnprintf(_out_buffer, buffer, (size_t)-1, format, argv, argc);
+        const s32 ret = _vsnprintf(_out_buffer, buffer, (size_t)-1, format, argv, argc);
         return ret;
     }
 
-    int snprintf_(char* buffer, size_t count, const char* format, const va_t* argv, s32 argc)
+    s32 snprintf_(char* buffer, size_t count, const char* format, const va_t* argv, s32 argc)
     {
-        const int ret = _vsnprintf(_out_buffer, buffer, count, format, argv, argc);
+        const s32 ret = _vsnprintf(_out_buffer, buffer, count, format, argv, argc);
         return ret;
     }
 
-    int vprintf_(const char* format, const va_t* argv, s32 argc)
+    s32 vprintf_(const char* format, const va_t* argv, s32 argc)
     {
         char buffer[1];
         return _vsnprintf(_out_char, buffer, (size_t)-1, format, argv, argc);
     }
 
-    int vsnprintf_(char* buffer, size_t count, const char* format, const va_t* argv, s32 argc) { return _vsnprintf(_out_buffer, buffer, count, format, argv, argc); }
+    s32 vsnprintf_(char* buffer, size_t count, const char* format, const va_t* argv, s32 argc) { return _vsnprintf(_out_buffer, buffer, count, format, argv, argc); }
 
-    int fctprintf_(void (*out)(char character, void* arg), void* arg, const char* format, const va_t* argv, s32 argc)
+    s32 fctprintf_(void (*out)(char character, void* arg), void* arg, const char* format, const va_t* argv, s32 argc)
     {
         const out_fct_wrap_type out_fct_wrap = {out, arg};
-        const int               ret          = _vsnprintf(_out_fct, (char*)(uptr_t)&out_fct_wrap, (size_t)-1, format, argv, argc);
+        const s32               ret          = _vsnprintf(_out_fct, (char*)(uptr_t)&out_fct_wrap, (size_t)-1, format, argv, argc);
         return ret;
     }
 
