@@ -14,10 +14,12 @@ namespace ncore
      * This function is declared here only. You have to write your custom implementation somewhere
      * \param character Character to output
      */
-    void putchar(char character);
+    //void putchar(char character);
+    typedef void (*putchar_func_t)(char character);
+    extern putchar_func_t putchar;
 
     s32 printf_(const char* format, const va_t* argv, s32 argc);
-    
+
     template<typename... Args>
     s32 printf(const char* format, Args... _args)
     {
@@ -77,7 +79,7 @@ namespace ncore
      * \return The number of characters that are WRITTEN into the buffer, not counting the terminating null character
      */
     s32 vprintf_(const char* format, const va_t* argv, s32 argc);
-    
+
     template<typename... Args>
     s32 vprintf(const char* format, Args... _args)
     {

@@ -9,9 +9,8 @@
 
 namespace ncore
 {
-#ifdef TARGET_MAC
-    void putchar(char character) { fputc(character, stdout); }
-#endif
+    void           putchar_nil(char character) {}
+    putchar_func_t putchar = putchar_nil;
 }  // namespace ncore
 
 namespace ncore
