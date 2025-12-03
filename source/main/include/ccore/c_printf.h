@@ -55,6 +55,7 @@ namespace ncore
      *         is non-negative and less than count, the string has been completely written.
      */
     s32 snprintf_(char* buffer, size_t count, const char* format, const va_t* argv, s32 argc);
+    
     template<typename... Args>
     s32 snprintf(char* buffer, size_t count, const char* format, Args... _args)
     {

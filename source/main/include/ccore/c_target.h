@@ -135,7 +135,7 @@ namespace ncore
     static_assert(sizeof(u64) == 8, "s64 must be 64 bits");
 #    endif
 #endif
-    
+
     typedef s64 i64;
 
 #if (CC_PLATFORM_PTR_SIZE == 4)
@@ -830,12 +830,12 @@ namespace ncore
     // templated versions have failed in various subtle ways.
 
     template <typename T, size_t N>
-    char (&CCArraySizeHelper(T (&x)[N]))[N];
+    char (&CCARRAYSIZEHELPER(T (&x)[N]))[N];
 
     template <typename T, size_t N>
-    char (&CCArraySizeHelper(T (&&x)[N]))[N];
+    char (&CCARRAYSIZEHELPER(T (&&x)[N]))[N];
 
-#    define DARRAYSIZE(x) (sizeof(CCArraySizeHelper(x)))
+#    define DARRAYSIZE(x) (sizeof(ncore::CCARRAYSIZEHELPER(x)))
 #endif
 
 // ------------------------------------------------------------------------
