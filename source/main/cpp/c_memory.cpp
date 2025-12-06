@@ -159,11 +159,9 @@ namespace ncore
 
         void memswap(void *inLHS, void *inRHS, int_t inLength)
         {
-            char *p1 = (char *)inLHS;
-            char *p2 = (char *)inRHS;
-            ASSERT(((p1 < p2) && ((p1 + inLength) <= p2)) || ((p2 < p1) && ((p2 + inLength) <= p1)));
             u8 *lhs = (u8 *)inLHS;
             u8 *rhs = (u8 *)inRHS;
+            ASSERT(((lhs < rhs) && ((lhs + inLength) <= rhs)) || ((rhs < lhs) && ((rhs + inLength) <= lhs)));
             for (u32 i = 0; i < inLength; i++)
             {
                 const u8 t = lhs[i];
