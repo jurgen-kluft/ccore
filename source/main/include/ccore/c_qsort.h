@@ -21,15 +21,26 @@ namespace ncore
         extern void sort(u16 *a, u32 n);
         extern void sort(s16 *a, u32 n);
 
+        extern void sort(u16 *a, u32 n, s8 (*cmp)(const void *, const void *, const void *), const void *user_data = 0);
+        extern void sort(s16 *a, u32 n, s8 (*cmp)(const void *, const void *, const void *), const void *user_data = 0);
+
         // element_array (4 bytes, u32, s32), element_count, compare delegate, user_data
         extern void sort(u32 *a, u32 n);
         extern void sort(s32 *a, u32 n);
         extern void sort(f32 *a, u32 n);
 
+        extern void sort(u32 *a, u32 n, s8 (*cmp)(const void *, const void *, const void *), const void *user_data = 0);
+        extern void sort(s32 *a, u32 n, s8 (*cmp)(const void *, const void *, const void *), const void *user_data = 0);
+        extern void sort(f32 *a, u32 n, s8 (*cmp)(const void *, const void *, const void *), const void *user_data = 0);
+
         // element_array (8 bytes, u64, s64), element_count
         extern void sort(u64 *a, u32 n);
         extern void sort(s64 *a, u32 n);
         extern void sort(f64 *a, u32 n);
+
+        extern void sort(u64 *a, u32 n, s8 (*cmp)(const void *, const void *, const void *), const void *user_data = 0);
+        extern void sort(s64 *a, u32 n, s8 (*cmp)(const void *, const void *, const void *), const void *user_data = 0);
+        extern void sort(f64 *a, u32 n, s8 (*cmp)(const void *, const void *, const void *), const void *user_data = 0);
 
         template <typename T>
         inline s8 generic_compare(const void *_lhs, const void *_rhs, const void *_user_data)

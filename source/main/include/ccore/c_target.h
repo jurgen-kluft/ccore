@@ -835,7 +835,7 @@ namespace ncore
     template <typename T, size_t N>
     char (&CCARRAYSIZEHELPER(T (&&x)[N]))[N];
 
-#    define DARRAYSIZE(x) (sizeof(ncore::CCARRAYSIZEHELPER(x)))
+#    define DARRAYSIZE(x) ((size_t)sizeof(ncore::CCARRAYSIZEHELPER(x)))
 #endif
 
 // ------------------------------------------------------------------------
