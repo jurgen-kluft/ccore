@@ -1,5 +1,5 @@
-#ifndef __CCORE_TARGET_PLATFORM_V2_H__
-#define __CCORE_TARGET_PLATFORM_V2_H__
+#ifndef __CCORE_TARGET_PLATFORM_H__
+#define __CCORE_TARGET_PLATFORM_H__
 #pragma once
 
 namespace ncore
@@ -93,9 +93,9 @@ namespace ncore
 #    define CC_PROCESSOR_LRB1  1  // Larrabee version 1
 #    define CC_ASM_STYLE_ATT   1  // Both types of asm style
 #    define CC_ASM_STYLE_INTEL 1  // are supported.
-
 // Android (Google phone OS)
 #elif defined(CC_PLATFORM_ANDROID) || defined(__ANDROID__)
+
 #    undef CC_PLATFORM_ANDROID
 #    define CC_PLATFORM_MOBILE  1
 #    define CC_PLATFORM_ANDROID 1
@@ -120,6 +120,7 @@ namespace ncore
 #    else
 #        error Unknown processor
 #    endif
+
 #    if !defined(CC_SYSTEM_BIG_ENDIAN) && !defined(CC_SYSTEM_LITTLE_ENDIAN)
 #        define CC_SYSTEM_LITTLE_ENDIAN 1
 #    endif
@@ -138,14 +139,12 @@ namespace ncore
 #    define CC_PROCESSOR_ARM32      1
 #    define CC_ABI_ARM_LINUX        1  // a.k.a. "ARM eabi"
 #    define CC_PROCESSOR_ARM7       1
-
+// Apple platforms (iPhone, iPad, Macintosh)
 #elif defined(__APPLE__) && __APPLE__
 #    include <TargetConditionals.h>
-
 // Apple family of operating systems.
 #    define CC_PLATFORM_APPLE
 #    define CC_PLATFORM_POSIX 1
-
 // iPhone
 // TARGET_OS_IPHONE will be undefined on an unknown compiler, and will be defined on gcc.
 #    if defined(CC_PLATFORM_IPHONE) || defined(__IPHONE__) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE) || (defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR)
@@ -177,7 +176,6 @@ namespace ncore
 #        else
 #            error Unknown processor
 #        endif
-
 // Macintosh OSX
 // TARGET_OS_MAC is defined by the Metrowerks and older AppleC compilers.
 // Howerver, TARGET_OS_MAC is defined to be 1 in all cases.
@@ -192,7 +190,7 @@ namespace ncore
 #        define CC_PLATFORM_DESKTOP 1
 #        define CC_PLATFORM_UNIX    1
 #        define CC_PLATFORM_POSIX   1
-    // #define CC_PLATFORM_BSD 1           We don't currently define this. OSX has some BSD history but a lot of the API is different.
+// #define CC_PLATFORM_BSD 1           We don't currently define this. OSX has some BSD history but a lot of the API is different.
 #        define CC_PLATFORM_NAME    "OSX"
 #        if defined(__i386__) || defined(__intel__)
 #            define CC_PROCESSOR_X86        1
@@ -373,6 +371,7 @@ namespace ncore
 #    if defined(__GNUC__)
 #        define CC_ASM_STYLE_ATT 1
 #    endif
+
 #elif defined(CC_PLATFORM_BSD) || (defined(__BSD__) || defined(__FreeBSD__))
 #    undef CC_PLATFORM_BSD
 #    define CC_PLATFORM_DESKTOP 1
@@ -671,12 +670,11 @@ namespace ncore
 #    endif
 #endif
 
-#ifdef CC_SYSTEM_LITTLE_ENDIAN
+#if defined(CC_SYSTEM_LITTLE_ENDIAN)
 #    define D_LITTLE_ENDIAN
 #elif defined(CC_SYSTEM_BIG_ENDIAN)
 #    define D_BIG_ENDIAN
 #endif
-
 };  // namespace ncore
 
 #endif
