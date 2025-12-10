@@ -162,6 +162,14 @@ namespace ncore
     }
 
     template <typename T>
+    inline T* g_reallocate_array(alloc_t* a, T* oldarray, u32 oldsize, u32 newsize)
+    {
+        u32 const memsize = newsize * sizeof(T);
+        void*     ptr     = g_reallocate(a, oldarray, oldsize * sizeof(T), memsize);
+        return (T*)ptr;
+    }
+
+    template <typename T>
     inline T* g_allocate_array_and_memset(alloc_t* a, u32 maxsize, u32 value)
     {
         ASSERTS(maxsize > 0, "error: allocation request for an array of size 0");
