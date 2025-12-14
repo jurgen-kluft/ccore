@@ -59,7 +59,7 @@ namespace ncore
         inline rune to_upper(rune c) { return ((c >= 'a') && (c <= 'z')) ? c + (rune)('A' - 'a') : c; }
         inline rune to_lower(rune c) { return ((c >= 'A') && (c <= 'Z')) ? c + (rune)('a' - 'A') : c; }
         inline u32  to_digit(rune c) { return ((c >= '0') && (c <= '9')) ? (c - '0') : c; }
-        inline u32  hex_to_number(rune c) { return ((c >= '0') && (c <= '9')) ? (c - '0') : ((c >= 'A') && (c <= 'F')) ? (c - 'A' + 10) : ((c >= 'a') && (c <= 'f')) ? (c - 'a' + 10) : 0; }
+        inline i16  hex_to_number(rune c) { return ((c >= '0') && (c <= '9')) ? (c - '0') : ((c >= 'A') && (c <= 'F')) ? (c - 'A' + 10) : ((c >= 'a') && (c <= 'f')) ? (c - 'a' + 10) : -1; }
         inline char to_dec_char(u8 val) { return "0123456789??????"[val & 0xf]; }
         inline char to_hex_char(u8 val, bool lowercase) { return (lowercase) ? "0123456789abcdef"[val & 0xf] : "0123456789ABCDEF"[val & 0xf]; }
         inline bool is_equal(rune a, rune b) { return (a == b); }
