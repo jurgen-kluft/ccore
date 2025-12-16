@@ -1,35 +1,35 @@
 #include "ccore/c_target.h"
 #include "ccore/c_allocator.h"
+#include "ccore/c_memory.h"
+#include "ccore/c_runes.h"
 #include "ccore/c_vmem.h"
 
 namespace ncore
 {
     void* g_reallocate(alloc_t* alloc, void* ptr, u32 size, u32 new_size)
     {
-        void* newptr = alloc->allocate(new_size, sizeof(void*));
-
-        // copy the old data to the new memory, manually
-        ASSERT(newptr != nullptr && ((ptr_t)newptr & 3) == 0);  // Ensure 4 byte alignment
-        ASSERT(ptr != nullptr && ((ptr_t)ptr & 3) == 0);        // Ensure 4 byte alignment
-
+        void*     newptr  = alloc->allocate(new_size, sizeof(void*));
         u32 const minsize = size < new_size ? size : new_size;
-
-        // TODO, use nmem::memcpy
-
-        u32*       dstptr = (u32*)newptr;
-        u32 const* dstend = dstptr + (minsize >> 2);
-        u32 const* srcptr = (u32*)ptr;
-        while (dstptr < dstend)
-            *dstptr++ = *srcptr++;
-
-        u8*       dstptr8 = (u8*)newptr;
-        u8 const* dstend8 = dstptr8 + (minsize & 3);
-        u8*       srcptr8 = (u8*)srcptr;
-        while (dstptr8 < dstend8)
-            *dstptr8++ = *srcptr8++;
-
+        g_memory_aligned4_copy(newptr, ptr, minsize);
         alloc->deallocate(ptr);
         return newptr;
+    }
+
+    char* g_duplicate_string(alloc_t* alloc, const char* str)
+    {
+        const u32 len = ascii::strlen(str) + 1;
+        char*     cp  = g_allocate_memory<char>(alloc, len);
+        g_memory_aligned4_copy(cp, str, len);
+        return cp;
+    }
+
+    void g_deallocate_string(alloc_t* alloc, const char*& str)
+    {
+        if (str != nullptr)
+        {
+            alloc->deallocate((void*)str);
+            str = nullptr;
+        }
     }
 
 };  // namespace ncore

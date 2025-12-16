@@ -113,20 +113,48 @@ namespace ncore
         return (u32)N;
     }
 
-    inline void* g_allocate_and_memset(alloc_t* alloc, u32 size, u32 value)
+    inline void g_memory_fill(void* ptr, u8 value, u32 size)
+    {
+        ASSERT(ptr != nullptr && ((ptr_t)ptr & 3) == 0);  // Ensure 4 byte alignment
+        u32*       clr32 = (u32*)ptr;
+        u32 const* end32 = clr32 + (size >> 2);
+        while (clr32 < end32)
+            *clr32++ = value;
+        u8*       clr8 = (u8*)clr32;
+        u8 const* end8 = clr8 + (size & 3);
+        while (clr8 < end8)
+            *clr8++ = (u8)value;
+    }
+
+    inline void g_memory_aligned4_copy(void* dest, void const* src, u32 size)
+    {
+        ASSERT(dest != nullptr && ((ptr_t)dest & 3) == 0);  // Ensure 4 byte alignment
+        ASSERT(src != nullptr && ((ptr_t)src & 3) == 0);    // Ensure 4 byte alignment
+        u32*       dst32 = (u32*)dest;
+        u32 const* end32 = dst32 + (size >> 2);
+        u32 const* src32 = (u32*)src;
+        while (dst32 < end32)
+            *dst32++ = *src32++;
+        u8*       dst8 = (u8*)dst32;
+        u8 const* end8 = dst8 + (size & 3);
+        u8 const* src8 = (u8*)src32;
+        while (dst8 < end8)
+            *dst8++ = *src8++;
+    }
+
+    template <typename T>
+    inline T* g_allocate_memory(alloc_t* alloc, u32 size)
     {
         ASSERTS(size > 0, "error: allocation request for an array of size 0");
         u32 const memsize = size;
         void*     ptr     = alloc->allocate(memsize);
-        ASSERT(ptr != nullptr && ((ptr_t)ptr & 3) == 0);  // Ensure 4 byte alignment
-        u32*       clr32 = (u32*)ptr;
-        u32 const* end32 = clr32 + (memsize >> 2);
-        while (clr32 < end32)
-            *clr32++ = value;
-        u8*       clr8 = (u8*)clr32;
-        u8 const* end8 = clr8 + (memsize & 3);
-        while (clr8 < end8)
-            *clr8++ = (u8)value;
+        return (T*)ptr;
+    }
+
+    inline void* g_allocate_and_memset(alloc_t* alloc, u32 size, u32 value)
+    {
+        void* ptr = g_allocate_memory<void>(alloc, size);
+        g_memory_fill(ptr, (u8)value, size);
         return (void*)ptr;
     }
 
@@ -186,6 +214,9 @@ namespace ncore
         void*     ptr     = g_allocate_and_memset(a, memsize, 0);
         return (T*)ptr;
     }
+
+    char* g_duplicate_string(alloc_t* alloc, const char* str);
+    void g_deallocate_string(alloc_t* alloc, const char*& str);
 
     void* g_reallocate(alloc_t* alloc, void* ptr, u32 size, u32 new_size);
 

@@ -59,6 +59,12 @@ namespace ncore
         {
             sort((void *)a, n, (u32)sizeof(T), generic_compare<T>, nullptr);
         }
+
+        template <typename T>
+        inline void sort(T *a, u32 n, s8 (*cmp)(const void *, const void *, const void *), const void *user_data = nullptr)
+        {
+            sort((void *)a, n, (u32)sizeof(T), cmp, user_data);
+        }
     }
 }; // namespace ncore
 
