@@ -165,11 +165,17 @@ namespace ncore
         arena->m_reserved_pages   = reserve_pages;
         arena->m_committed_pages  = committed_pages;
         arena->m_pages_commit_min = minimum_pages;
-
         return arena;
     }
 
-    bool arena_t::committed(int_t committed_size_in_bytes) { return true; }
+    bool arena_t::committed(int_t committed_size_in_bytes)
+    {
+        const s32  want_committed_pages = math::g_max((s32)(math::g_alignUp(committed_size_in_bytes + sizeof(arena_t), (int_t)1 << m_page_size_shift) >> m_page_size_shift), m_pages_commit_min);
+        const s32  committed_pages      = sCommit((byte *)this, m_committed_pages, want_committed_pages, m_reserved_pages, m_page_size_shift);
+        const bool success              = (committed_pages == want_committed_pages);
+        m_committed_pages               = committed_pages;
+        return success;
+    }
 
     // commits (allocate) size number of bytes and possibly grows the committed region.
     // returns a pointer to the allocated memory or nullptr if allocation failed.

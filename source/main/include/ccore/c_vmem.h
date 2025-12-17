@@ -27,6 +27,8 @@ namespace ncore
         inline int_t alignment() const { return (int_t)1 << m_alignment_shift; }
         inline int_t reserved_size() const { return (int_t)m_reserved_pages << m_page_size_shift; }
         inline int_t committed_size() const { return (int_t)m_committed_pages << m_page_size_shift; }
+        inline void* base() const { return (void*)((byte*)this); }
+        inline void* address_at_pos(int_t pos) { return (void*)((byte*)this + pos); }
 
         bool  committed(int_t committed_size_in_bytes);   // set committed size of the allocator, this will not change 'pos'
         void* alloc(int_t size);                          // allocate 'size' from the reserved region
