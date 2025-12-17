@@ -116,7 +116,7 @@ namespace ncore
 
 namespace ncore
 {
-    bool vmem_arena_t::reserved(int_t reserve_size)
+    bool arena_t::reserved(int_t reserve_size)
     {
         const s32 page_size = v_alloc_get_page_size();
         reserve_size        = math::g_alignUp(reserve_size, page_size);
@@ -126,7 +126,7 @@ namespace ncore
         if (m_base != nullptr)
         {
             m_pos              = 0;
-            m_alignment        = 16;  // default alignment
+            m_alignment_shift  = 4;  // default alignment shift (4 = 16 bytes)
             m_reserved_pages   = (s32)(reserve_size >> m_page_size_shift);
             m_committed_pages  = 0;
             m_pages_commit_min = 4;
@@ -135,7 +135,7 @@ namespace ncore
         return false;  // reserve failed
     }
 
-    bool vmem_arena_t::committed(int_t committed_size_in_bytes)
+    bool arena_t::committed(int_t committed_size_in_bytes)
     {
         if (m_base == nullptr)
         {
@@ -175,18 +175,15 @@ namespace ncore
         return true;
     }
 
-    int_t vmem_arena_t::save() const { return m_pos; }
-
     // commits (allocate) size number of bytes and possibly grows the committed region.
     // returns a pointer to the allocated memory or nullptr if allocation failed.
-    void *vmem_arena_t::commit(int_t size)
+    void *arena_t::commit(int_t size)
     {
         if (size == 0)
-        {
             return nullptr;  // we will consider this an error
-        }
 
-        const int_t size_in_bytes = math::g_alignUp(size, (int_t)m_alignment);
+        // align the size to the default alignment
+        const int_t size_in_bytes = math::g_alignUp(size, alignment());
 
         // When allocating, will our pointer stay within our committed region, if not we
         // need to commit more pages.
@@ -194,7 +191,7 @@ namespace ncore
         {
             if (m_base == nullptr)
             {
-                if (!reserved(cDEFAULT_ARENA_CAPACITY))
+                if (!reserved(m_reserved_pages << m_page_size_shift))
                 {
                     return nullptr;
                 }
@@ -223,52 +220,58 @@ namespace ncore
         return ptr;
     }
 
-    void *vmem_arena_t::commit(int_t size, s32 alignment)
+    void *arena_t::commit(int_t size, s32 align)
     {
-        if (size == 0 || alignment <= 0)
-        {
+        if (size == 0 || align <= 0)
             return nullptr;
-        }
 
-        alignment = math::g_max(alignment, m_alignment);
+        align = math::g_max((int_t)align, alignment());
 
         // ensure alignment is a power of two
-        ASSERTS(math::g_ispo2(alignment), "Error: alignment value should be a power of 2");
+        ASSERTS(math::g_ispo2(align), "Error: alignment value should be a power of 2");
 
-        // align the size to the default alignment
-        size = math::g_alignUp(size, (int_t)m_alignment);
+        // align the position to the requested alignment
+        const int_t aligning = (math::g_alignUp(m_pos, (int_t)align) - m_pos);
 
-        // align the position to the given alignment
-        const int_t pos      = math::g_alignUp(m_pos, (int_t)alignment);
-        const int_t aligning = (pos - m_pos);
-
+        // we let our core commit function handle the rest
         void *ptr = commit(size + aligning);
 
-        // align the pointer to the given alignment
+        // out of memory ?
         if (ptr == nullptr)
             return nullptr;
 
+        // align the pointer to the given alignment
         ptr = (void *)((byte *)ptr + aligning);
         return ptr;
     }
 
-    void *vmem_arena_t::commit_and_zero(int_t size)
+    void *arena_t::commit_and_zero(int_t size)
     {
         void *ptr = commit(size);
         nmem::memset(ptr, 0, size);
         return ptr;
     }
 
-    void *vmem_arena_t::commit_and_zero(int_t size, s32 alignment)
+    void *arena_t::commit_and_zero(int_t size, s32 alignment)
     {
         void *ptr = commit(size, alignment);
         nmem::memset(ptr, 0, size);
         return ptr;
     }
 
-    void vmem_arena_t::restore(int_t size) { m_pos = size; }
+    int_t arena_t::save_point() const { return m_pos; }
 
-    void vmem_arena_t::shrink()
+    void arena_t::restore_point(int_t pos)
+    {
+        ASSERT(pos >= 0 && pos <= m_pos);
+#    ifdef TARGET_DEBUG
+        // clear the memory that is being 'freed' for debug purposes
+        nmem::memset(m_base + pos, 0xFEFEFEFE, m_pos - pos);
+#    endif
+        m_pos = pos;
+    }
+
+    void arena_t::shrink()
     {
         // ensure current used memory is aligned up to page size
         const int_t used_in_bytes = math::g_alignUp(m_pos, ((int_t)1 << m_page_size_shift));
@@ -285,9 +288,9 @@ namespace ncore
         }
     }
 
-    void vmem_arena_t::reset() { m_pos = 0; }
+    void arena_t::reset() { m_pos = 0; }
 
-    bool vmem_arena_t::release()
+    bool arena_t::release()
     {
         if (m_base == nullptr)
             return true;
@@ -302,7 +305,7 @@ namespace ncore
         {
             m_base             = nullptr;
             m_pos              = 0;
-            m_alignment        = 16;  // default alignment
+            m_alignment_shift  = 4;  // default alignment (1 << 4) = 16 bytes
             m_reserved_pages   = 0;
             m_committed_pages  = 0;
             m_page_size_shift  = 0;
@@ -317,52 +320,51 @@ namespace ncore
 
 namespace ncore
 {
-    bool vmem_arena_t::reserved(int_t reserve_size)
+    bool arena_t::reserved(int_t reserve_size)
     {
         CC_UNUSED(reserve_size);
         return false;  // reserve failed
     }
 
-    bool vmem_arena_t::committed(int_t committed_size_in_bytes)
+    bool arena_t::committed(int_t committed_size_in_bytes)
     {
         CC_UNUSED(committed_size_in_bytes);
         return false;
     }
 
-    int_t vmem_arena_t::save() const { return m_pos; }
-
     // commits (allocate) size number of bytes and possibly grows the committed region.
     // returns a pointer to the allocated memory or nullptr if allocation failed.
-    void *vmem_arena_t::commit(int_t size)
+    void *arena_t::commit(int_t size)
     {
         CC_UNUSED(size);
         return nullptr;  // we will consider this an error
     }
 
-    void *vmem_arena_t::commit(int_t size, s32 alignment)
+    void *arena_t::commit(int_t size, s32 alignment)
     {
         CC_UNUSED(size);
         CC_UNUSED(alignment);
         return nullptr;
     }
 
-    void *vmem_arena_t::commit_and_zero(int_t size)
+    void *arena_t::commit_and_zero(int_t size)
     {
         CC_UNUSED(size);
         return nullptr;
     }
 
-    void *vmem_arena_t::commit_and_zero(int_t size, s32 alignment)
+    void *arena_t::commit_and_zero(int_t size, s32 alignment)
     {
         CC_UNUSED(size);
         CC_UNUSED(alignment);
         return nullptr;
     }
 
-    void vmem_arena_t::restore(int_t size) { m_pos = size; }
-    void vmem_arena_t::shrink() {}
-    void vmem_arena_t::reset() { m_pos = 0; }
-    bool vmem_arena_t::release() { return true; }
+    int_t arena_t::save_point() const { return m_pos; }
+    void  arena_t::restore_point_point(int_t size) { m_pos = size; }
+    void  arena_t::shrink() {}
+    void  arena_t::reset() { m_pos = 0; }
+    bool  arena_t::release() { return true; }
 }  // namespace ncore
 
 #endif

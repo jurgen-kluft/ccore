@@ -9,7 +9,7 @@
 
 namespace ncore
 {
-    struct vmem_arena_t;
+    struct arena_t;
 
     // class new and delete
 #define DCORE_CLASS_PLACEMENT_NEW_DELETE                   \
@@ -113,7 +113,7 @@ namespace ncore
         return (u32)N;
     }
 
-    inline void g_memory_fill(void* ptr, u8 value, u32 size)
+    inline void g_memory_fill(void* ptr, u32 value, u32 size)
     {
         ASSERT(ptr != nullptr && ((ptr_t)ptr & 3) == 0);  // Ensure 4 byte alignment
         u32*       clr32 = (u32*)ptr;
@@ -154,7 +154,7 @@ namespace ncore
     inline void* g_allocate_and_memset(alloc_t* alloc, u32 size, u32 value)
     {
         void* ptr = g_allocate_memory<void>(alloc, size);
-        g_memory_fill(ptr, (u8)value, size);
+        g_memory_fill(ptr, value, size);
         return (void*)ptr;
     }
 
