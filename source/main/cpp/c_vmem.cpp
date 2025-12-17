@@ -116,68 +116,64 @@ namespace ncore
 
 namespace ncore
 {
-    bool arena_t::reserved(int_t reserve_size)
+    static s32 sCommit(byte *base_address, s32 current_committed_pages, int_t want_committed_pages, s32 total_reserved_pages, s16 page_size_shift)
     {
-        const s32 page_size = v_alloc_get_page_size();
-        reserve_size        = math::g_alignUp(reserve_size, page_size);
-        m_page_size_shift   = math::g_ilog2(page_size);
-
-        m_base = (byte *)v_alloc_reserve(reserve_size);
-        if (m_base != nullptr)
+        if (want_committed_pages > current_committed_pages)
         {
-            m_pos              = 0;
-            m_alignment_shift  = 4;  // default alignment shift (4 = 16 bytes)
-            m_reserved_pages   = (s32)(reserve_size >> m_page_size_shift);
-            m_committed_pages  = 0;
-            m_pages_commit_min = 4;
-            return true;
-        }
-        return false;  // reserve failed
-    }
-
-    bool arena_t::committed(int_t committed_size_in_bytes)
-    {
-        if (m_base == nullptr)
-        {
-            return false;
-        }
-
-        const int_t size_in_bytes = math::g_alignUp(committed_size_in_bytes, ((int_t)1 << m_page_size_shift));
-        const int_t size_in_pages = size_in_bytes >> m_page_size_shift;
-
-        if (size_in_pages > m_committed_pages)
-        {
-            int_t extra_needed_pages = math::g_max(size_in_pages - m_committed_pages, (int_t)m_pages_commit_min);
-            extra_needed_pages       = math::g_min(extra_needed_pages, (int_t)(m_reserved_pages - m_committed_pages));
-            if ((m_committed_pages + extra_needed_pages) > m_reserved_pages)
-            {
-                return false;
-            }
-
-            const bool result = v_alloc_commit(m_base + ((int_t)m_committed_pages << m_page_size_shift), extra_needed_pages << m_page_size_shift);
+            const int_t extra_needed_pages = (int_t)(want_committed_pages - current_committed_pages);
+            if ((current_committed_pages + extra_needed_pages) > total_reserved_pages)
+                return current_committed_pages;
+            const bool result = v_alloc_commit(base_address + ((int_t)current_committed_pages << page_size_shift), extra_needed_pages << page_size_shift);
             if (!result)
-            {
-                return false;
-            }
-            m_committed_pages += (s32)extra_needed_pages;
+                return current_committed_pages;
+            current_committed_pages += (s32)extra_needed_pages;
         }
-        else if (size_in_pages < m_committed_pages)
+        else if (want_committed_pages < current_committed_pages)
         {
             // decommit the extra pages
-            const int_t decommit_size_in_bytes = ((int_t)m_committed_pages - size_in_pages) << m_page_size_shift;
-            byte       *decommit_start         = m_base + (size_in_pages << m_page_size_shift);
+            const int_t decommit_size_in_bytes = ((int_t)current_committed_pages - want_committed_pages) << page_size_shift;
+            byte       *decommit_start         = base_address + (want_committed_pages << page_size_shift);
             if (!v_alloc_decommit(decommit_start, decommit_size_in_bytes))
-            {
-                return false;
-            }
-            m_committed_pages = (s32)size_in_pages;
+                return current_committed_pages;
+            current_committed_pages = (s32)want_committed_pages;
         }
-        return true;
+        return current_committed_pages;
     }
+
+    arena_t *gCreateArena(int_t reserve_size, int_t commit_size)
+    {
+        const s32 minimum_pages   = 4;
+        const s32 page_size       = v_alloc_get_page_size();
+        const s8  page_size_shift = math::g_ilog2(page_size);
+        const s32 reserve_pages   = math::g_max((s32)(math::g_alignUp(reserve_size, page_size) >> page_size_shift), minimum_pages);
+
+        byte *base_address = (byte *)v_alloc_reserve((int_t)reserve_pages << page_size_shift);
+        if (base_address == nullptr)
+            return nullptr;
+
+        const s32 commit_pages    = math::g_max((s32)(math::g_alignUp(commit_size, (int_t)page_size) >> page_size_shift), minimum_pages);
+        s32       committed_pages = sCommit(base_address, 0, commit_pages, reserve_pages, page_size_shift);
+        if (committed_pages == 0)
+        {
+            v_alloc_release(base_address, reserve_size);
+            return nullptr;
+        }
+        arena_t *arena            = (arena_t *)base_address;
+        arena->m_pos              = sizeof(arena_t);
+        arena->m_page_size_shift  = page_size_shift;
+        arena->m_alignment_shift  = 4;  // default alignment shift (4 = 16 bytes)
+        arena->m_reserved_pages   = reserve_pages;
+        arena->m_committed_pages  = committed_pages;
+        arena->m_pages_commit_min = minimum_pages;
+
+        return arena;
+    }
+
+    bool arena_t::committed(int_t committed_size_in_bytes) { return true; }
 
     // commits (allocate) size number of bytes and possibly grows the committed region.
     // returns a pointer to the allocated memory or nullptr if allocation failed.
-    void *arena_t::commit(int_t size)
+    void *arena_t::alloc(int_t size)
     {
         if (size == 0)
             return nullptr;  // we will consider this an error
@@ -189,14 +185,6 @@ namespace ncore
         // need to commit more pages.
         if ((m_pos + size_in_bytes) > (m_committed_pages << m_page_size_shift))
         {
-            if (m_base == nullptr)
-            {
-                if (!reserved(m_reserved_pages << m_page_size_shift))
-                {
-                    return nullptr;
-                }
-            }
-
             const int_t size_request_in_pages = math::g_alignUp(size_in_bytes, (int_t)1 << m_page_size_shift) >> m_page_size_shift;
             const int_t used_committed_pages  = math::g_alignUp(m_pos, (int_t)1 << m_page_size_shift) >> m_page_size_shift;
             if ((used_committed_pages + size_request_in_pages) > m_committed_pages)
@@ -209,18 +197,18 @@ namespace ncore
                 if ((m_committed_pages + extra_needed_pages) > m_reserved_pages)
                     return nullptr;
 
-                const bool result = v_alloc_commit(m_base + ((int_t)m_committed_pages << m_page_size_shift), extra_needed_pages << m_page_size_shift);
+                const bool result = v_alloc_commit((byte *)this + ((int_t)m_committed_pages << m_page_size_shift), extra_needed_pages << m_page_size_shift);
                 if (!result)
                     return nullptr;
                 m_committed_pages += (s32)extra_needed_pages;
             }
         }
-        void *ptr = m_base + m_pos;
+        void *ptr = (byte *)this + m_pos;
         m_pos += size_in_bytes;
         return ptr;
     }
 
-    void *arena_t::commit(int_t size, s32 align)
+    void *arena_t::alloc(int_t size, s32 align)
     {
         if (size == 0 || align <= 0)
             return nullptr;
@@ -234,7 +222,7 @@ namespace ncore
         const int_t aligning = (math::g_alignUp(m_pos, (int_t)align) - m_pos);
 
         // we let our core commit function handle the rest
-        void *ptr = commit(size + aligning);
+        void *ptr = alloc(size + aligning);
 
         // out of memory ?
         if (ptr == nullptr)
@@ -245,16 +233,16 @@ namespace ncore
         return ptr;
     }
 
-    void *arena_t::commit_and_zero(int_t size)
+    void *arena_t::alloc_and_zero(int_t size)
     {
-        void *ptr = commit(size);
+        void *ptr = alloc(size);
         nmem::memset(ptr, 0, size);
         return ptr;
     }
 
-    void *arena_t::commit_and_zero(int_t size, s32 alignment)
+    void *arena_t::alloc_and_zero(int_t size, s32 alignment)
     {
-        void *ptr = commit(size, alignment);
+        void *ptr = alloc(size, alignment);
         nmem::memset(ptr, 0, size);
         return ptr;
     }
@@ -266,7 +254,7 @@ namespace ncore
         ASSERT(pos >= 0 && pos <= m_pos);
 #    ifdef TARGET_DEBUG
         // clear the memory that is being 'freed' for debug purposes
-        nmem::memset(m_base + pos, 0xFEFEFEFE, m_pos - pos);
+        nmem::memset((byte *)this + pos, 0xFEFEFEFE, m_pos - pos);
 #    endif
         m_pos = pos;
     }
@@ -277,7 +265,7 @@ namespace ncore
         const int_t used_in_bytes = math::g_alignUp(m_pos, ((int_t)1 << m_page_size_shift));
         const int_t used_in_pages = used_in_bytes >> m_page_size_shift;
 
-        byte       *decommit_start         = m_base + used_in_bytes;
+        byte       *decommit_start         = (byte *)this + used_in_bytes;
         const int_t decommit_size_in_bytes = (m_committed_pages - used_in_pages) << m_page_size_shift;
         if (decommit_size_in_bytes > 0)
         {
@@ -292,18 +280,14 @@ namespace ncore
 
     bool arena_t::release()
     {
-        if (m_base == nullptr)
-            return true;
-
-        const bool partof_vmem = ((byte *)this >= m_base && (byte *)this < (m_base + (m_reserved_pages << m_page_size_shift)));
+        const bool partof_vmem = ((byte *)this >= (byte *)this && (byte *)this < ((byte *)this + (m_reserved_pages << m_page_size_shift)));
         if (partof_vmem)
         {
-            return v_alloc_release(m_base, m_reserved_pages << m_page_size_shift);
+            return v_alloc_release((void *)this, m_reserved_pages << m_page_size_shift);
         }
 
-        if (v_alloc_release(m_base, m_reserved_pages << m_page_size_shift))
+        if (v_alloc_release((void *)this, m_reserved_pages << m_page_size_shift))
         {
-            m_base             = nullptr;
             m_pos              = 0;
             m_alignment_shift  = 4;  // default alignment (1 << 4) = 16 bytes
             m_reserved_pages   = 0;

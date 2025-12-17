@@ -14,17 +14,16 @@ UNITTEST_SUITE_BEGIN(vmem)
 
         UNITTEST_TEST(init)
         {
-            arena_t arena;
+            arena_t* arena = gCreateArena(8 * cGB, 16 * cMB);  // reserve 8 GB, commit 16 MB
 
-            // reserve 8 GB, if you don't call this, then when calling commit, it will reserve
+            // reserve 8 GB, if you don't call this, then when calling alloc, it will reserve
             // the default arena capacity of 1 GB.
-            const bool result = arena.reserved(8 * cGB);
-            CHECK_TRUE(result);
+            CHECK_NOT_NULL(arena);
 
-            int_t save = arena.save_point();  // save a restore point
+            int_t save = arena->save_point();  // save a restore point
             CHECK_EQUAL(0, save);
 
-            void* ptr1 = arena.commit(1020);  // allocate 1 KB
+            void* ptr1 = arena->alloc(1020);  // allocate 1 KB
             CHECK_NOT_NULL(ptr1);
 
             // Write to the allocated memory
@@ -34,13 +33,13 @@ UNITTEST_SUITE_BEGIN(vmem)
                 data[i] = (byte)i;
             }
 
-            arena.restore_point(save);  // restore the size
+            arena->restore_point(save);  // restore the size
 
-            void* ptr2 = arena.commit(1020);  // allocate 1 KB
+            void* ptr2 = arena->alloc(1020);  // allocate 1 KB
             CHECK_NOT_NULL(ptr2);
             CHECK_EQUAL(ptr1, ptr2);  // should be the same pointer
 
-            arena.release();  // release the reserved memory
+            arena->release();  // release the reserved memory
         }
     }
 }
