@@ -13,330 +13,330 @@ UNITTEST_SUITE_BEGIN(integer)
 		UNITTEST_TEST(Min)
 		{
 			u8 au8 = 1, bu8 = 2, cu8 = 0;
-			CHECK_EQUAL(1, math::g_min(au8,bu8));
-			CHECK_EQUAL(0, math::g_min(au8,cu8));
+			CHECK_EQUAL(1, math::min(au8,bu8));
+			CHECK_EQUAL(0, math::min(au8,cu8));
 
 			u16 au16 = 1, bu16 = 2, cu16 = 0;
-			CHECK_EQUAL(1, math::g_min(au16,bu16));
-			CHECK_EQUAL(0, math::g_min(au16,cu16));
+			CHECK_EQUAL(1, math::min(au16,bu16));
+			CHECK_EQUAL(0, math::min(au16,cu16));
 
 			u32 au32 = 1, bu32 = 2, cu32 = 0;
-			CHECK_EQUAL(au32, math::g_min(au32,bu32));
-			CHECK_EQUAL(cu32, math::g_min(au32,cu32));
+			CHECK_EQUAL(au32, math::min(au32,bu32));
+			CHECK_EQUAL(cu32, math::min(au32,cu32));
 
 			s32 as32 = 1, bs32 = 2, cs32 = 0;
-			CHECK_EQUAL(as32, math::g_min(as32,bs32));
-			CHECK_EQUAL(cs32, math::g_min(as32,cs32));
+			CHECK_EQUAL(as32, math::min(as32,bs32));
+			CHECK_EQUAL(cs32, math::min(as32,cs32));
 
 			u64 au64 = 1, bu64 = 2, cu64 = 0;
-			CHECK_EQUAL(au64, math::g_min(au64,bu64));
-			CHECK_EQUAL(cu64, math::g_min(au64,cu64));
+			CHECK_EQUAL(au64, math::min(au64,bu64));
+			CHECK_EQUAL(cu64, math::min(au64,cu64));
 		}
 
 		UNITTEST_TEST(Max)
 		{
 			u8 au8 = 1, bu8 = 2, cu8 = 0;
-			CHECK_EQUAL(2, math::g_max(au8,bu8));
-			CHECK_EQUAL(1, math::g_max(au8,cu8));
+			CHECK_EQUAL(2, math::max(au8,bu8));
+			CHECK_EQUAL(1, math::max(au8,cu8));
 
 			u16 au16 = 1, bu16 = 2, cu16 = 0;
-			CHECK_EQUAL(2, math::g_max(au16,bu16));
-			CHECK_EQUAL(1, math::g_max(au16,cu16));
+			CHECK_EQUAL(2, math::max(au16,bu16));
+			CHECK_EQUAL(1, math::max(au16,cu16));
 
 			u32 au32 = 1, bu32 = 2, cu32 = 0;
-			CHECK_EQUAL(bu32, math::g_max(au32,bu32));
-			CHECK_EQUAL(au32, math::g_max(au32,cu32));
+			CHECK_EQUAL(bu32, math::max(au32,bu32));
+			CHECK_EQUAL(au32, math::max(au32,cu32));
 
 			u32 as32 = 1, bs32 = 2, cs32 = 0;
-			CHECK_EQUAL(bs32, math::g_max(as32,bs32));
-			CHECK_EQUAL(as32, math::g_max(as32,cs32));
+			CHECK_EQUAL(bs32, math::max(as32,bs32));
+			CHECK_EQUAL(as32, math::max(as32,cs32));
 
 			u64 au64 = 1, bu64 = 2, cu64 = 0;
-			CHECK_EQUAL(bu64, math::g_max(au64,bu64));
-			CHECK_EQUAL(au64, math::g_max(au64,cu64));
+			CHECK_EQUAL(bu64, math::max(au64,bu64));
+			CHECK_EQUAL(au64, math::max(au64,cu64));
 		}
 
 		UNITTEST_TEST(Clamp)
 		{
 			u8 au8 = 0, bu8 = 1, cu8 = 2;
-			CHECK_EQUAL(1, math::g_clamp(au8,bu8,cu8));
-			CHECK_EQUAL(1, math::g_clamp(bu8,bu8,cu8));
+			CHECK_EQUAL(1, math::clamp(au8,bu8,cu8));
+			CHECK_EQUAL(1, math::clamp(bu8,bu8,cu8));
 
 			u16 au16 = 0, bu16 = 1, cu16 = 2;
-			CHECK_EQUAL(1, math::g_clamp(au16,bu16,cu16));
-			CHECK_EQUAL(2, math::g_clamp(cu16,bu16,cu16));
+			CHECK_EQUAL(1, math::clamp(au16,bu16,cu16));
+			CHECK_EQUAL(2, math::clamp(cu16,bu16,cu16));
 
 			u32 au32 = 0, bu32 = 1, cu32 = 2;
-			CHECK_EQUAL((u32)1, math::g_clamp(au32,bu32,cu32));
-			CHECK_EQUAL((u32)2, math::g_clamp(au32,cu32,cu32));
+			CHECK_EQUAL((u32)1, math::clamp(au32,bu32,cu32));
+			CHECK_EQUAL((u32)2, math::clamp(au32,cu32,cu32));
 
 			u64 au64 = 0, bu64 = 1, cu64 = 2;
-			CHECK_EQUAL((u64)1, math::g_clamp(au64,bu64,cu64));
-			CHECK_EQUAL((u64)1, math::g_clamp(bu64,au64,cu64));
+			CHECK_EQUAL((u64)1, math::clamp(au64,bu64,cu64));
+			CHECK_EQUAL((u64)1, math::clamp(bu64,au64,cu64));
 		}
 
 		UNITTEST_TEST(Align)
 		{
-			CHECK_EQUAL(16, math::g_align(17, 16));
-			CHECK_EQUAL(256, math::g_align(300, 256));
-			CHECK_EQUAL(1024, math::g_align(2011, 1024));
+			CHECK_EQUAL(16, math::align(17, 16));
+			CHECK_EQUAL(256, math::align(300, 256));
+			CHECK_EQUAL(1024, math::align(2011, 1024));
 		}
 
 		UNITTEST_TEST(AlignDown)
 		{
-			CHECK_EQUAL(16, math::g_alignDown(17, 16));
-			CHECK_EQUAL(256, math::g_alignDown(300, 256));
-			CHECK_EQUAL(1024, math::g_alignDown(2011, 1024));
+			CHECK_EQUAL(16, math::alignDown(17, 16));
+			CHECK_EQUAL(256, math::alignDown(300, 256));
+			CHECK_EQUAL(1024, math::alignDown(2011, 1024));
 		}
 
 		UNITTEST_TEST(AlignUp)
 		{
-			CHECK_EQUAL(16, math::g_alignUp(12, 16));
-			CHECK_EQUAL(32, math::g_alignUp(17, 16));
-			CHECK_EQUAL(256, math::g_alignUp(200, 256));
-			CHECK_EQUAL(512, math::g_alignUp(300, 256));
-			CHECK_EQUAL(2048, math::g_alignUp(2011, 1024));
+			CHECK_EQUAL(16, math::alignUp(12, 16));
+			CHECK_EQUAL(32, math::alignUp(17, 16));
+			CHECK_EQUAL(256, math::alignUp(200, 256));
+			CHECK_EQUAL(512, math::alignUp(300, 256));
+			CHECK_EQUAL(2048, math::alignUp(2011, 1024));
 		}
 
 		UNITTEST_TEST(IsAligned)
 		{
-			CHECK_TRUE(math::g_isAligned(16, 16));
-			CHECK_TRUE(math::g_isAligned(256, 256));
-			CHECK_TRUE(math::g_isAligned(1024, 1024));
+			CHECK_TRUE(math::isAligned(16, 16));
+			CHECK_TRUE(math::isAligned(256, 256));
+			CHECK_TRUE(math::isAligned(1024, 1024));
 		}
 
 		UNITTEST_TEST(Abs)
 		{
 			s32 a = 0, b = 1, c = -2;
-			CHECK_EQUAL(0, math::g_abs(a));
-			CHECK_EQUAL(1, math::g_abs(b));
-			CHECK_EQUAL(2, math::g_abs(c));
+			CHECK_EQUAL(0, math::abs(a));
+			CHECK_EQUAL(1, math::abs(b));
+			CHECK_EQUAL(2, math::abs(c));
 		}
 
 		UNITTEST_TEST(Sqr)
 		{
 			s32 a = 0, b = 1, c = -2;
-			CHECK_EQUAL(0, math::g_sqr(a));
-			CHECK_EQUAL(1, math::g_sqr(b));
-			CHECK_EQUAL(4, math::g_sqr(c));
+			CHECK_EQUAL(0, math::sqr(a));
+			CHECK_EQUAL(1, math::sqr(b));
+			CHECK_EQUAL(4, math::sqr(c));
 
 			u32 au = 0, bu = 1, cu = 2;
-			CHECK_EQUAL((u32)0, math::g_sqr(au));
-			CHECK_EQUAL((u32)1, math::g_sqr(bu));
-			CHECK_EQUAL((u32)4, math::g_sqr(cu));
+			CHECK_EQUAL((u32)0, math::sqr(au));
+			CHECK_EQUAL((u32)1, math::sqr(bu));
+			CHECK_EQUAL((u32)4, math::sqr(cu));
 		}
 
 		UNITTEST_TEST(Mod)
 		{
 			s32 a = 3, b = 50, c = -2;
-			CHECK_EQUAL(3, math::g_mod(a,b));
-			CHECK_EQUAL(0, math::g_mod(b,c));
-			CHECK_EQUAL(2, math::g_mod(b,a));
+			CHECK_EQUAL(3, math::mod(a,b));
+			CHECK_EQUAL(0, math::mod(b,c));
+			CHECK_EQUAL(2, math::mod(b,a));
 
 			// WII: truncates towards zero
 
-			CHECK_EQUAL(-2, math::g_mod(c,a));
+			CHECK_EQUAL(-2, math::mod(c,a));
 			c = -22;
 			a = 7;
-			CHECK_EQUAL(-1, math::g_mod(c,a));
+			CHECK_EQUAL(-1, math::mod(c,a));
 		}
 
 		UNITTEST_TEST(Gcd)
 		{
 			s32 a = 12, b = 50, c = -2;
-			CHECK_EQUAL(2, math::g_gcd(a,b));
-			CHECK_EQUAL(-2, math::g_gcd(b,c));
-			CHECK_EQUAL(-2, math::g_gcd(c,a));
+			CHECK_EQUAL(2, math::gcd(a,b));
+			CHECK_EQUAL(-2, math::gcd(b,c));
+			CHECK_EQUAL(-2, math::gcd(c,a));
 		}
 
 		UNITTEST_TEST(Average)
 		{
 			s32 a = 13, b = 50, c = -200;
-			CHECK_TRUE(math::g_average(a,b) >= 31);
-			CHECK_TRUE(math::g_average(a,b) <= 32);
-			CHECK_TRUE(math::g_average(b,c) == -75);
-			CHECK_TRUE(math::g_average(c,a) <= -93);
-			CHECK_TRUE(math::g_average(c,a) >= -94);
+			CHECK_TRUE(math::average(a,b) >= 31);
+			CHECK_TRUE(math::average(a,b) <= 32);
+			CHECK_TRUE(math::average(b,c) == -75);
+			CHECK_TRUE(math::average(c,a) <= -93);
+			CHECK_TRUE(math::average(c,a) >= -94);
 		}
 
 		UNITTEST_TEST(IsPowerOf2)
 		{
 			s32 a = 13, b = 64;
-			CHECK_FALSE(math::g_ispo2(a));
-			CHECK_TRUE(math::g_ispo2(b));
+			CHECK_FALSE(math::ispo2(a));
+			CHECK_TRUE(math::ispo2(b));
 		}
 
 		UNITTEST_TEST(CeilPower2)
 		{
 			u32 a = 13, b = 64;
-			CHECK_EQUAL((u32)16, math::g_ceilpo2(a));
-			CHECK_EQUAL((u32)64, math::g_ceilpo2(b));
+			CHECK_EQUAL((u32)16, math::ceilpo2(a));
+			CHECK_EQUAL((u32)64, math::ceilpo2(b));
 		}
 
 		UNITTEST_TEST(FloorPower2)
 		{
 			u32 a = 13, b = 64;
-			CHECK_EQUAL((u32)8, math::g_floorpo2(a));
-			CHECK_EQUAL((u32)64, math::g_floorpo2(b));
+			CHECK_EQUAL((u32)8, math::floorpo2(a));
+			CHECK_EQUAL((u32)64, math::floorpo2(b));
 		}
 
 		UNITTEST_TEST(CountBits)
 		{
 			u32 a = 13, b = 64;
-			CHECK_EQUAL(3, math::g_countBits(a));
-			CHECK_EQUAL(1, math::g_countBits(b));
+			CHECK_EQUAL(3, math::countBits(a));
+			CHECK_EQUAL(1, math::countBits(b));
 		}
 
 		UNITTEST_TEST(Log2_s32)
         {
             s32 a = 13, b = 64, c = 1;
-            CHECK_EQUAL(3, math::g_ilog2(a));
-            CHECK_EQUAL(6, math::g_ilog2(b));
-            CHECK_EQUAL(0, math::g_ilog2(c));
+            CHECK_EQUAL(3, math::ilog2(a));
+            CHECK_EQUAL(6, math::ilog2(b));
+            CHECK_EQUAL(0, math::ilog2(c));
         }
 
 		UNITTEST_TEST(Log2_u32)
         {
             u32 a = 0x1, b = 0x10000, c = 0x80000000;
-            CHECK_EQUAL(0, math::g_ilog2(a));
-            CHECK_EQUAL(16, math::g_ilog2(b));
-            CHECK_EQUAL(31, math::g_ilog2(c));
+            CHECK_EQUAL(0, math::ilog2(a));
+            CHECK_EQUAL(16, math::ilog2(b));
+            CHECK_EQUAL(31, math::ilog2(c));
         }
 
 		UNITTEST_TEST(CountTrailingZeros16)
 		{
 			u16 a = 13, b = 64, c = 0, d = -1;
-			CHECK_EQUAL(0, math::g_countTrailingZeros(a));
-			CHECK_EQUAL(6, math::g_countTrailingZeros(b));
-			CHECK_EQUAL(16, math::g_countTrailingZeros(c));
-			CHECK_EQUAL(0, math::g_countTrailingZeros(d));
+			CHECK_EQUAL(0, math::countTrailingZeros(a));
+			CHECK_EQUAL(6, math::countTrailingZeros(b));
+			CHECK_EQUAL(16, math::countTrailingZeros(c));
+			CHECK_EQUAL(0, math::countTrailingZeros(d));
 		}
 		UNITTEST_TEST(CountTrailingZeros32)
 		{
 			u32 a = 13, b = 64, c = 0, d = -1;
-			CHECK_EQUAL(0, math::g_countTrailingZeros(a));
-			CHECK_EQUAL(6, math::g_countTrailingZeros(b));
-			CHECK_EQUAL(32, math::g_countTrailingZeros(c));
-			CHECK_EQUAL(0, math::g_countTrailingZeros(d));
+			CHECK_EQUAL(0, math::countTrailingZeros(a));
+			CHECK_EQUAL(6, math::countTrailingZeros(b));
+			CHECK_EQUAL(32, math::countTrailingZeros(c));
+			CHECK_EQUAL(0, math::countTrailingZeros(d));
 		}
 		UNITTEST_TEST(CountTrailingZeros64)
 		{
 			u64 a = 13, b = 64, c = 0, d = -1, e = 0xffff000000000000UL;
-			CHECK_EQUAL( 0, math::g_countTrailingZeros(a));
-			CHECK_EQUAL( 6, math::g_countTrailingZeros(b));
-			CHECK_EQUAL(64, math::g_countTrailingZeros(c));
-			CHECK_EQUAL( 0, math::g_countTrailingZeros(d));
-			CHECK_EQUAL(48, math::g_countTrailingZeros(e));
+			CHECK_EQUAL( 0, math::countTrailingZeros(a));
+			CHECK_EQUAL( 6, math::countTrailingZeros(b));
+			CHECK_EQUAL(64, math::countTrailingZeros(c));
+			CHECK_EQUAL( 0, math::countTrailingZeros(d));
+			CHECK_EQUAL(48, math::countTrailingZeros(e));
 		}
 
 		UNITTEST_TEST(CountLeadingZeros16)
 		{
 			u16 a = 13, b = 64, c = 0, d = -1;
-			CHECK_EQUAL(12, math::g_countLeadingZeros(a));
-			CHECK_EQUAL(9, math::g_countLeadingZeros(b));
-			CHECK_EQUAL(16, math::g_countLeadingZeros(c));
-			CHECK_EQUAL( 0, math::g_countLeadingZeros(d));
+			CHECK_EQUAL(12, math::countLeadingZeros(a));
+			CHECK_EQUAL(9, math::countLeadingZeros(b));
+			CHECK_EQUAL(16, math::countLeadingZeros(c));
+			CHECK_EQUAL( 0, math::countLeadingZeros(d));
 		}
 		UNITTEST_TEST(CountLeadingZeros32)
 		{
 			u32 a = 13, b = 64, c = 0, d = -1;
-			CHECK_EQUAL(28, math::g_countLeadingZeros(a));
-			CHECK_EQUAL(25, math::g_countLeadingZeros(b));
-			CHECK_EQUAL(32, math::g_countLeadingZeros(c));
-			CHECK_EQUAL( 0, math::g_countLeadingZeros(d));
+			CHECK_EQUAL(28, math::countLeadingZeros(a));
+			CHECK_EQUAL(25, math::countLeadingZeros(b));
+			CHECK_EQUAL(32, math::countLeadingZeros(c));
+			CHECK_EQUAL( 0, math::countLeadingZeros(d));
 		}
 		UNITTEST_TEST(CountLeadingZeros64)
 		{
 			u64 a = 13, b = 64, c = 0, d = -1, e = 0x0000ffff00000000UL;
-			CHECK_EQUAL(32+28, math::g_countLeadingZeros(a));
-			CHECK_EQUAL(32+25, math::g_countLeadingZeros(b));
-			CHECK_EQUAL(32+32, math::g_countLeadingZeros(c));
-			CHECK_EQUAL(0, math::g_countLeadingZeros(d));
-			CHECK_EQUAL(16, math::g_countLeadingZeros(e));
+			CHECK_EQUAL(32+28, math::countLeadingZeros(a));
+			CHECK_EQUAL(32+25, math::countLeadingZeros(b));
+			CHECK_EQUAL(32+32, math::countLeadingZeros(c));
+			CHECK_EQUAL(0, math::countLeadingZeros(d));
+			CHECK_EQUAL(16, math::countLeadingZeros(e));
 		}
 
 		UNITTEST_TEST(LeastSignificantOneBit)
 		{
 			u32 a = 12, b = 64, c = 0;
-			CHECK_EQUAL((u32)4, math::g_leastSignificantOneBit(a));
-			CHECK_EQUAL((u32)64, math::g_leastSignificantOneBit(b));
-			CHECK_EQUAL((u32)0, math::g_leastSignificantOneBit(c));
+			CHECK_EQUAL((u32)4, math::leastSignificantOneBit(a));
+			CHECK_EQUAL((u32)64, math::leastSignificantOneBit(b));
+			CHECK_EQUAL((u32)0, math::leastSignificantOneBit(c));
 		}
 
 		UNITTEST_TEST(MostSignificantOneBit)
 		{
 			u32 a = 12, b = 64, c = 0;
-			CHECK_EQUAL((u32)8, math::g_mostSignificantOneBit(a));
-			CHECK_EQUAL((u32)64, math::g_mostSignificantOneBit(b));
-			CHECK_EQUAL((u32)0, math::g_mostSignificantOneBit(c));
+			CHECK_EQUAL((u32)8, math::mostSignificantOneBit(a));
+			CHECK_EQUAL((u32)64, math::mostSignificantOneBit(b));
+			CHECK_EQUAL((u32)0, math::mostSignificantOneBit(c));
 		}
 
 		UNITTEST_TEST(LeastSignificantBit)
 		{
 			u32 a = 12, b = 64, c = 0;
-			CHECK_EQUAL(2, math::g_leastSignificantBit(a));
-			CHECK_EQUAL(6, math::g_leastSignificantBit(b));
-			CHECK_EQUAL(32, math::g_leastSignificantBit(c));
+			CHECK_EQUAL(2, math::leastSignificantBit(a));
+			CHECK_EQUAL(6, math::leastSignificantBit(b));
+			CHECK_EQUAL(32, math::leastSignificantBit(c));
 		}
 
 		UNITTEST_TEST(MostSignificantBit)
 		{
 			u32 a = 12, b = 64, c = 0;
-			CHECK_EQUAL(3, math::g_mostSignificantBit(a));
-			CHECK_EQUAL(6, math::g_mostSignificantBit(b));
-			CHECK_EQUAL(32, math::g_mostSignificantBit(c));
+			CHECK_EQUAL(3, math::mostSignificantBit(a));
+			CHECK_EQUAL(6, math::mostSignificantBit(b));
+			CHECK_EQUAL(32, math::mostSignificantBit(c));
 		}
 
 		UNITTEST_TEST(FindFirstBit)
 		{
 			u32 a = 12, b = 64, c = 0;
-			CHECK_EQUAL(2, math::g_findFirstBit(a));
-			CHECK_EQUAL(6, math::g_findFirstBit(b));
-			CHECK_EQUAL(32, math::g_findFirstBit(c));
+			CHECK_EQUAL(2, math::findFirstBit(a));
+			CHECK_EQUAL(6, math::findFirstBit(b));
+			CHECK_EQUAL(32, math::findFirstBit(c));
 		}
 
 		UNITTEST_TEST(FindLastBit_u16)
 		{
 			u16 a = 12, b = 64, c = 0;
-			CHECK_EQUAL(15-3 , math::g_findLastBit(a));
-			CHECK_EQUAL(15-6 , math::g_findLastBit(b));
-			CHECK_EQUAL(16, math::g_findLastBit(c));
+			CHECK_EQUAL(15-3 , math::findLastBit(a));
+			CHECK_EQUAL(15-6 , math::findLastBit(b));
+			CHECK_EQUAL(16, math::findLastBit(c));
 		}
 
 		UNITTEST_TEST(FindLastBit_u32)
 		{
 			u32 a = 12, b = 64, c = 0;
-			CHECK_EQUAL(31-3 , math::g_findLastBit(a));
-			CHECK_EQUAL(31-6 , math::g_findLastBit(b));
-			CHECK_EQUAL(32, math::g_findLastBit(c));
+			CHECK_EQUAL(31-3 , math::findLastBit(a));
+			CHECK_EQUAL(31-6 , math::findLastBit(b));
+			CHECK_EQUAL(32, math::findLastBit(c));
 		}
 
 		UNITTEST_TEST(FindLastBit_u64)
 		{
 			u64 a = 12, b = 64, c = 0;
-			CHECK_EQUAL(63-3 , math::g_findLastBit(a));
-			CHECK_EQUAL(63-6 , math::g_findLastBit(b));
-			CHECK_EQUAL(64, math::g_findLastBit(c));
+			CHECK_EQUAL(63-3 , math::findLastBit(a));
+			CHECK_EQUAL(63-6 , math::findLastBit(b));
+			CHECK_EQUAL(64, math::findLastBit(c));
 		}
 
 		UNITTEST_TEST(Rol32)
 		{
 			u32 a = 12, b = 64, c = 0 , m = 5;
-			CHECK_EQUAL((u32)24, math::g_rol32(a,1));
-			CHECK_EQUAL((u32)64, math::g_rol32(b,0));
-			CHECK_EQUAL((u32)0, math::g_rol32(c,m));
-			CHECK_EQUAL((u32)12, math::g_rol32(a,b));
-			CHECK_EQUAL((u32)0x000000FF, math::g_rol32(0xF000000F,4));
+			CHECK_EQUAL((u32)24, math::rol32(a,1));
+			CHECK_EQUAL((u32)64, math::rol32(b,0));
+			CHECK_EQUAL((u32)0, math::rol32(c,m));
+			CHECK_EQUAL((u32)12, math::rol32(a,b));
+			CHECK_EQUAL((u32)0x000000FF, math::rol32(0xF000000F,4));
 		}
 
 		UNITTEST_TEST(Ror32)
 		{
 			u32 a = 12, b = 64, c = 0 , m = 5;
-			CHECK_EQUAL((u32)6, math::g_ror32(a,1));
-			CHECK_EQUAL((u32)64, math::g_ror32(b,0));
-			CHECK_EQUAL((u32)0, math::g_ror32(c,m));
-			CHECK_EQUAL((u32)12, math::g_ror32(a,b));
-			CHECK_EQUAL((u32)0xFF000000, math::g_ror32(0xF000000F,4));
+			CHECK_EQUAL((u32)6, math::ror32(a,1));
+			CHECK_EQUAL((u32)64, math::ror32(b,0));
+			CHECK_EQUAL((u32)0, math::ror32(c,m));
+			CHECK_EQUAL((u32)12, math::ror32(a,b));
+			CHECK_EQUAL((u32)0xFF000000, math::ror32(0xF000000F,4));
 		}
 	}
 }

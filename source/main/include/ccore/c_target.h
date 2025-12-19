@@ -126,13 +126,9 @@ namespace ncore
 #    if defined(CC_PLATFORM_OSX)
     typedef signed long   s64;
     typedef unsigned long u64;
-    static_assert(sizeof(s64) == 8, "s64 must be 64 bits");
-    static_assert(sizeof(u64) == 8, "s64 must be 64 bits");
 #    else
     typedef signed long long   s64;
     typedef unsigned long long u64;
-    static_assert(sizeof(s64) == 8, "s64 must be 64 bits");
-    static_assert(sizeof(u64) == 8, "s64 must be 64 bits");
 #    endif
 #endif
 
@@ -248,7 +244,7 @@ namespace ncore
 #        define D_NILL_U32        D_CONSTANT_U32(0xffffffff)
 #    endif
 #    ifndef D_S64
-#        define D_CONSTANT_S64(x) (s64)x##LL  // The way to deal with this is to compare ULONG_MAX to 0xffffffff and if not equal, then remove the L.
+#        define D_CONSTANT_S64(x) (s64) x##LL  // The way to deal with this is to compare ULONG_MAX to 0xffffffff and if not equal, then remove the L.
 #    endif
 #    ifndef D_U64
 #        define D_CONSTANT_U64(x) x##ULL  // We need to follow a similar approach for LL.
@@ -851,6 +847,8 @@ namespace ncore
 //
 #if defined(_MSC_VER) && (_MSC_VER >= 1600) && defined(__cplusplus)
     // static_assert is defined by the compiler for both C and C++.
+#    define STATIC_ASSERT(c)     static_assert(c)
+#    define STATIC_ASSERTS(c, m) static_assert(c, m)
 #elif !defined(__cplusplus) && defined(CC_PLATFORM_ANDROID) && ((defined(__STDC_VERSION__) && __STDC_VERSION__ < 201100L) || !defined(__STDC_VERSION__))
 // AndroidNDK does not support static_assert despite claiming it's a C11 compiler
 #    define NEED_CUSTOM_STATIC_ASSERT
@@ -858,15 +856,26 @@ namespace ncore
 // We need to separate these checks on a new line, as the pre-processor on other compilers will fail on the _has_feature macros
 #    if !(__has_feature(cxx_static_assert) || __has_extension(cxx_static_assert))
 #        define NEED_CUSTOM_STATIC_ASSERT
+#    else
+#        define STATIC_ASSERT(c)     static_assert(c)
+#        define STATIC_ASSERTS(c, m) static_assert(c, m)
 #    endif
 #elif defined(__GNUC__) && (defined(__GXX_EXPERIMENTAL_CXX0X__) || (defined(__cplusplus) && (__cplusplus >= 201103L)))
     // static_assert is defined by the compiler.
+#    define STATIC_ASSERT(c)     static_assert(c)
+#    define STATIC_ASSERTS(c, m) static_assert(c, m)
 #elif defined(__EDG_VERSION__) && (__EDG_VERSION__ >= 401) && defined(CC_COMPILER_CPP11_ENABLED)
-    // static_assert is defined by the compiler.
+// static_assert is defined by the compiler.
+#    define STATIC_ASSERT(c)     static_assert(c)
+#    define STATIC_ASSERTS(c, m) static_assert(c, m)
 #elif !defined(__cplusplus) && defined(__GLIBC__) && defined(__USE_ISOC11)
     // static_assert is defined by the compiler.
+#    define STATIC_ASSERT(c)     static_assert(c)
+#    define STATIC_ASSERTS(c, m) static_assert(c, m)
 #elif !defined(__cplusplus) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201100L
     // static_assert is defined by the compiler.
+#    define STATIC_ASSERT(c)     static_assert(c)
+#    define STATIC_ASSERTS(c, m) static_assert(c, m)
 #else
 #    define NEED_CUSTOM_STATIC_ASSERT
 #endif
@@ -885,9 +894,11 @@ namespace ncore
 #    define CC_STATIC_ASSERT_CONCATENATE_HELPER(a, b) CC_STATIC_ASSERT_TOKEN_PASTE(a, b)
 
 #    if defined(__COUNTER__)  // If this extension is available, which allows multiple statements per line...
-#        define static_assert(expression, description) typedef char CC_STATIC_ASSERT_CONCATENATE_HELPER(compileTimeAssert, __COUNTER__)[((expression) != 0) ? 1 : -1] CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
+#        define STATIC_ASSERT(expression)               typedef char CC_STATIC_ASSERT_CONCATENATE_HELPER(compileTimeAssert, __COUNTER__)[((expression) != 0) ? 1 : -1] CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
+#        define STATIC_ASSERTS(expression, description) typedef char CC_STATIC_ASSERT_CONCATENATE_HELPER(compileTimeAssert, __COUNTER__)[((expression) != 0) ? 1 : -1] CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
 #    else
-#        define static_assert(expression, description) typedef char CC_STATIC_ASSERT_CONCATENATE_HELPER(compileTimeAssert, __LINE__)[((expression) != 0) ? 1 : -1] CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
+#        define STATIC_ASSERT(expression)               typedef char CC_STATIC_ASSERT_CONCATENATE_HELPER(compileTimeAssert, __COUNTER__)[((expression) != 0) ? 1 : -1] CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
+#        define STATIC_ASSERTS(expression, description) typedef char CC_STATIC_ASSERT_CONCATENATE_HELPER(compileTimeAssert, __LINE__)[((expression) != 0) ? 1 : -1] CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
 #    endif
 
 #    undef NEED_CUSTOM_STATIC_ASSERT
