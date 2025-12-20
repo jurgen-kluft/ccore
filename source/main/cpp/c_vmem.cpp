@@ -148,7 +148,7 @@ namespace ncore
 
             const s32 page_size       = v_alloc_get_page_size();
             const s8  page_size_shift = math::ilog2(page_size);
-            const s32 reserve_pages   = math::max((s32)(math::alignUp(reserve_size, page_size) >> page_size_shift), minimum_pages);
+            const s32 reserve_pages   = math::max((s32)(math::alignUp(reserve_size, page_size) >> page_size_shift), minimum_pages) + 1;
 
             byte *base_address = (byte *)v_alloc_reserve((int_t)reserve_pages << page_size_shift);
             if (base_address == nullptr)
@@ -161,9 +161,9 @@ namespace ncore
                 v_alloc_release(base_address, reserve_size);
                 return nullptr;
             }
-            ASSERT(sizeof(arena_t) <= c_arena_header_size);
+            ASSERT(sizeof(arena_t) <= cARENA_HEADERSIZE);
             arena_t *arena            = (arena_t *)base_address;
-            arena->m_pos              = c_arena_header_size;
+            arena->m_pos              = cARENA_HEADERSIZE;
             arena->m_page_size_shift  = page_size_shift;
             arena->m_alignment_shift  = 4;  // default alignment shift (4 = 16 bytes)
             arena->m_reserved_pages   = reserve_pages;
@@ -174,7 +174,7 @@ namespace ncore
 
         bool commit(arena_t *ar, int_t committed_size_in_bytes)
         {
-            const s32  want_committed_pages = math::max((s32)(math::alignUp(committed_size_in_bytes + c_arena_header_size, (int_t)1 << ar->m_page_size_shift) >> ar->m_page_size_shift), ar->m_pages_commit_min);
+            const s32  want_committed_pages = math::max((s32)(math::alignUp(committed_size_in_bytes + cARENA_HEADERSIZE, (int_t)1 << ar->m_page_size_shift) >> ar->m_page_size_shift), ar->m_pages_commit_min);
             const s32  committed_pages      = sCommit((byte *)ar, ar->m_committed_pages, want_committed_pages, ar->m_reserved_pages, ar->m_page_size_shift);
             const bool success              = (committed_pages == want_committed_pages);
             ar->m_committed_pages           = committed_pages;
@@ -277,7 +277,7 @@ namespace ncore
         {
             ASSERT(ptr >= base(ar));
             const int_t position = (int_t)((byte *)ptr - (byte *)ar);
-            ASSERT(position >= c_arena_header_size && position < (ar->m_committed_pages << ar->m_page_size_shift));
+            ASSERT(position >= cARENA_HEADERSIZE && position < (ar->m_committed_pages << ar->m_page_size_shift));
 #    ifdef TARGET_DEBUG
             // clear the memory that is being 'freed' for debug purposes
             if ((ar->m_pos - position) > 0)

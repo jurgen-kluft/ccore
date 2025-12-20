@@ -25,7 +25,7 @@ namespace ncore
 
     namespace narena
     {
-        const int_t c_arena_header_size = 64;
+        const int_t cARENA_HEADERSIZE = 64;
 
         arena_t* create(int_t reserve_size, int_t commit_size, i32 minimum_pages = 1);
 
@@ -33,6 +33,7 @@ namespace ncore
         inline int_t reserved_size(arena_t* ar) { return (int_t)ar->m_reserved_pages << ar->m_page_size_shift; }
         inline int_t committed_size(arena_t* ar) { return (int_t)ar->m_committed_pages << ar->m_page_size_shift; }
         inline void* base(arena_t* ar) { return (void*)((byte*)ar); }
+        inline bool  within_committed(arena_t* ar, void* ptr) { return ((ptr_t)ptr >= (ptr_t)base(ar)) && ((ptr_t)ptr < ((ptr_t)base(ar) + committed_size(ar))); }
 
         bool  commit(arena_t* ar, int_t size_in_bytes);                              // set committed size of the allocator, this will not change 'pos'
         bool  commit_from_address(arena_t* ar, void* address, int_t size_in_bytes);  // set committed size of the allocator, this will not change 'pos'
