@@ -246,10 +246,6 @@ namespace ncore
     inline uint_t g_ptr_diff_in_bytes(void* ptr, void* next_ptr) { return (uint_t)((ptr_t)next_ptr - (ptr_t)ptr); }
     inline bool   g_ptr_inside_range(void* buffer, uint_t size_in_bytes, void* ptr) { return (ptr >= buffer) && g_ptr_diff_in_bytes(buffer, ptr) <= size_in_bytes; }
 
-    struct global_new_t
-    {
-    };
-
 }  // namespace ncore
 
 #endif  // __CCORE_ALLOCATOR_H__
