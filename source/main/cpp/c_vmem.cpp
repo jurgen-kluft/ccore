@@ -1,10 +1,11 @@
-#include "ccore/c_vmem.h"
-#include "ccore/c_math.h"
-#include "ccore/c_memory.h"
 
 #if defined(TARGET_PC)
 #    define WIN32_LEAN_AND_MEAN
 #    include <windows.h>
+
+#include "ccore/c_vmem.h"
+#include "ccore/c_math.h"
+#include "ccore/c_memory.h"
 
 namespace ncore
 {
@@ -47,6 +48,10 @@ namespace ncore
 #    include <unistd.h>
 #    include <sys/mman.h>
 
+#include "ccore/c_vmem.h"
+#include "ccore/c_math.h"
+#include "ccore/c_memory.h"
+
 namespace ncore
 {
     s32 v_alloc_get_page_size()
@@ -81,6 +86,10 @@ namespace ncore
 }  // namespace ncore
 
 #else
+
+#include "ccore/c_vmem.h"
+#include "ccore/c_math.h"
+#include "ccore/c_memory.h"
 
 namespace ncore
 {

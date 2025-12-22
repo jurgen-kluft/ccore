@@ -671,7 +671,7 @@ namespace ncore
                 {
                     /* We don't have a full buffer, so we just copy the data over and return. */
                     nmem::memcpy(&state->temp_buffer[state->temp_buffer_size], input, length);
-                    state->temp_buffer_size += (u64)length;
+                    state->temp_buffer_size += (u32)length;
                     return XXH_OK;
                 }
 
