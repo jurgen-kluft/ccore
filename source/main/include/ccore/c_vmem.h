@@ -14,25 +14,24 @@ namespace ncore
     // TODO Investigate the use of madvise(MADV_FREE) to decommit memory on Mac, madvise(MADV_DONTNEED) on Linux, and VirtualAlloc(MEM_RESET)
     struct arena_t
     {
+        byte* m_address;           // base address of the reserved memory region
         int_t m_pos;               // current position in the committed memory region to allocate from
         s32   m_reserved_pages;    // (unit = pages) total reserved memory size in pages
         s32   m_committed_pages;   // (unit = pages) total committed memory size in pages
         s32   m_pages_commit_min;  // this is the minimum amount of pages to commit
         s16   m_alignment_shift;   // default minimum alignment for allocations (default is 4 = (1<<4) = 16 bytes)
         s16   m_page_size_shift;   // page size in shift, used for alignment and memory operations
-        int_t m_reserved0;         // unused
     };
 
     namespace narena
     {
-        const int_t cARENA_HEADERSIZE = 64;
-
-        arena_t* create(int_t reserve_size, int_t commit_size, i32 minimum_pages = 1);
+        arena_t* create(int_t reserve_size, int_t commit_size, i32 minimum_pages = 1);  // create a virtual memory arena
+        bool     destroy(arena_t* ar);                                                  // destroy the virtual memory arena
 
         inline u32   alignment(arena_t* ar) { return (u32)1 << ar->m_alignment_shift; }
         inline int_t reserved_size(arena_t* ar) { return (int_t)ar->m_reserved_pages << ar->m_page_size_shift; }
         inline int_t committed_size(arena_t* ar) { return (int_t)ar->m_committed_pages << ar->m_page_size_shift; }
-        inline void* base(arena_t* ar) { return (void*)((byte*)ar); }
+        inline byte* base(arena_t* ar) { return ar->m_address; }
         inline bool  within_committed(arena_t* ar, void* ptr) { return ((ptr_t)ptr >= (ptr_t)base(ar)) && ((ptr_t)ptr < ((ptr_t)base(ar) + committed_size(ar))); }
 
         bool  commit(arena_t* ar, int_t size_in_bytes);                              // set committed size of the allocator, this will not change 'pos'
@@ -41,11 +40,12 @@ namespace ncore
         void* alloc(arena_t* ar, int_t size, u32 alignment);                         // allocate 'size' from the reserved region with the given alignment
         void* alloc_and_zero(arena_t* ar, int_t size);                               // allocate 'size' from the reserved region
         void* alloc_and_zero(arena_t* ar, int_t size, u32 alignment);                // allocate 'size' from the reserved region with the given alignment
+        void* alloc_and_fill(arena_t* ar, int_t size, u32 fill);                     // allocate 'size' from the reserved region and fill with 'fill' word
+        void* alloc_and_fill(arena_t* ar, int_t size, u32 alignment, u32 fill);      // allocate 'size' from the reserved region with the given alignment and fill with 'fill' wor
         void* current_address(arena_t* ar);                                          // return the address of the current allocation point
         void  restore_address(arena_t* ar, void* ptr);                               // restore the arena to the given address
         void  shrink(arena_t* ar);                                                   // decommit any 'extra' pages
         void  reset(arena_t* ar);                                                    // make all memory available for reuse without releasing it
-        bool  release(arena_t* ar);                                                  // release the virtual memory region
 
         // Some C++ style helper functions
         template <typename T>
@@ -76,6 +76,13 @@ namespace ncore
             return (T*)ptr;
         }
 
+        template <typename T>
+        inline T* allocate_array_and_fill(arena_t* a, u32 maxsize, u32 alignment = sizeof(void*))
+        {
+            void* ptr = alloc_and_fill(a, maxsize * sizeof(T), alignment, 0);
+            return (T*)ptr;
+        }
+
         // clang-format off
         class aalloc_t : public alloc_t
         {
@@ -84,7 +91,7 @@ namespace ncore
             inline aalloc_t(arena_t* vmem) : m_vmem(vmem) {}
             virtual ~aalloc_t() {
                 if (m_vmem != nullptr) {
-                    release(m_vmem);
+                    narena::destroy(m_vmem);
                     m_vmem = nullptr;
                 }
             }
