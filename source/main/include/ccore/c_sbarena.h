@@ -13,52 +13,57 @@ namespace ncore
     // Regions of 64KB, for allocating 16, 32, 64, 128 or 256 byte items
     struct sbnil_t
     {
-        void*    m_block_address;
-        void*    m_empty0;
-        sbnil_t* m_prev;
-        sbnil_t* m_next;
+        u64      m_empty0;  // unused
+        sbnil_t *m_prev;
+        sbnil_t *m_next;
     };
 
+    // 64KB, 4096 items
     struct sb16_t
     {
-        binmap12_t m_bin16;  // binmap for free/used items, 16 byte items
-        sb16_t*    m_prev;
-        sb16_t*    m_next;
+        u64     m_bin0;  // binmap for free/used items, 16 byte items
+        sb16_t *m_prev;
+        sb16_t *m_next;
     };
 
+    // 64KB, 2048 items
     struct sb32_t
     {
-        binmap11_t m_bin32;  // binmap for free/used items, 32 byte items
-        sb32_t*    m_prev;
-        sb32_t*    m_next;
+        u64     m_bin0;  // binmap for free/used items, 32 byte items
+        sb32_t *m_prev;
+        sb32_t *m_next;
     };
 
+    // 64KB, 1024 items
     struct sb64_t
     {
-        binmap10_t m_bin64;  // binmap for free/used items, 64 byte items
-        sb64_t*    m_prev;
-        sb64_t*    m_next;
+        u64     m_bin0;  // binmap for free/used items, 64 byte items
+        sb64_t *m_prev;
+        sb64_t *m_next;
     };
 
+    // 64KB, 512 items
     struct sb128_t
     {
-        binmap9_t m_bin128;  // binmap for free/used items, 128 byte items
-        sb128_t*  m_prev;
-        sb128_t*  m_next;
+        u64      m_bin0;  // binmap for free/used items, 128 byte items
+        sb128_t *m_prev;
+        sb128_t *m_next;
     };
 
+    // 64KB, 256 items
     struct sb256_t
     {
-        binmap9_t m_bin256;  // binmap for free/used items, 256 byte items
-        sb256_t*  m_prev;
-        sb256_t*  m_next;
+        u64      m_bin0;  // binmap for free/used items, 256 byte items
+        sb256_t *m_prev;
+        sb256_t *m_next;
     };
 
+    // 64KB, 128 items
     struct sb512_t
     {
-        binmap9_t m_bin512;  // binmap for free/used items, 512 byte items
-        sb512_t*  m_prev;
-        sb512_t*  m_next;
+        u64      m_bin0;  // binmap for free/used items, 512 byte items
+        sb512_t *m_prev;
+        sb512_t *m_next;
     };
 
     // All the above structures are allocated from the sbarena itself, since
@@ -84,24 +89,37 @@ namespace ncore
     // small block arena (64 bytes)
     struct sbarena_t
     {
-        arena_t* m_arena;             // dedicated arena for 64KB blocks
-        sbnil_t* m_free_list;         // list of completely free 64KB blocks
-        sb16_t*  m_sb16_active_list;  // sorted by number of free items, most free items last
-        sb32_t*  m_sb32_active_list;
-        sb64_t*  m_sb64_active_list;
-        sb128_t* m_sb128_active_list;
-        sb256_t* m_sb256_active_list;
-        sb512_t* m_sb512_active_list;
+        sbarena_t();
+        arena_t *m_arena;             // dedicated arena for 64KB blocks
+        sbnil_t *m_free_list;         // list of free 64KB blocks
+        sb16_t  *m_sb16_active_list;  // list of active 16 byte item blocks
+        sb32_t  *m_sb32_active_list;
+        sb64_t  *m_sb64_active_list;
+        sb128_t *m_sb128_active_list;
+        sb256_t *m_sb256_active_list;
+        sb512_t *m_sb512_active_list;
+        i32      m_alloc16_count;
+        i32      m_alloc32_count;
+        i32      m_alloc64_count;
+        i32      m_alloc128_count;
+        i32      m_alloc256_count;
+        i32      m_alloc512_count;
+        i32      m_alloc16_free_index;
+        i32      m_alloc32_free_index;
+        i32      m_alloc64_free_index;
+        i32      m_alloc128_free_index;
+        i32      m_alloc256_free_index;
+        i32      m_alloc512_free_index;
     };
 
-    void sbarena_construct(sbarena_t* sbarena, int_t reserve_size, int_t commit_size);
-    void sbarena_destruct(sbarena_t* sbarena);
+    void sbarena_construct(sbarena_t *sbarena, int_t reserve_size, int_t commit_size);
+    void sbarena_destruct(sbarena_t *sbarena);
 
-    void* sbarena_alloc16(sbarena_t* sbarena);
-    void* sbarena_alloc32(sbarena_t* sbarena);
-    void* sbarena_alloc64(sbarena_t* sbarena);
-    void* sbarena_alloc128(sbarena_t* sbarena);
-    void  sbarena_free(sbarena_t* sbarena, void* ptr);
+    void *sbarena_alloc16(sbarena_t *sbarena);
+    void *sbarena_alloc32(sbarena_t *sbarena);
+    void *sbarena_alloc64(sbarena_t *sbarena);
+    void *sbarena_alloc128(sbarena_t *sbarena);
+    void  sbarena_free(sbarena_t *sbarena, void *ptr);
 
 }  // namespace ncore
 
