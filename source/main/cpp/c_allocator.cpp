@@ -2,7 +2,7 @@
 #include "ccore/c_allocator.h"
 #include "ccore/c_memory.h"
 #include "ccore/c_runes.h"
-#include "ccore/c_vmem.h"
+#include "ccore/c_arena.h"
 
 namespace ncore
 {

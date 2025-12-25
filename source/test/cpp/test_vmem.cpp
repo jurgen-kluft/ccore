@@ -1,5 +1,5 @@
 #include "ccore/c_target.h"
-#include "ccore/c_vmem.h"
+#include "ccore/c_arena.h"
 
 #include "cunittest/cunittest.h"
 
@@ -39,7 +39,7 @@ UNITTEST_SUITE_BEGIN(vmem)
             CHECK_NOT_NULL(ptr2);
             CHECK_EQUAL(ptr1, ptr2);  // should be the same pointer
 
-            narena::release(arena);  // release the reserved memory
+            narena::destroy(arena);  // release the reserved memory
         }
     }
 }

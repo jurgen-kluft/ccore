@@ -11,7 +11,6 @@ namespace ncore
 {
     struct arena_t;
 
-    // TODO Investigate the use of madvise(MADV_FREE) to decommit memory on Mac, madvise(MADV_DONTNEED) on Linux, and VirtualAlloc(MEM_RESET)
     struct arena_t
     {
         byte* m_address;           // base address of the reserved memory region

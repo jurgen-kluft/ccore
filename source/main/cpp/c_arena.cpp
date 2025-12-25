@@ -1,10 +1,13 @@
 #include "ccore/c_binmap1.h"
 
+// TODO
+// - Investigate the use of madvise(MADV_FREE) to decommit memory on Mac, madvise(MADV_DONTNEED) on Linux, and VirtualAlloc(MEM_RESET)
+
 #if defined(TARGET_PC)
 #    define WIN32_LEAN_AND_MEAN
 #    include <windows.h>
 
-#    include "ccore/c_vmem.h"
+#    include "ccore/c_arena.h"
 #    include "ccore/c_math.h"
 #    include "ccore/c_memory.h"
 
@@ -49,7 +52,7 @@ namespace ncore
 #    include <unistd.h>
 #    include <sys/mman.h>
 
-#    include "ccore/c_vmem.h"
+#    include "ccore/c_arena.h"
 #    include "ccore/c_math.h"
 #    include "ccore/c_memory.h"
 
@@ -88,7 +91,7 @@ namespace ncore
 
 #else
 
-#    include "ccore/c_vmem.h"
+#    include "ccore/c_arena.h"
 #    include "ccore/c_math.h"
 #    include "ccore/c_memory.h"
 
@@ -126,12 +129,12 @@ namespace ncore
 
 namespace ncore
 {
-    const int_t       sArenaArenaReserveSize = (int_t)(128 * 1024);  // 128 KB
-    const int_t       sArenaArenaCommitSize  = (int_t)(32 * 256);    // 8 KB
-    static arena_t    sArenaArena;                                   // arena used to allocate arenas from
-    static u64        sArenaArenaFreeMapBin1[64];                    // bin1 for the arena-arena free map
-    static binmap12_t sArenaArenaFreeMap;                            // bit map of free arenas in the arena-arena
-    static i32        sArenaArenaFreeIndex = 0;                      // next free index if we need to grow
+    const int_t    sArenaArenaReserveSize = (int_t)(128 * 1024);  // 128 KB
+    const int_t    sArenaArenaCommitSize  = (int_t)(32 * 256);    // 8 KB
+    static arena_t sArenaArena;                                   // arena used to allocate arenas from
+    static u64     sArenaArenaFreeMapBin1[64];                    // bin1 for the arena-arena free map
+    static u64     sArenaArenaFreeMapBin0;                        // bin0 for the arena-arena free map
+    static i32     sArenaArenaFreeIndex = 0;                      // next free index if we need to grow
 
     static bool sConstructArena(arena_t &arena, int_t reserve_size, int_t commit_size, i32 minimum_pages);
 
@@ -141,7 +144,7 @@ namespace ncore
         {
             const bool result = sConstructArena(sArenaArena, sArenaArenaReserveSize, sArenaArenaCommitSize, 1);
             ASSERT(result == true);
-            sArenaArenaFreeMap.setup_used_lazy(sArenaArenaFreeMapBin1, 4096);
+            nbinmap12::setup_used_lazy(&sArenaArenaFreeMapBin0, sArenaArenaFreeMapBin1, 4096);
             sArenaArenaFreeIndex = 0;
         }
     }
@@ -149,7 +152,7 @@ namespace ncore
     static arena_t *sAllocArena()
     {
         sInitArenaArena();
-        const s32 free_index = sArenaArenaFreeMap.find_and_set(4096);
+        const s32 free_index = nbinmap12::find_and_set(&sArenaArenaFreeMapBin0, sArenaArenaFreeMapBin1, 4096);
         if (free_index >= 0)
         {
             arena_t *arena = (arena_t *)(narena::base(&sArenaArena) + (free_index * sizeof(arena_t)));
@@ -158,7 +161,7 @@ namespace ncore
         else
         {
             arena_t *arena = narena::allocate<arena_t>(&sArenaArena);
-            sArenaArenaFreeMap.tick_used_lazy(sArenaArenaFreeIndex, sArenaArenaFreeIndex);
+            nbinmap12::tick_used_lazy(&sArenaArenaFreeMapBin0, sArenaArenaFreeMapBin1, 4096, sArenaArenaFreeIndex);
             sArenaArenaFreeIndex++;
             return arena;
         }
@@ -169,7 +172,7 @@ namespace ncore
     static void sFreeArena(arena_t *arena)
     {
         const s32 index = (s32)(((byte *)arena - sArenaArena.m_address) / sizeof(arena_t));
-        sArenaArenaFreeMap.clr(4096, index);
+        nbinmap12::clr(&sArenaArenaFreeMapBin0, sArenaArenaFreeMapBin1, 4096, index);
     }
 
     static s32 sCommit(byte *base_address, s32 current_committed_pages, int_t want_committed_pages, s32 total_reserved_pages, s16 page_size_shift);
