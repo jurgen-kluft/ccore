@@ -147,30 +147,6 @@ namespace ncore
 {
     namespace narena
     {
-        static s32 sCommitMemory(byte *base_address, s32 current_committed_pages, int_t want_committed_pages, s32 total_reserved_pages, s16 page_size_shift)
-        {
-            if (want_committed_pages > current_committed_pages)
-            {
-                const int_t extra_needed_pages = (int_t)(want_committed_pages - current_committed_pages);
-                if ((current_committed_pages + extra_needed_pages) > total_reserved_pages)
-                    return current_committed_pages;
-                const bool result = v_alloc_commit(base_address + ((int_t)current_committed_pages << page_size_shift), extra_needed_pages << page_size_shift);
-                if (!result)
-                    return current_committed_pages;
-                current_committed_pages += (s32)extra_needed_pages;
-            }
-            else if (want_committed_pages < current_committed_pages)
-            {
-                // decommit the extra pages
-                const int_t decommit_size_in_bytes = ((int_t)current_committed_pages - want_committed_pages) << page_size_shift;
-                byte       *decommit_start         = base_address + (want_committed_pages << page_size_shift);
-                if (!v_alloc_decommit(decommit_start, decommit_size_in_bytes))
-                    return current_committed_pages;
-                current_committed_pages = (s32)want_committed_pages;
-            }
-            return current_committed_pages;
-        }
-
         arena_t *sNewArena(int_t _header_size, int_t _reserve_size, int_t _commit_size, s8 _arena_alignment_shift)
         {
             const s32   page_size       = v_alloc_get_page_size();
@@ -236,10 +212,35 @@ namespace ncore
 
         bool commit(arena_t *ar, int_t committed_size_in_bytes)
         {
-            const s32  want_committed_pages = math::max((s32)(math::alignUp(committed_size_in_bytes, (int_t)1 << ar->m_page_size_shift) >> ar->m_page_size_shift), 1);
-            const s32  committed_pages      = sCommitMemory(base(ar), ar->m_committed_pages, want_committed_pages, ar->m_reserved_pages, ar->m_page_size_shift);
-            const bool success              = (committed_pages == want_committed_pages);
-            ar->m_committed_pages           = committed_pages;
+            const s32 want_committed_pages = math::max((s32)(math::alignUp(committed_size_in_bytes, (int_t)1 << ar->m_page_size_shift) >> ar->m_page_size_shift), 1);
+            const s32 total_reserved_pages = ar->m_reserved_pages;
+            const s8  page_size_shift      = ar->m_page_size_shift;
+
+            byte *base_address            = base(ar);
+            s32   current_committed_pages = ar->m_committed_pages;
+
+            if (want_committed_pages > current_committed_pages)
+            {
+                const int_t extra_needed_pages = (int_t)(want_committed_pages - current_committed_pages);
+                if ((current_committed_pages + extra_needed_pages) > total_reserved_pages)
+                    return current_committed_pages;
+                const bool result = v_alloc_commit(base_address + ((int_t)current_committed_pages << page_size_shift), extra_needed_pages << page_size_shift);
+                if (!result)
+                    return current_committed_pages;
+                current_committed_pages += (s32)extra_needed_pages;
+            }
+            else if (want_committed_pages < current_committed_pages)
+            {
+                // decommit the extra pages
+                const int_t decommit_size_in_bytes = ((int_t)current_committed_pages - want_committed_pages) << page_size_shift;
+                byte       *decommit_start         = base_address + (want_committed_pages << page_size_shift);
+                if (!v_alloc_decommit(decommit_start, decommit_size_in_bytes))
+                    return current_committed_pages;
+                current_committed_pages = (s32)want_committed_pages;
+            }
+
+            const bool success    = (current_committed_pages == want_committed_pages);
+            ar->m_committed_pages = current_committed_pages;
             return success;
         }
 
