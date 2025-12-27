@@ -316,10 +316,10 @@ namespace ncore
 #        define D_U16_MAX 0xffffU  // 65535
 #    endif
 #    ifndef D_U32_MAX
-#        define D_U32_MAX D_U32(0xffffffff)  // 4294967295
+#        define D_U32_MAX D_CONSTANT_U32(0xffffffff)  // 4294967295
 #    endif
 #    ifndef D_U64_MAX
-#        define D_U64_MAX D_U64(0xffffffffffffffff)  // 18446744073709551615
+#        define D_U64_MAX D_CONSTANT_U64(0xffffffffffffffff)  // 18446744073709551615
 #    endif
 #    ifndef D_UINTMAX_MAX
 #        define D_UINTMAX_MAX D_U64_MAX

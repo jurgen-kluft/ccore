@@ -10,7 +10,7 @@ namespace ncore
     namespace nregion
     {
         struct region_t;
-        region_t* create(u32 max_number_of_blocks);  // 1 block = 4MB, maximum = 4096 blocks = 16GB
+        region_t* create();  // 1 block = 64KB, maximum = 65535 blocks = 4GB
 
         // allocation sizes are power-of-two from minimum 16 to maximum 1024 bytes
         void* alloc(region_t* region, u32 size);

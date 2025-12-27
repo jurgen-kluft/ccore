@@ -14,7 +14,7 @@ UNITTEST_SUITE_BEGIN(vmem)
 
         UNITTEST_TEST(init)
         {
-            arena_t* arena = narena::create(8 * cGB, 16 * cMB);  // reserve 8 GB, commit 16 MB
+            arena_t* arena = narena::new_arena(8 * cGB, 16 * cMB);  // reserve 8 GB, commit 16 MB
 
             // reserve 8 GB, if you don't call this, then when calling alloc, it will reserve
             // the default arena capacity of 1 GB.

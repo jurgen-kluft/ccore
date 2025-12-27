@@ -9,42 +9,55 @@
 
 namespace ncore
 {
-    struct arena_t;
-
     struct arena_t
     {
-        byte* m_address;           // base address of the reserved memory region
-        int_t m_pos;               // current position in the committed memory region to allocate from
-        s32   m_reserved_pages;    // (unit = pages) total reserved memory size in pages
-        s32   m_committed_pages;   // (unit = pages) total committed memory size in pages
-        s32   m_pages_commit_min;  // this is the minimum amount of pages to commit
-        s16   m_alignment_shift;   // default minimum alignment for allocations (default is 4 = (1<<4) = 16 bytes)
-        s16   m_page_size_shift;   // page size in shift, used for alignment and memory operations
+        byte* m_base;             // base address of the arena (after header)
+        int_t m_pos;              // current position in the arena to allocate from (relative to m_base)
+        u16   m_header_pages;     // (unit = pages) number of header pages (before m_base)
+        s16   m_page_size_shift;  // page size in shift (from system)
+        u32   m_reserved_pages;   // (unit = pages) reserved number of pages for this arena (relative to arena)
+        u32   m_committed_pages;  // (unit = pages) number of committed pages (relative to arena)
+        s16   m_alignment_shift;  // default minimum alignment for allocations (default is 4 = (1<<4) = 16 bytes)
+        s16   m_padding;          // padding to make the structure aligned to 16 bytes
     };
 
     namespace narena
     {
-        arena_t* create(int_t reserve_size, int_t commit_size, i32 minimum_pages = 1);  // create a virtual memory arena
-        bool     destroy(arena_t* ar);                                                  // destroy the virtual memory arena
+        // usage: basic arena
+        arena_t* new_arena(int_t arena_reserve_size, int_t arena_commit_size, s8 arena_alignment_shift = 3);
+        bool     destroy(arena_t*& ar);
 
-        inline u32   alignment(arena_t* ar) { return (u32)1 << ar->m_alignment_shift; }
-        inline int_t reserved_size(arena_t* ar) { return (int_t)ar->m_reserved_pages << ar->m_page_size_shift; }
-        inline int_t committed_size(arena_t* ar) { return (int_t)ar->m_committed_pages << ar->m_page_size_shift; }
-        inline byte* base(arena_t* ar) { return ar->m_address; }
-        inline bool  within_committed(arena_t* ar, void* ptr) { return ((ptr_t)ptr >= (ptr_t)base(ar)) && ((ptr_t)ptr < ((ptr_t)base(ar) + committed_size(ar))); }
+        // usage: stack like arena
+        struct stack_t;
+        stack_t* new_stack(int_t reserve_size, int_t commit_size, s32 max_depth = 64);  // a virtual memory arena stack
+        void     destroy(stack_t*& s);                                                  // destroy the virtual memory arena stack
+        arena_t* push_stack(stack_t* s);                                                // create a new arena as a stack on top of the given arena
+        bool     pop_stack(stack_t* s);                                                 // destroy the top arena
 
-        bool  commit(arena_t* ar, int_t size_in_bytes);                              // set committed size of the allocator, this will not change 'pos'
-        bool  commit_from_address(arena_t* ar, void* address, int_t size_in_bytes);  // set committed size of the allocator, this will not change 'pos'
-        void* alloc(arena_t* ar, int_t size);                                        // allocate 'size' from the reserved region
-        void* alloc(arena_t* ar, int_t size, u32 alignment);                         // allocate 'size' from the reserved region with the given alignment
-        void* alloc_and_zero(arena_t* ar, int_t size);                               // allocate 'size' from the reserved region
-        void* alloc_and_zero(arena_t* ar, int_t size, u32 alignment);                // allocate 'size' from the reserved region with the given alignment
-        void* alloc_and_fill(arena_t* ar, int_t size, u32 fill);                     // allocate 'size' from the reserved region and fill with 'fill' word
-        void* alloc_and_fill(arena_t* ar, int_t size, u32 alignment, u32 fill);      // allocate 'size' from the reserved region with the given alignment and fill with 'fill' wor
-        void* current_address(arena_t* ar);                                          // return the address of the current allocation point
-        void  restore_address(arena_t* ar, void* ptr);                               // restore the arena to the given address
-        void  shrink(arena_t* ar);                                                   // decommit any 'extra' pages
-        void  reset(arena_t* ar);                                                    // make all memory available for reuse without releasing it
+        // usage: advanced, multiple arenas within the same virtual address space
+        // example: A 1GB region with 32 arenas of 32MB each
+        struct region_t;
+        region_t* new_region(int_t region_reserve_size, int_t arena_reserve_size, s8 arena_alignment_shift, u16 num_arenas);  // a virtual memory arena in a larger region
+        void      destroy(region_t* region);                                                                                  // destroy the virtual memory arena region
+        arena_t*  get_arena(region_t* region, s16 index);                                                                     // get the arena at the given index within the region
+
+        inline u32    alignment(arena_t* ar) { return (u32)1 << ar->m_alignment_shift; }
+        inline uint_t reserved_size(arena_t* ar) { return (uint_t)ar->m_reserved_pages << ar->m_page_size_shift; }
+        inline uint_t committed_size(arena_t* ar) { return (uint_t)ar->m_committed_pages << ar->m_page_size_shift; }
+        inline byte*  base(arena_t* ar) { return ar->m_base; }
+        inline bool   within_committed(arena_t* ar, void* ptr) { return ((ptr_t)ptr >= (ptr_t)base(ar)) && ((ptr_t)ptr < (ptr_t)(base(ar) + committed_size(ar))); }
+
+        bool  commit(arena_t* ar, int_t size_in_bytes);                          // set committed size of the allocator, this will not change 'pos'
+        void* alloc(arena_t* ar, int_t size);                                    // allocate 'size' from the reserved region
+        void* alloc(arena_t* ar, int_t size, u32 alignment);                     // allocate 'size' from the reserved region with the given alignment
+        void* alloc_and_zero(arena_t* ar, int_t size);                           // allocate 'size' from the reserved region
+        void* alloc_and_zero(arena_t* ar, int_t size, u32 alignment);            // allocate 'size' from the reserved region with the given alignment
+        void* alloc_and_fill(arena_t* ar, int_t size, u32 fill);                 // allocate 'size' from the reserved region and fill with 'fill' word
+        void* alloc_and_fill(arena_t* ar, int_t size, u32 alignment, u32 fill);  // allocate 'size' from the reserved region with the given alignment and fill with 'fill' wor
+        void* current_address(arena_t* ar);                                      // return the address of the current allocation point
+        void  restore_address(arena_t* ar, void* ptr);                           // restore the arena to the given address
+        void  shrink(arena_t* ar);                                               // decommit any 'extra' pages
+        void  reset(arena_t* ar);                                                // make all memory available for reuse without releasing it
 
         // Some C++ style helper functions
         template <typename T>
@@ -76,9 +89,9 @@ namespace ncore
         }
 
         template <typename T>
-        inline T* allocate_array_and_fill(arena_t* a, u32 maxsize, u32 alignment = sizeof(void*))
+        inline T* allocate_array_and_fill(arena_t* a, u32 maxsize, u32 fill, u32 alignment = sizeof(void*))
         {
-            void* ptr = alloc_and_fill(a, maxsize * sizeof(T), alignment, 0);
+            void* ptr = alloc_and_fill(a, maxsize * sizeof(T), alignment, fill);
             return (T*)ptr;
         }
 
