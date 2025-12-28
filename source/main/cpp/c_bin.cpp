@@ -143,6 +143,10 @@ namespace ncore
             v_alloc_release(base_address, total_reserved_size);
         }
 
+        u32 size(bin_t* bin) { return bin->m_items_count; }
+        u32 capacity(bin_t* bin) { return bin->m_items_capacity; }
+        u32 highwater_mark(bin_t* bin) { return bin->m_items_free_index; }
+
         void* alloc(bin_t* bin)
         {
             if (bin->m_items_count >= bin->m_items_capacity)

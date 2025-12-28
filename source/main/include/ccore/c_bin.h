@@ -23,7 +23,10 @@ namespace ncore
 
         struct bin_t;
         bin_t* make_bin(u16 item_size, u32 max_items);  // 1 block = 64KB, maximum = 65535 blocks = 4GB
-        void   destroy(bin_t* bin);
+        void   destroy(bin_t* bin);                     // destroy the bin
+        u32    size(bin_t* bin);                        // number of items currently in the bin
+        u32    capacity(bin_t* bin);                    // maximum number of items the bin can hold
+        u32    highwater_mark(bin_t* bin);              // highest number of items that have been in the bin
 
         void* alloc(bin_t* bin);
         void  free(bin_t* bin, void* ptr);
