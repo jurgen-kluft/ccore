@@ -20,6 +20,14 @@ namespace ncore
         void*       memmove(void* inDest, const void* inSrc, int_t inLength);
         inline void memclr(void* inDest, int_t inLength) { memset(inDest, 0, inLength); }
 
+        template <class T>
+        inline void swap(T& a, T& b)
+        {
+            const T c(a);
+            a = b;
+            b = c;
+        }
+
         ///@name Pointer arithmetic
         template <typename T>
         inline T* ptr_add(T* ptr, int_t size)
@@ -61,9 +69,7 @@ namespace ncore
     template <class T>
     inline void g_swap(T& a, T& b)
     {
-        const T c(a);
-        a = b;
-        b = c;
+        nmem::swap(a, b);
     }
 
     inline void g_memset(void* inBlock, u32 inValue, int_t inLength) { nmem::memset(inBlock, inValue, inLength); }

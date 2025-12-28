@@ -113,16 +113,16 @@ namespace ncore
             {
                 case 3:
                 {
-                    const u32 bin_binx               = ((u32)bin->m_bin3_offset * sizeof(u64));
-                    const u32 items_commit_threshold = (u32)sizeof(bin_t) - (u32)sizeof(u64) + (u32)(((bin_hdr_commit_size - bin_binx) * 8));
+                    const u32 bin_binx               = ((u32)sizeof(bin_t) - (u32)sizeof(u64)) + ((u32)bin->m_bin3_offset * sizeof(u64));
+                    const u32 items_commit_threshold = (u32)(bin_hdr_commit_size - bin_binx) * 8;
                     bin->m_items_commit_threshold    = math::min(items_commit_threshold, bin->m_items_capacity);
                 }
                 break;
 
                 case 2:
                 {
-                    const u32 bin_binx               = (u32)sizeof(bin_t) - (u32)sizeof(u64) + ((u32)bin->m_bin2_offset * sizeof(u64));
-                    const u32 items_commit_threshold = (u32)(((bin_hdr_commit_size - bin_binx) * 8));
+                    const u32 bin_binx               = ((u32)sizeof(bin_t) - (u32)sizeof(u64)) + ((u32)bin->m_bin2_offset * sizeof(u64));
+                    const u32 items_commit_threshold = (u32)(bin_hdr_commit_size - bin_binx) * 8;
                     bin->m_items_commit_threshold    = math::min(items_commit_threshold, bin->m_items_capacity);
                 }
                 break;
@@ -181,10 +181,10 @@ namespace ncore
             else
             {
                 // Before touching the binmap, make sure we have committed enough memory for it
-                if (bin->m_items_free_index > bin->m_items_commit_threshold)
+                if (bin->m_items_free_index >= bin->m_items_commit_threshold)
                 {
                     // commit +1 page for binmap
-                    if (v_alloc_commit((byte*)bin + (bin->m_bin_committed_pages << bin->m_pagesize_shift), 1 << bin->m_pagesize_shift))
+                    if (!v_alloc_commit((byte*)bin + (bin->m_bin_committed_pages << bin->m_pagesize_shift), 1 << bin->m_pagesize_shift))
                         return nullptr;
                     bin->m_bin_committed_pages += 1;
                     // recalculate the new commit threshold
@@ -206,7 +206,7 @@ namespace ncore
                 if (item + bin->m_item_size > items_end)
                 {
                     // commit one more page
-                    if (v_alloc_commit(items_end, (1 << bin->m_pagesize_shift)))
+                    if (!v_alloc_commit(items_end, (1 << bin->m_pagesize_shift)))
                     {
                         return nullptr;
                     }
@@ -229,10 +229,10 @@ namespace ncore
             u64* bm0 = (u64*)&bin->m_bin0;
             switch (bin->m_bin_level_count)
             {
-                case 3: nbinmap24::clr(bm0, &bm0[1], &bm0[bin->m_bin2_offset], &bm0[bin->m_bin3_offset], bin->m_items_count, item_index); break;
-                case 2: nbinmap18::clr(bm0, &bm0[1], &bm0[bin->m_bin2_offset], bin->m_items_count, item_index); break;
-                case 1: nbinmap12::clr(bm0, &bm0[1], bin->m_items_count, item_index); break;
-                case 0: nbinmap6::clr(bm0, bin->m_items_count, item_index); break;
+                case 3: nbinmap24::clr(bm0, &bm0[1], &bm0[bin->m_bin2_offset], &bm0[bin->m_bin3_offset], bin->m_items_free_index, item_index); break;
+                case 2: nbinmap18::clr(bm0, &bm0[1], &bm0[bin->m_bin2_offset], bin->m_items_free_index, item_index); break;
+                case 1: nbinmap12::clr(bm0, &bm0[1], bin->m_items_free_index, item_index); break;
+                case 0: nbinmap6::clr(bm0, bin->m_items_free_index, item_index); break;
             }
 
             // Decrease number of used items
