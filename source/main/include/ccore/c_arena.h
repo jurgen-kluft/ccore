@@ -136,6 +136,7 @@ namespace ncore
 
     // Platform specific virtual memory functions
     s32   v_alloc_get_page_size();
+    s8    v_alloc_get_page_size_shift();
     void* v_alloc_reserve(int_t size);
     bool  v_alloc_commit(void* addr, int_t size);
     bool  v_alloc_decommit(void* addr, int_t extra_size);

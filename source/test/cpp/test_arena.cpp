@@ -5,7 +5,7 @@
 
 using namespace ncore;
 
-UNITTEST_SUITE_BEGIN(vmem)
+UNITTEST_SUITE_BEGIN(arena)
 {
     UNITTEST_FIXTURE(init)
     {

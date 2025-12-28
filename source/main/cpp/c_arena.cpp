@@ -141,6 +141,20 @@ namespace ncore
 
 #endif
 
+namespace ncore
+{
+    static s8 s_page_size_shift = 0;
+    s8        v_alloc_get_page_size_shift()
+    {
+        if (s_page_size_shift == 0)
+        {
+            const s32 page_size = v_alloc_get_page_size();
+            s_page_size_shift   = (s8)math::ilog2(page_size);
+        }
+        return s_page_size_shift;
+    }
+}  // namespace ncore
+
 #if defined(TARGET_MAC) || defined(TARGET_LINUX) || defined(TARGET_PC)
 
 namespace ncore
