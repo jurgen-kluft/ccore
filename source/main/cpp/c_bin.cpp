@@ -9,17 +9,6 @@ namespace ncore
 {
     namespace nbin
     {
-        // This is an allocation bin that can handle quite a lot of different allocation sizes.
-        // It uses a hierarchical binmap to track used/free items and can grow both the committed
-        // memory for the binmap as well as for the items themselves.
-        // A certain part of the binmap is always committed, roughly 1 to 2 pages (page-size = 16KB)
-        // depending on the maximum number of items.
-        // One benefit of this bin is that it can handle up to 16M items (with 4 levels) and that
-        // the memory overhead for the binmap is quite low, especially when the number of items
-        // is high, basically tracking consumes 1 bit per item.
-        // The behaviour of the binmap is such that allocations are always done from low to high,
-        // so an allocation will always take the first free position that is lowest in the binmap.
-
         struct bin_t
         {
             u32 m_items_committed_pages;   // (unit = pages) number of pages committed for items

@@ -164,7 +164,7 @@ namespace ncore
         arena_t *sNewArena(int_t _header_size, int_t _reserve_size, int_t _commit_size, s8 _arena_alignment_shift)
         {
             const s32   page_size       = v_alloc_get_page_size();
-            const s8    page_size_shift = math::ilog2(page_size);
+            const s8    page_size_shift = v_alloc_get_page_size_shift();
             const int_t reserved_size   = math::alignUp(_reserve_size, (int_t)page_size);
             const int_t header_size     = math::alignUp(_header_size, (int_t)page_size);
             const int_t alignment_size  = math::alignUp(header_size, 1 << _arena_alignment_shift);
@@ -478,8 +478,7 @@ namespace ncore
             ASSERT(num_arenas <= 256 && num_arenas > 0);
 
             // Align the requested region size to page size
-            const s32 page_size            = v_alloc_get_page_size();
-            const s8  page_size_shift      = math::ilog2(page_size);
+            const s8  page_size_shift      = v_alloc_get_page_size_shift();
             const s32 region_reserve_pages = (s32)(math::alignUp(region_reserve_size, (int_t)1 << page_size_shift) >> page_size_shift);
 
             // Align the header size to pages
