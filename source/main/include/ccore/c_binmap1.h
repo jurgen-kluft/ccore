@@ -12,22 +12,36 @@ namespace ncore
     // --------------------------------------------------------------------------------------------
     namespace nbinmap
     {
-        // size = 16 bytes
-        struct layout_t
+        struct layout64_t
         {
             u32 m_maxbits;  // maximum number of bits this layout can handle
-            u32 m_bin3;     // (unit = number of u64)
-            u32 m_bin2;     // (unit = number of u64)
-            u16 m_bin1;     // (unit = number of u64, should be 2 <= N <= 64)
-            u8  m_bin0;     // (unit = number of u64, should always be == 1)
+            u32 m_bin3;     // number of u64 at this level (unit = number of u64)
+            u32 m_bin2;     // number of u64 at this level (unit = number of u64)
+            u16 m_bin1;     // number of u64 at this level (unit = number of u64, should be 2 <= N <= 64)
+            u8  m_bin0;     // number of u64 at this level (unit = number of u64, should always be == 1)
             u8  m_levels;   // number of levels (0 = bin0, 1 = bin0+bin1, 2 = bin0+bin1+bin2, 3 = bin0+bin1+bin2+bin3)
         };
 
-        void compute(u32 number_of_bits, layout_t &l);
-        void pointers(byte* ptr, layout_t const &l, u64 *&bin0, u64 *&bin1, u64 *&bin2, u64 *&bin3);
-        u32  sizeof_data(layout_t const &l);  // u64[N], where N is computed based on layout
-        // This will compute the data size, where the bottom level is considered 'growable' up to 'bit'
-        u32 sizeof_data(layout_t const &l, u32 bit);
+        void compute(u32 number_of_bits, layout64_t &l);
+        void pointers(byte *ptr, layout64_t const &l, u64 *&bin0, u64 *&bin1, u64 *&bin2, u64 *&bin3);
+        u32  sizeof_data(layout64_t const &l);  // u64[N], where N is computed based on layout
+        // This will compute the data size in u64[N], where the full level is considered 'growable' up to 'bit'
+        u32 sizeof_data(layout64_t const &l, u32 bit);
+
+        struct layout32_t
+        {
+            u32 m_maxbits;  // maximum number of bits this layout can handle
+            u32 m_bin3;     // number of u32 at this level (unit = number of u32)
+            u32 m_bin2;     // number of u32 at this level (unit = number of u32)
+            u16 m_bin1;     // number of u32 at this level (unit = number of u32, should be 2 <= N <= 32)
+            u8  m_bin0;     // number of u32 at this level (unit = number of u32, should always be == 1)
+            u8  m_levels;   // number of levels (0 = bin0, 1 = bin0+bin1, 2 = bin0+bin1+bin2, 3 = bin0+bin1+bin2+bin3)
+        };
+        void compute(u32 number_of_bits, layout32_t &l);
+        void pointers(byte *ptr, layout32_t const &l, u32 *&bin0, u32 *&bin1, u32 *&bin2, u32 *&bin3);
+        u32  sizeof_data(layout32_t const &l);  // u32[N], where N is computed based on layout
+        // This will compute the data size in u32[N], where the full level is considered 'growable' up to 'bit'
+        u32 sizeof_data(layout32_t const &l, u32 bit);
 
     }  // namespace nbinmap
 

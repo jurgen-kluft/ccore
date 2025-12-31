@@ -11,16 +11,16 @@ namespace ncore
     {
         struct bin_t
         {
-            u32 m_items_committed_pages;   // (unit = pages) number of pages committed for items
-            u32 m_items_free_index;        // current 'bit' used to allocate next free item
-            u32 m_items_count;             // number of items currently in use
-            u32 m_items_capacity;          // maximum number of items for this bin
-            u32 m_items_commit_threshold;  // threshold of when to commit +1 page for items
-            u16 m_item_size;               // size of one item
-            u8  m_items_pages_offset;      // (unit = pages, relative to base address) offset from base for where items start
-            u8  m_pagesize_shift;          // page-size = 1 << pagesize_shift
-            u8  m_bin_committed_pages;     // (unit = pages) number of pages committed for bin, including binmap
-            u8  m_bin_level_count;         // binmap, number of levels
+            u32 m_items_committed_pages;    // (unit = pages) number of pages committed for items
+            u32 m_items_free_index;         // current 'bit' used to allocate next free item
+            u32 m_items_count;              // number of items currently in use
+            u32 m_items_capacity;           // maximum number of items for this bin
+            u32 m_binmap_commit_threshold;  // threshold of when to commit +1 page for binmap
+            u16 m_item_size;                // size of one item
+            u16 m_items_pages_offset;       // (unit = pages, relative to base address) offset from base for where items start
+            u16 m_bin_committed_pages;      // (unit = pages) number of pages committed for bin, including binmap
+            u8  m_pagesize_shift;           // page-size = 1 << pagesize_shift
+            u8  m_bin_level_count;          // binmap, number of levels
             // u16 m_bin1_offset;            // (unit = number of u64, relative to &m_bin0), always == 1
             u16 m_bin2_offset;  // (unit = number of u64, relative to &m_bin0)
             u16 m_bin3_offset;  // (unit = number of u64, relative to &m_bin0)
@@ -34,8 +34,21 @@ namespace ncore
 
             const int_t items_memory_size = math::alignUp((int_t)item_size * max_items, page_size);
 
-            nbinmap::layout_t layout;
+            nbinmap::layout64_t layout;
             nbinmap::compute(max_items, layout);
+
+            // TODO: just reserve the maximum amount of pages for 16M items, then the logic
+            // to compute the bin header pages would be much simpler.
+            // If header reserve size == header commit size -> commit header + items in one call.
+            // All does depend on the page size.
+            // ((sizeof(bin_t) + max-sizeof(bin1) + max-sizeof(bin2) + max-sizeof(bin3))) / sizeof-page
+            // this makes the following member obsolete:
+            // - m_items_pages_offset
+            // Also the logic in this function to either combine or do 2 commits would change to always
+            // do two commits, the rare case that the user is asking for close to max_items == 16M 
+            // will be ignored. Same for the destroy() function.
+            const int_t bin_hdr_max_size  = sizeof(bin_t) + (16 * cMB / 8 / 64 / 64) + (16 * cMB / 8 / 64) + (16 * cMB / 8);
+            const s32   bin_hdr_max_pages = ((bin_hdr_max_size + (page_size - 1)) >> page_size_shift);
 
             // bin header total size = 'sizeof(bin_t) + full binmap data' (excluding size for items)
             int_t bin_hdr_total_size = sizeof(bin_t);
@@ -44,8 +57,8 @@ namespace ncore
             bin_hdr_total_size += ((layout.m_bin3 + 63) >> 6) * sizeof(u64);
             bin_hdr_total_size = math::alignUp(bin_hdr_total_size, page_size);
 
-            bin_t* bin = (bin_t*)v_alloc_reserve(bin_hdr_total_size + items_memory_size);
-
+            byte* base_address = (byte*)v_alloc_reserve(bin_hdr_total_size + items_memory_size);
+            
             // bin header commit size includes bin_t and most of the binmap data but not all
             int_t bin_hdr_commit_size = sizeof(bin_t);
             bin_hdr_commit_size += (((layout.m_bin1 + 63) >> 6) * sizeof(u64));
@@ -54,15 +67,15 @@ namespace ncore
             bin_hdr_commit_size = math::alignUp(bin_hdr_commit_size, page_size);
 
             // where do the items start relative to the reserved region, calculate the offset in pages
-            const u8  items_pages_offset    = (u8)(bin_hdr_total_size >> page_size_shift);
+            const u16  items_pages_offset    = (u16)(bin_hdr_total_size >> page_size_shift);
             const u16 items_pages_committed = 1;
 
             // if items start right after the bin_hdr_commit_size, then we can combine the commit
-            if (items_pages_offset == (bin_hdr_commit_size >> page_size_shift))
+            if (items_pages_offset == (u16)(bin_hdr_commit_size >> page_size_shift))
             {
-                if (!v_alloc_commit(bin, bin_hdr_commit_size + (items_pages_committed << page_size_shift)))
+                if (!v_alloc_commit(base_address, bin_hdr_commit_size + (items_pages_committed << page_size_shift)))
                 {
-                    v_alloc_release(bin, bin_hdr_total_size + items_memory_size);
+                    v_alloc_release(base_address, bin_hdr_total_size + items_memory_size);
                     return nullptr;
                 }
             }
@@ -72,18 +85,19 @@ namespace ncore
                 // will 'grow' later when needed.
                 // but we will have to commit part of the header and separately commit the first page
                 // for items.
-                if (!v_alloc_commit(bin, bin_hdr_commit_size))
+                if (!v_alloc_commit(base_address, bin_hdr_commit_size))
                 {
-                    v_alloc_release(bin, bin_hdr_total_size + items_memory_size);
+                    v_alloc_release(base_address, bin_hdr_total_size + items_memory_size);
                     return nullptr;
                 }
-                if (!v_alloc_commit(bin + bin_hdr_total_size, items_pages_committed << page_size_shift))
+                if (!v_alloc_commit((byte*)base_address + bin_hdr_total_size, items_pages_committed << page_size_shift))
                 {
-                    v_alloc_release(bin, bin_hdr_total_size + items_memory_size);
+                    v_alloc_release(base_address, bin_hdr_total_size + items_memory_size);
                     return nullptr;
                 }
             }
 
+            bin_t* bin = (bin_t*)base_address;
             bin->m_items_committed_pages = items_pages_committed;
             bin->m_items_free_index      = 0;
             bin->m_items_count           = 0;
@@ -104,7 +118,7 @@ namespace ncore
                 {
                     const u32 bin_binx               = ((u32)sizeof(bin_t) - (u32)sizeof(u64)) + ((u32)bin->m_bin3_offset * sizeof(u64));
                     const u32 items_commit_threshold = (u32)(bin_hdr_commit_size - bin_binx) * 8;
-                    bin->m_items_commit_threshold    = math::min(items_commit_threshold, bin->m_items_capacity);
+                    bin->m_binmap_commit_threshold   = math::min(items_commit_threshold, bin->m_items_capacity);
                 }
                 break;
 
@@ -112,13 +126,13 @@ namespace ncore
                 {
                     const u32 bin_binx               = ((u32)sizeof(bin_t) - (u32)sizeof(u64)) + ((u32)bin->m_bin2_offset * sizeof(u64));
                     const u32 items_commit_threshold = (u32)(bin_hdr_commit_size - bin_binx) * 8;
-                    bin->m_items_commit_threshold    = math::min(items_commit_threshold, bin->m_items_capacity);
+                    bin->m_binmap_commit_threshold   = math::min(items_commit_threshold, bin->m_items_capacity);
                 }
                 break;
 
                 case 1:
                 case 0:
-                    bin->m_items_commit_threshold = bin->m_items_capacity;  // all committed
+                    bin->m_binmap_commit_threshold = bin->m_items_capacity;  // all committed
                     break;
             }
 
@@ -174,14 +188,14 @@ namespace ncore
             else
             {
                 // Before touching the binmap, make sure we have committed enough memory for it
-                if (bin->m_items_free_index >= bin->m_items_commit_threshold)
+                if (bin->m_items_free_index >= bin->m_binmap_commit_threshold)
                 {
                     // commit +1 page for binmap
                     if (!v_alloc_commit((byte*)bin + (bin->m_bin_committed_pages << bin->m_pagesize_shift), 1 << bin->m_pagesize_shift))
                         return nullptr;
                     bin->m_bin_committed_pages += 1;
                     // recalculate the new commit threshold
-                    bin->m_items_commit_threshold += (((u32)1 << bin->m_pagesize_shift) * 8);
+                    bin->m_binmap_commit_threshold += (((u32)1 << bin->m_pagesize_shift) * 8);
                 }
 
                 switch (bin->m_bin_level_count)

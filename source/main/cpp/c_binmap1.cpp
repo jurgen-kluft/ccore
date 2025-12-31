@@ -756,54 +756,94 @@ namespace ncore
     namespace nbinmap
     {
         // Note: maximum count is 16 Million (6 bits + 6 bits + 6 bits + 6 bits = 24 bits = 16 M)
-        void compute(u32 number_of_bits, layout_t& layout)
+        void compute(u32 number_of_bits, layout64_t& layout)
         {
             ASSERT(number_of_bits > 0 && number_of_bits <= 16 * 1024 * 1024);
 
             layout.m_maxbits = number_of_bits;
-            layout.m_bin0    = 0;  // bits for level 1
-            layout.m_bin1    = 0;  // bits for level 2
-            layout.m_bin2    = 0;  // bits for level 3
-            layout.m_bin3    = 0;  // bits for level 4
+            layout.m_bin0    = 0;  // u64[N], N for level 1
+            layout.m_bin1    = 0;  // u64[N], N for level 2
+            layout.m_bin2    = 0;  // u64[N], N for level 3
+            layout.m_bin3    = 0;  // u64[N], N for level 4
 
-            u32 len         = number_of_bits;
-            layout.m_levels = (u16)(math::mostSignificantBit(len - 1) / 6);  // We can have a maximum of 4 levels, each level holds 6 bits (u64)
+            u32 len = number_of_bits;
+            // We can have a maximum of 4 levels, each level holds 6 bits (u64)
+            layout.m_levels = (u16)(math::mostSignificantBit(len - 1) / 6);
             switch (layout.m_levels)
             {
-                case 3: layout.m_bin3 = len; len = (len + 63) >> 6;  // fall through
-                case 2: layout.m_bin2 = len; len = (len + 63) >> 6;  // fall through
-                case 1: layout.m_bin1 = len; len = (len + 63) >> 6;  // fall through
+                case 3: layout.m_bin3 = (len = 63) >> 6; len = (len + 63) >> 6;  // fall through
+                case 2: layout.m_bin2 = (len = 63) >> 6; len = (len + 63) >> 6;  // fall through
+                case 1: layout.m_bin1 = (len = 63) >> 6; len = (len + 63) >> 6;  // fall through
             }
             layout.m_bin0 = len;
         }
 
-        void pointers(byte* ptr, layout_t const& l, u64*& bin0, u64*& bin1, u64*& bin2, u64*& bin3)
+        void pointers(byte* ptr, layout64_t const& l, u64*& bin0, u64*& bin1, u64*& bin2, u64*& bin3)
         {
             bin0 = (u64*)ptr;
             bin1 = (u64*)(ptr + sizeof(u64));
-            bin2 = bin1 + ((l.m_bin1 + 63) >> 6);
-            bin3 = bin2 + ((l.m_bin2 + 63) >> 6);
+            bin2 = bin1 + l.m_bin1;
+            bin3 = bin2 + l.m_bin2;
         }
 
-        u32 sizeof_data(layout_t const& l)
-        {
-            u32 size = (l.m_bin0 + 63) >> 6;
-            size += (l.m_bin1 + 63) >> 6;
-            size += (l.m_bin2 + 63) >> 6;
-            size += (l.m_bin3 + 63) >> 6;
-            return size;
-        }
+        u32 sizeof_data(layout64_t const& l) { return l.m_bin0 + l.m_bin1 + l.m_bin2 + l.m_bin3; }
 
-        u32 sizeof_data(layout_t const& l, u32 bit)
+        u32 sizeof_data(layout64_t const& l, u32 bit)
         {
-            u32 size = sizeof(u64);
+            u32 size = l.m_bin0;
             switch (l.m_levels)
             {
-                case 3: size += (l.m_bin2 + 63) >> 6;
-                case 2: size += (l.m_bin1 + 63) >> 6;
+                case 3: size += l.m_bin2;
+                case 2: size += l.m_bin1;
                 case 1: break;
             }
             size += (bit + 63) >> 6;
+            return size;
+        }
+
+        // Note: maximum count is 1 Million (5 bits + 5 bits + 5 bits + 5 bits = 20 bits = 1 M)
+        void compute(u32 number_of_bits, layout32_t& layout)
+        {
+            ASSERT(number_of_bits > 0 && number_of_bits <= 1 * 1024 * 1024);
+
+            layout.m_maxbits = number_of_bits;
+            layout.m_bin0    = 0;  // u32[N], N for level 1
+            layout.m_bin1    = 0;  // u32[N], N for level 2
+            layout.m_bin2    = 0;  // u32[N], N for level 3
+            layout.m_bin3    = 0;  // u32[N], N for level 4
+
+            u32 len = number_of_bits;
+            // We can have a maximum of 4 levels, each level holds 5 bits (u32)
+            layout.m_levels = (u16)(math::mostSignificantBit(len - 1) / 5);
+            switch (layout.m_levels)
+            {
+                case 3: layout.m_bin3 = (len = 31) >> 5; len = (len + 31) >> 5;  // fall through
+                case 2: layout.m_bin2 = (len = 31) >> 5; len = (len + 31) >> 5;  // fall through
+                case 1: layout.m_bin1 = (len = 31) >> 5; len = (len + 31) >> 5;  // fall through
+            }
+            layout.m_bin0 = len;
+        }
+
+        void pointers(byte* ptr, layout32_t const& l, u32*& bin0, u32*& bin1, u32*& bin2, u32*& bin3)
+        {
+            bin0 = (u32*)ptr;
+            bin1 = (u32*)(ptr + sizeof(u32));
+            bin2 = bin1 + l.m_bin1;
+            bin3 = bin2 + l.m_bin2;
+        }
+
+        u32 sizeof_data(layout32_t const& l) { return l.m_bin0 + l.m_bin1 + l.m_bin2 + l.m_bin3; }
+
+        u32 sizeof_data(layout32_t const& l, u32 bit)
+        {
+            u32 size = l.m_bin0;
+            switch (l.m_levels)
+            {
+                case 3: size += l.m_bin2;
+                case 2: size += l.m_bin1;
+                case 1: break;
+            }
+            size += (bit + 31) >> 5;
             return size;
         }
 
