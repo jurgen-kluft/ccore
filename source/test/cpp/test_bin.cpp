@@ -17,9 +17,15 @@ UNITTEST_SUITE_BEGIN(bin)
 
         UNITTEST_ALLOCATOR;
 
-        UNITTEST_TEST(create_destroy)
+        UNITTEST_TEST(create_destroy_1)
         {
             nbin::bin_t* bin = nbin::make_bin(64, 65536);
+            nbin::destroy(bin);
+        }
+
+        UNITTEST_TEST(create_destroy_2)
+        {
+            nbin::bin_t* bin = nbin::make_bin(64, 3 * 1024);  // 256K items
             nbin::destroy(bin);
         }
 

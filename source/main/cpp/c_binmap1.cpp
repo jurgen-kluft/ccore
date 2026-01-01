@@ -771,11 +771,11 @@ namespace ncore
             layout.m_levels = (u16)(math::mostSignificantBit(len - 1) / 6);
             switch (layout.m_levels)
             {
-                case 3: layout.m_bin3 = (len = 63) >> 6; len = (len + 63) >> 6;  // fall through
-                case 2: layout.m_bin2 = (len = 63) >> 6; len = (len + 63) >> 6;  // fall through
-                case 1: layout.m_bin1 = (len = 63) >> 6; len = (len + 63) >> 6;  // fall through
+                case 3: layout.m_bin3 = (len + 63) >> 6; len = (len + 63) >> 6;  // fall through
+                case 2: layout.m_bin2 = (len + 63) >> 6; len = (len + 63) >> 6;  // fall through
+                case 1: layout.m_bin1 = (len + 63) >> 6; len = (len + 63) >> 6;  // fall through
             }
-            layout.m_bin0 = len;
+            layout.m_bin0 = (len + 63) >> 6;
         }
 
         void pointers(byte* ptr, layout64_t const& l, u64*& bin0, u64*& bin1, u64*& bin2, u64*& bin3)
@@ -817,11 +817,11 @@ namespace ncore
             layout.m_levels = (u16)(math::mostSignificantBit(len - 1) / 5);
             switch (layout.m_levels)
             {
-                case 3: layout.m_bin3 = (len = 31) >> 5; len = (len + 31) >> 5;  // fall through
-                case 2: layout.m_bin2 = (len = 31) >> 5; len = (len + 31) >> 5;  // fall through
-                case 1: layout.m_bin1 = (len = 31) >> 5; len = (len + 31) >> 5;  // fall through
+                case 3: layout.m_bin3 = (len + 31) >> 5; len = (len + 31) >> 5;  // fall through
+                case 2: layout.m_bin2 = (len + 31) >> 5; len = (len + 31) >> 5;  // fall through
+                case 1: layout.m_bin1 = (len + 31) >> 5; len = (len + 31) >> 5;  // fall through
             }
-            layout.m_bin0 = len;
+            layout.m_bin0 = (len + 31) >> 5;
         }
 
         void pointers(byte* ptr, layout32_t const& l, u32*& bin0, u32*& bin1, u32*& bin2, u32*& bin3)
