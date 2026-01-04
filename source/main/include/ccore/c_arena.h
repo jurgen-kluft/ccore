@@ -99,16 +99,16 @@ namespace ncore
         class aalloc_t : public alloc_t
         {
         public:
-            inline aalloc_t() : m_vmem(nullptr) {}
-            inline aalloc_t(arena_t* vmem) : m_vmem(vmem) {}
+            inline aalloc_t() : m_arena(nullptr) {}
+            inline aalloc_t(arena_t* vmem) : m_arena(vmem) {}
             virtual ~aalloc_t() {
-                if (m_vmem != nullptr) {
-                    narena::destroy(m_vmem);
-                    m_vmem = nullptr;
+                if (m_arena != nullptr) {
+                    narena::destroy(m_arena);
+                    m_arena = nullptr;
                 }
             }
-            arena_t* m_vmem;  // virtual memory arena used for allocations
-            virtual void* v_allocate(u32 size, u32 alignment) { return narena::alloc(m_vmem, (int_t)size, alignment); }
+            arena_t* m_arena;  // virtual memory arena used for allocations
+            virtual void* v_allocate(u32 size, u32 alignment) { return narena::alloc(m_arena, (int_t)size, alignment); }
             virtual void  v_deallocate(void*) {}
 
             DCORE_CLASS_PLACEMENT_NEW_DELETE

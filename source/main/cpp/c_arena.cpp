@@ -242,20 +242,24 @@ namespace ncore
                 if (!result)
                     return current_committed_pages;
                 current_committed_pages += (s32)extra_needed_pages;
-            }
-            else if (want_committed_pages < current_committed_pages)
-            {
-                // decommit the extra pages
-                const int_t decommit_size_in_bytes = ((int_t)current_committed_pages - want_committed_pages) << page_size_shift;
-                byte       *decommit_start         = base_address + (want_committed_pages << page_size_shift);
-                if (!v_alloc_decommit(decommit_start, decommit_size_in_bytes))
-                    return current_committed_pages;
-                current_committed_pages = (s32)want_committed_pages;
+
+                const bool success    = (current_committed_pages == want_committed_pages);
+                ar->m_committed_pages = current_committed_pages;
+                return success;
             }
 
-            const bool success    = (current_committed_pages == want_committed_pages);
-            ar->m_committed_pages = current_committed_pages;
-            return success;
+            // don't run the logic to shrink
+            // else if (want_committed_pages < current_committed_pages)
+            // {
+            //     // decommit the extra pages
+            //     const int_t decommit_size_in_bytes = ((int_t)current_committed_pages - want_committed_pages) << page_size_shift;
+            //     byte       *decommit_start         = base_address + (want_committed_pages << page_size_shift);
+            //     if (!v_alloc_decommit(decommit_start, decommit_size_in_bytes))
+            //         return current_committed_pages;
+            //     current_committed_pages = (s32)want_committed_pages;
+            // }
+
+            return true;
         }
 
         // commits (allocate) size number of bytes and possibly grows the committed region.
