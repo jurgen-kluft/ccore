@@ -83,7 +83,7 @@ namespace ncore
             }
 
             const u16 items_pages_committed = 1;
-            if (!v_alloc_commit(base_address + bin_hdr_max_size, items_pages_committed << page_size_shift))
+            if (!v_alloc_commit(base_address + bin_hdr_max_size, (int_t)items_pages_committed << page_size_shift))
             {
                 v_alloc_release(base_address, bin_hdr_max_size + items_memory_size);
                 return nullptr;

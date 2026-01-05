@@ -13,12 +13,12 @@ namespace ncore
     {
         byte* m_base;             // base address of the arena (after header)
         int_t m_pos;              // current position in the arena to allocate from (relative to m_base)
-        u16   m_header_pages;     // (unit = pages) number of header pages (before m_base)
-        s16   m_page_size_shift;  // page size in shift (from system)
         u32   m_reserved_pages;   // (unit = pages) reserved number of pages for this arena (relative to arena)
         u32   m_committed_pages;  // (unit = pages) number of committed pages (relative to arena)
-        s16   m_alignment_shift;  // default minimum alignment for allocations (default is 4 = (1<<4) = 16 bytes)
-        s16   m_padding;          // padding to make the structure aligned to 16 bytes
+        u16   m_header_pages;     // (unit = pages) number of header pages (before m_base)
+        s8    m_page_size_shift;  // page size in shift (from system)
+        s8    m_alignment_shift;  // default minimum alignment for allocations (default is 4 = (1<<4) = 16 bytes)
+        s32   m_padding;          // padding to make the structure aligned to 16 bytes
     };
 
     namespace narena

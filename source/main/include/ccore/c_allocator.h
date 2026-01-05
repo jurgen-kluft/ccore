@@ -93,11 +93,11 @@ namespace ncore
 
     // =========================================================
 
-    template <typename T>
-    inline T* g_construct(alloc_t* a)
+    template <typename T, typename ...A>
+    inline T* g_construct(alloc_t* a, A ...args)
     {
         void* mem = a->allocate(sizeof(T));
-        return new (mem) T();
+        return new (mem) T(args...);
     }
 
     template <typename T>
