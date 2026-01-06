@@ -59,42 +59,6 @@ namespace ncore
         void  shrink(arena_t* ar);                                               // decommit any 'extra' pages
         void  reset(arena_t* ar);                                                // make all memory available for reuse without releasing it
 
-        // Some C++ style helper functions
-        template <typename T>
-        inline T* allocate(arena_t* a, u32 alignment = sizeof(void*))
-        {
-            void* ptr = alloc(a, sizeof(T), alignment);
-            return (T*)ptr;
-        }
-
-        template <typename T>
-        inline T* allocate_and_clear(arena_t* a, u32 alignment = sizeof(void*))
-        {
-            void* ptr = alloc_and_zero(a, sizeof(T), alignment);
-            return (T*)ptr;
-        }
-
-        template <typename T>
-        inline T* allocate_array(arena_t* a, u32 maxsize, u32 alignment = sizeof(void*))
-        {
-            void* ptr = alloc(a, maxsize * sizeof(T), alignment);
-            return (T*)ptr;
-        }
-
-        template <typename T>
-        inline T* allocate_array_and_clear(arena_t* a, u32 maxsize, u32 alignment = sizeof(void*))
-        {
-            void* ptr = alloc_and_zero(a, maxsize * sizeof(T), alignment);
-            return (T*)ptr;
-        }
-
-        template <typename T>
-        inline T* allocate_array_and_fill(arena_t* a, u32 maxsize, u32 fill, u32 alignment = sizeof(void*))
-        {
-            void* ptr = alloc_and_fill(a, maxsize * sizeof(T), alignment, fill);
-            return (T*)ptr;
-        }
-
         // clang-format off
         class aalloc_t : public alloc_t
         {
@@ -115,6 +79,50 @@ namespace ncore
         };
         // clang-format on
     }  // namespace narena
+
+    // Some C++ style helper functions
+    template <typename T>
+    inline T* g_allocate(arena_t* a, u32 alignment = sizeof(void*))
+    {
+        void* ptr = narena::alloc(a, sizeof(T), alignment);
+        return (T*)ptr;
+    }
+
+    template <typename T>
+    inline void g_deallocate(arena_t* a, T* ptr)
+    {
+        // no-op, arena allocations are not deallocated individually
+        (void)a;
+        (void)ptr;
+    }
+
+    template <typename T>
+    inline T* g_allocate_and_clear(arena_t* a, u32 alignment = sizeof(void*))
+    {
+        void* ptr = narena::alloc_and_zero(a, sizeof(T), alignment);
+        return (T*)ptr;
+    }
+
+    template <typename T>
+    inline T* g_allocate_array(arena_t* a, u32 maxsize, u32 alignment = sizeof(void*))
+    {
+        void* ptr = narena::alloc(a, maxsize * sizeof(T), alignment);
+        return (T*)ptr;
+    }
+
+    template <typename T>
+    inline T* g_allocate_array_and_clear(arena_t* a, u32 maxsize, u32 alignment = sizeof(void*))
+    {
+        void* ptr = narena::alloc_and_zero(a, maxsize * sizeof(T), alignment);
+        return (T*)ptr;
+    }
+
+    template <typename T>
+    inline T* g_allocate_array_and_fill(arena_t* a, u32 maxsize, u32 fill, u32 alignment = sizeof(void*))
+    {
+        void* ptr = narena::alloc_and_fill(a, maxsize * sizeof(T), alignment, fill);
+        return (T*)ptr;
+    }
 
     struct arena_scratch_t
     {
