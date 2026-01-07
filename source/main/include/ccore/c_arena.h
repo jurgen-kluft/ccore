@@ -2,7 +2,7 @@
 #define __CCORE_VMEM_ALLOC_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
-#    pragma once
+    #pragma once
 #endif
 
 #include "ccore/c_allocator.h"
@@ -16,9 +16,9 @@ namespace ncore
         u32   m_reserved_pages;   // (unit = pages) reserved number of pages for this arena (relative to arena)
         u32   m_committed_pages;  // (unit = pages) number of committed pages (relative to arena)
         u16   m_header_pages;     // (unit = pages) number of header pages (before m_base)
-        s8    m_page_size_shift;  // page size in shift (from system)
-        s8    m_alignment_shift;  // default minimum alignment for allocations (default is 4 = (1<<4) = 16 bytes)
-        s32   m_padding;          // padding to make the structure aligned to 16 bytes
+        u8    m_page_size_shift;  // page size in shift (from system)
+        u8    m_alignment_shift;  // default minimum alignment for allocations (default is 4 = (1<<4) = 16 bytes)
+        u32   m_padding;          // padding to make the structure aligned to 16 bytes
     };
 
     namespace narena
@@ -58,28 +58,25 @@ namespace ncore
         void  restore_address(arena_t* ar, void* ptr);                           // restore the arena to the given address
         void  shrink(arena_t* ar);                                               // decommit any 'extra' pages
         void  reset(arena_t* ar);                                                // make all memory available for reuse without releasing it
-
-        // clang-format off
-        class aalloc_t : public alloc_t
-        {
-        public:
-            inline aalloc_t() : m_arena(nullptr) {}
-            inline aalloc_t(arena_t* vmem) : m_arena(vmem) {}
-            virtual ~aalloc_t() {
-                if (m_arena != nullptr) {
-                    narena::destroy(m_arena);
-                    m_arena = nullptr;
-                }
-            }
-            arena_t* m_arena;  // virtual memory arena used for allocations
-            virtual void* v_allocate(u32 size, u32 alignment) { return narena::alloc(m_arena, (int_t)size, alignment); }
-            virtual void  v_deallocate(void*) {}
-
-            DCORE_CLASS_PLACEMENT_NEW_DELETE
-        };
-        // clang-format on
     }  // namespace narena
 
+    // clang-format off
+    class arena_alloc_t : public alloc_t
+    {
+    public:
+        inline arena_alloc_t() : m_arena(nullptr) {}
+        inline arena_alloc_t(arena_t* vmem) : m_arena(vmem) {}
+        virtual ~arena_alloc_t() {}
+
+        arena_t* m_arena; 
+
+        virtual void* v_allocate(u32 size, u32 alignment) { return narena::alloc(m_arena, (int_t)size, alignment); }
+        virtual void  v_deallocate(void*) {}
+
+        DCORE_CLASS_PLACEMENT_NEW_DELETE
+    };
+    // clang-format on
+    
     // Some C++ style helper functions
     template <typename T>
     inline T* g_allocate(arena_t* a, u32 alignment = sizeof(void*))
@@ -144,7 +141,7 @@ namespace ncore
 
     // Platform specific virtual memory functions
     s32   v_alloc_get_page_size();
-    s8    v_alloc_get_page_size_shift();
+    u8    v_alloc_get_page_size_shift();
     void* v_alloc_reserve(int_t size);
     bool  v_alloc_commit(void* addr, int_t size);
     bool  v_alloc_decommit(void* addr, int_t extra_size);
