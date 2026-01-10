@@ -33,6 +33,7 @@ namespace ncore
         u32 val = rng->rand32();
         return (val >> (32 - inBits));
     }
+    inline s32 g_random_u32_max(random_t* rng, u32 max) { return g_random_u32(rng) % max; }
     inline s32 g_random_s32(random_t* rng) { return (s32)(g_random_u32(rng) & 0x7fffffff); }
     inline s32 g_random_s32(random_t* rng, s8 inBits)
     {
@@ -55,6 +56,7 @@ namespace ncore
     inline f32 g_random_f32(random_t* rng) { return (f32)g_random_u32(rng) / (f32)cU32Max; }
     inline f32 g_random_f32_min_max(random_t* rng, f32 _min, f32 _max) { return _min + (g_random_f32(rng) * (_max - _min)); }
     inline f32 g_random_f32S(random_t* rng) { return ((g_random_f32(rng) - 0.5f) * 2.0f); }
+    inline s32 g_random_s32_max(random_t* rng, s32 max) { return g_random_s32(rng, 31) % max; }
     inline s32 g_random_s32_0_max(random_t* rng, s32 max) { return (s32)g_random_u32(rng, 31) % max; }
     inline s32 g_random_s32_min_max(random_t* rng, s32 min, s32 max) { return min + ((s32)g_random_u32(rng, 31) % (max-min)); }
     inline s32 g_random_s32_0_1(random_t* rng) { return g_random_s32_0_max(rng, 2); }
