@@ -25,7 +25,7 @@ namespace ncore
         // space locality is therefore quite good.
 
         struct bin_t;
-        bin_t* make_bin(u16 item_size, u32 max_items);  // 1 block = 64KB, maximum = 65535 blocks = 4GB
+        bin_t* make_bin(u16 item_size, u32 max_items);  // e.g. 1 block = 64KB, maximum = 65535 blocks = 4GB
         void   destroy(bin_t* bin);                     // destroy the bin
         u32    size(bin_t* bin);                        // number of items currently in the bin
         u32    capacity(bin_t* bin);                    // maximum number of items the bin can hold

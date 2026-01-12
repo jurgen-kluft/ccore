@@ -2,7 +2,7 @@
 #define __CCORE_BINMAPS_V2_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
-#    pragma once
+    #pragma once
 #endif
 
 namespace ncore
@@ -52,13 +52,18 @@ namespace ncore
     // 2^6 binmap, can handle a maximum of 64 bits.
     namespace nbinmap6
     {
-        typedef u64 bin0type;
+        typedef u64 bintype;
 
-        void set(bin0type *bin0, u32 maxbits, u32 bit);
-        void clr(bin0type *bin0, u32 maxbits, u32 bit);
-        bool get(bin0type const *bin0, u32 maxbits, u32 bit);
-        s32  find(bin0type const *bin0, u32 maxbits);
-        s32  find_and_set(bin0type *bin0, u32 maxbits);
+        void set(bintype *bin0, u32 maxbits, u32 bit);
+        void clr(bintype *bin0, u32 maxbits, u32 bit);
+        bool get(bintype const *bin0, u32 maxbits, u32 bit);
+        s32  find(bintype const *bin0, u32 maxbits);
+        s32  find_and_set(bintype *bin0, u32 maxbits);
+
+        s32 find_last(bintype *bin0, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype *bin0, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype *bin0, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype *bin0, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap6
 
     // --------------------------------------------------------------------------------------------
@@ -70,21 +75,25 @@ namespace ncore
     {
         // bin0 = a single u32 (5)
         // bin1 = an array of u32, max u32[32] (5)
-        typedef u32 bin0type;
-        typedef u32 bin1type;
+        typedef u32 bintype;
 
-        void setup_free_lazy(bin0type *bin0, bin1type *bin1, u32 maxbits);
-        void tick_free_lazy(bin0type *bin0, bin1type *bin1, u32 maxbits, u32 bit);
-        void setup_used_lazy(bin0type *bin0, bin1type *bin1, u32 maxbits);
-        void tick_used_lazy(bin0type *bin0, bin1type *bin1, u32 maxbits, u32 bit);
+        void setup_free_lazy(bintype *bin0, bintype *bin1, u32 maxbits);
+        void tick_free_lazy(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
+        void setup_used_lazy(bintype *bin0, bintype *bin1, u32 maxbits);
+        void tick_used_lazy(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
 
-        void clear(bin0type *bin0, bin1type *bin1, u32 maxbits);
+        void clear(bintype *bin0, bintype *bin1, u32 maxbits);
 
-        void set(bin0type *bin0, bin1type *bin1, u32 maxbits, u32 bit);
-        void clr(bin0type *bin0, bin1type *bin1, u32 maxbits, u32 bit);
-        bool get(bin0type const *bin0, bin1type const *bin1, u32 maxbits, u32 bit);
-        s32  find(bin0type const *bin0, bin1type const *bin1, u32 maxbits);
-        s32  find_and_set(bin0type *bin0, bin1type *bin1, u32 maxbits);
+        void set(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
+        void clr(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
+        bool get(bintype const *bin0, bintype const *bin1, u32 maxbits, u32 bit);
+        s32  find(bintype const *bin0, bintype const *bin1, u32 maxbits);
+        s32  find_and_set(bintype *bin0, bintype *bin1, u32 maxbits);
+
+        s32 find_last(bintype *_bin0, bintype *_bin1, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype *_bin0, bintype *_bin1, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype *_bin0, bintype *_bin1, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype *_bin0, bintype *_bin1, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap10
 
     // 2^12 binmap, can handle a maximum of 4096 bits.
@@ -93,22 +102,25 @@ namespace ncore
         // max 2^12 = 4096 bits
         // bin0 = a single u64
         // bin1 = an array of u64, max u64[64]
-        typedef u64 bin0type;
-        typedef u64 bin1type;
+        typedef u64 bintype;
 
-        void setup_free_lazy(bin0type *bin0, bin1type *bin1, u32 maxbits);
-        void tick_free_lazy(bin0type *bin0, bin1type *bin1, u32 maxbits, u32 bit);
-        void setup_used_lazy(bin0type *bin0, bin1type *bin1, u32 maxbits);
-        void tick_used_lazy(bin0type *bin0, bin1type *bin1, u32 maxbits, u32 bit);
+        void setup_free_lazy(bintype *bin0, bintype *bin1, u32 maxbits);
+        void tick_free_lazy(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
+        void setup_used_lazy(bintype *bin0, bintype *bin1, u32 maxbits);
+        void tick_used_lazy(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
 
-        void clear(bin0type *bin0, bin1type *bin1, u32 maxbits);
+        void clear(bintype *bin0, bintype *bin1, u32 maxbits);
 
-        void set(bin0type *bin0, bin1type *bin1, u32 maxbits, u32 bit);
-        void clr(bin0type *bin0, bin1type *bin1, u32 maxbits, u32 bit);
-        bool get(bin0type const *bin0, bin1type const *bin1, u32 maxbits, u32 bit);
-        s32  find(bin0type const *bin0, bin1type const *bin1, u32 maxbits);
-        s32  find_and_set(bin0type *bin0, bin1type *bin1, u32 maxbits);
+        void set(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
+        void clr(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
+        bool get(bintype const *bin0, bintype const *bin1, u32 maxbits, u32 bit);
+        s32  find(bintype const *bin0, bintype const *bin1, u32 maxbits);
+        s32  find_and_set(bintype *bin0, bintype *bin1, u32 maxbits);
 
+        s32 find_last(bintype *_bin0, bintype *_bin1, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype *_bin0, bintype *_bin1, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype *_bin0, bintype *_bin1, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype *_bin0, bintype *_bin1, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap12
 
     // --------------------------------------------------------------------------------------------
@@ -121,22 +133,20 @@ namespace ncore
         // bin0 = u32 (5)
         // bin1 = an array of u32, max u32[32] (5)
         // bin2 = an array of u32, max u32[32*32*32] (5)
-        typedef u32 bin0type;
-        typedef u32 bin1type;
-        typedef u32 bin2type;
+        typedef u32 bintype;
 
-        void setup_free_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits);
-        void tick_free_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits, u32 bit);
-        void setup_used_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits);
-        void tick_used_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits, u32 bit);
+        void setup_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
+        void tick_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
+        void setup_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
+        void tick_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
 
-        void clear(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits);
+        void clear(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
 
-        void set(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits, u32 bit);
-        void clr(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits, u32 bit);
-        bool get(bin0type const *bin0, bin1type const *bin1, bin2type const *bin2, u32 maxbits, u32 bit);
-        s32  find(bin0type const *bin0, bin1type const *bin1, bin2type const *bin2, u32 maxbits);
-        s32  find_and_set(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits);
+        void set(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
+        void clr(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
+        bool get(bintype const *bin0, bintype const *bin1, bintype const *bin2, u32 maxbits, u32 bit);
+        s32  find(bintype const *bin0, bintype const *bin1, bintype const *bin2, u32 maxbits);
+        s32  find_and_set(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
     }  // namespace nbinmap15
 
     namespace nbinmap18
@@ -145,22 +155,20 @@ namespace ncore
         // bin0 = u64 (6)
         // bin1 = an array of u64, max u64[64] (6)
         // bin2 = an array of u64, max u64[64*64] (6)
-        typedef u64 bin0type;
-        typedef u64 bin1type;
-        typedef u64 bin2type;
+        typedef u64 bintype;
 
-        void setup_free_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits);
-        void tick_free_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits, u32 bit);
-        void setup_used_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits);
-        void tick_used_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits, u32 bit);
+        void setup_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
+        void tick_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
+        void setup_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
+        void tick_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
 
-        void clear(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits);
+        void clear(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
 
-        void set(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits, u32 bit);
-        void clr(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits, u32 bit);
-        bool get(bin0type const *bin0, bin1type const *bin1, bin2type const *bin2, u32 maxbits, u32 bit);
-        s32  find(bin0type const *bin0, bin1type const *bin1, bin2type const *bin2, u32 maxbits);
-        s32  find_and_set(bin0type *bin0, bin1type *bin1, bin2type *bin2, u32 maxbits);
+        void set(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
+        void clr(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
+        bool get(bintype const *bin0, bintype const *bin1, bintype const *bin2, u32 maxbits, u32 bit);
+        s32  find(bintype const *bin0, bintype const *bin1, bintype const *bin2, u32 maxbits);
+        s32  find_and_set(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
     }  // namespace nbinmap18
 
     // --------------------------------------------------------------------------------------------
@@ -175,23 +183,20 @@ namespace ncore
         // bin2 = an array of u32, max u32[32*32] (5)
         // bin3 = an array of u32, max u32[32*32*32] (5)
 
-        typedef u32 bin0type;
-        typedef u32 bin1type;
-        typedef u32 bin2type;
-        typedef u32 bin3type;
+        typedef u32 bintype;
 
-        void setup_free_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits);
-        void tick_free_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits, u32 bit);
-        void setup_used_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits);
-        void tick_used_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits, u32 bit);
+        void setup_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
+        void tick_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
+        void setup_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
+        void tick_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
 
-        void clear(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits);
+        void clear(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
 
-        void set(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits, u32 bit);
-        void clr(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits, u32 bit);
-        bool get(bin0type const *bin0, bin1type const *bin1, bin2type const *bin2, bin3type const *bin3, u32 maxbits, u32 bit);
-        s32  find(bin0type const *bin0, bin1type const *bin1, bin2type const *bin2, bin3type const *bin3, u32 maxbits);
-        s32  find_and_set(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits);
+        void set(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
+        void clr(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
+        bool get(bintype const *bin0, bintype const *bin1, bintype const *bin2, bintype const *bin3, u32 maxbits, u32 bit);
+        s32  find(bintype const *bin0, bintype const *bin1, bintype const *bin2, bintype const *bin3, u32 maxbits);
+        s32  find_and_set(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
     }  // namespace nbinmap20
 
     namespace nbinmap24
@@ -202,23 +207,20 @@ namespace ncore
         // bin2 = an array of u64, max u64[64*64] (6)
         // bin3 = an array of u64, max u64[64*64*64] (6)
 
-        typedef u64 bin0type;
-        typedef u64 bin1type;
-        typedef u64 bin2type;
-        typedef u64 bin3type;
+        typedef u64 bintype;
 
-        void setup_free_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits);
-        void tick_free_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits, u32 bit);
-        void setup_used_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits);
-        void tick_used_lazy(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits, u32 bit);
+        void setup_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
+        void tick_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
+        void setup_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
+        void tick_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
 
-        void clear(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits);
+        void clear(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
 
-        void set(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits, u32 bit);
-        void clr(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits, u32 bit);
-        bool get(bin0type const *bin0, bin1type const *bin1, bin2type const *bin2, bin3type const *bin3, u32 maxbits, u32 bit);
-        s32  find(bin0type const *bin0, bin1type const *bin1, bin2type const *bin2, bin3type const *bin3, u32 maxbits);
-        s32  find_and_set(bin0type *bin0, bin1type *bin1, bin2type *bin2, bin3type *bin3, u32 maxbits);
+        void set(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
+        void clr(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
+        bool get(bintype const *bin0, bintype const *bin1, bintype const *bin2, bintype const *bin3, u32 maxbits, u32 bit);
+        s32  find(bintype const *bin0, bintype const *bin1, bintype const *bin2, bintype const *bin3, u32 maxbits);
+        s32  find_and_set(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
     }  // namespace nbinmap24
 
 }  // namespace ncore

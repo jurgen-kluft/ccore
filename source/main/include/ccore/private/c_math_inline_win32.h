@@ -87,36 +87,68 @@ namespace ncore
         }
 
         // find the bit position/index of the first bit from low to high
-        // If 'value == 0' this function will return 8
-        inline s8 findFirstBit(u8 value) { return countTrailingZeros(value); }
+        // If 'value == 0' this function will return -1
+        inline s8 findFirstBit(u8 value) 
+        { 
+            unsigned long i;
+            return ::_BitScanForward(&i, (u32)value) == 0 ? -1 : (s8)i;
+        }
 
         // find the bit position/index of the first bit from high to low
         // If 'value == 0' this function will return -1
-        inline s8 findLastBit(u8 value) { return countLeadingZeros(value); }
+        inline s8 findLastBit(u8 value) 
+        { 
+            unsigned long i;
+            return ::_BitScanReverse(&i, (u32)value) == 0 ? -1 : (s8)i;
+        }
 
         // find the bit position/index of the first bit from low to high
-        // If 'value == 0' this function will return
-        inline s8 findFirstBit(u16 value) { return countTrailingZeros(value); }
+        // If 'value == 0' this function will return -1
+        inline s8 findFirstBit(u16 value) 
+        { 
+            unsigned long i;
+            return ::_BitScanForward(&i, (u32)value) == 0 ? -1 : (s8)i;
+        }
 
         // find the bit position/index of the first bit from high to low
         // If 'value == 0' this function will return -1
-        inline s8 findLastBit(u16 value) { return countLeadingZeros(value); }
+        inline s8 findLastBit(u16 value) 
+        { 
+            unsigned long i;
+            return ::_BitScanReverse(&i, (u32)value) == 0 ? -1 : (s8)i;
+        }
 
         // find the bit position/index of the first bit from low to high
         // If 'value == 0' this function will return -1
-        inline s8 findFirstBit(u32 value) { return countTrailingZeros(value); }
+        inline s8 findFirstBit(u32 value) 
+        { 
+            unsigned long i;
+            return ::_BitScanForward(&i, value) == 0 ? -1 : (s8)i;
+        }
 
         // find the bit position/index of the first bit from high to low
         // If 'value == 0' this function will return -1
-        inline s8 findLastBit(u32 value) { return countLeadingZeros(value); }
+        inline s8 findLastBit(u32 value) 
+        {
+            unsigned long i;
+            return ::_BitScanReverse(&i, value) == 0 ? -1 : (s8)i;
+        }
 
         // find the bit position/index of the first bit from low to high
-        // If 'value == 0' this function will return 0
-        inline s8 findFirstBit(u64 value) { return countTrailingZeros(value); }
+        // If 'value == 0' this function will return -1
+        inline s8 findFirstBit(u64 value) 
+        { 
+            unsigned long i;
+            return ::_BitScanForward64(&i, value) == 0 ? -1 : (s8)i;
+        }
 
         // find the bit position/index of the first bit from high to low
         // If 'value == 0' this function will return -1
-        inline s8 findLastBit(u64 value) { return countLeadingZeros(value); }
+        inline s8 findLastBit(u64 value) 
+        { 
+            unsigned long i;
+            return ::_BitScanReverse64(&i, value) == 0 ? -1 : (s8)i;
+        }
 
         /**
          * count one bits in 32 bit word

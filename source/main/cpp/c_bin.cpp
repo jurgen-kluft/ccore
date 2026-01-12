@@ -23,17 +23,18 @@ namespace ncore
         We will give the user the option to specify the page-size and number of hot empty pages
         when creating the bin.
         */
-        struct pages_t
+        struct blocks_t
         {
-            u16* m_alloc_count_per_page;  // number of allocations per page
-            u32  m_page_count;            // number of pages in this bin
-            u16  m_empty_page_count;      // number of hot empty pages we keep around
-            u16  m_empty_page_count_max;  // maximum number of hot empty pages
-            u8   m_pagesize_shift;        // page-size = 1 << pagesize_shift
-            u8   m_bin_level_count;       // binmap, number of levels
-            u16  m_bin2_offset;           // (unit = number of u64, relative to &m_bin0)
-            u16  m_bin3_offset;           // (unit = number of u64, relative to &m_bin0)
-            u64  m_bin0;                  // binmap level 0 (top level)
+            u16 m_block_count;        // number of blocks
+            u16 m_empty_block_high;   // highest free
+            u8  m_empty_block_count;  // number of empty blocks to keep
+            u8  m_pagesize_shift;     // page-size = 1 << pagesize_shift
+            u8  m_bin_level_count;    // binmap, number of levels
+            u16 m_bin3_offset;        // (unit = number of u16, relative to &m_bin0)
+            u16 m_bin2_offset;        // (unit = number of u16, relative to &m_bin0)
+            // u16 m_bin1_offset;        // (unit = number of u16, relative to &m_bin0)
+            u16 m_bin0;  // binmap level 0 (top level)
+            // u16* m_count_per_block;  // count per block (at a specific offset)
         };
 
         struct bin_t
