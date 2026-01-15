@@ -12,6 +12,72 @@ namespace ncore
 
     // binmaps with a single level
 
+    namespace nbinmap5
+    {
+        static constexpr bintype binconstant = (bintype) ~(bintype)0;
+
+        void set(bintype* bin0, u32 maxbits, u32 bit) { *bin0 |= ((bintype)1 << bit); }
+        void clr(bintype* bin0, u32 maxbits, u32 bit) { *bin0 &= D_INVERT(bintype, (bintype)1 << bit); }
+        bool get(bintype const* bin0, u32 maxbits, u32 bit) { return (*bin0 & ((bintype)1 << bit)) != 0; }
+
+        s32 find(bintype const* bin0, u32 maxbits)
+        {
+            if (*bin0 == binconstant)
+                return -1;
+            s32 const bit = math::findFirstBit(D_INVERT(bintype, *bin0));
+            return bit < (s32)maxbits ? bit : -1;
+        }
+
+        s32 find_and_set(bintype* bin0, u32 maxbits)
+        {
+            if (*bin0 == binconstant)
+                return -1;
+            s32 const bit = math::findFirstBit(D_INVERT(bintype, *bin0));
+            *bin0 |= ((bintype)1 << bit);
+            return bit < (s32)maxbits ? bit : -1;
+        }
+
+        s32 find_last(bintype* bin0, u32 maxbits)
+        {
+            if (*bin0 == binconstant)
+                return -1;
+            s32 const bit = math::findLastBit(D_INVERT(bintype, *bin0));
+            return bit;
+        }
+
+        s32 find_last_and_set(bintype* bin0, u32 maxbits)
+        {
+            if (*bin0 == binconstant)
+                return -1;
+            s32 const bit = math::findLastBit(D_INVERT(bintype, *bin0));
+            *bin0 |= ((bintype)1 << bit);
+            return bit;
+        }
+
+        s32 find_after(bintype* bin0, u32 maxbits, u32 pivot)
+        {
+            // mask out anything above the pivot bit
+            bintype masked = *bin0 & ~(((bintype)1 << pivot));
+            masked         = D_INVERT(bintype, masked);
+            if (masked == 0)
+                return -1;
+            s32 const bit = math::findFirstBit(masked);
+            return bit < (s32)maxbits ? bit : -1;
+        }
+
+        s32 find_before(bintype* bin0, u32 maxbits, u32 pivot)
+        {
+            // mask out anything below the pivot bit
+            bintype masked = *bin0 & (((bintype)1 << pivot) - 1);
+            masked         = D_INVERT(bintype, masked);
+            if (masked == 0)
+                return -1;
+            s32 const bit = math::findLastBit(masked);
+            return bit;
+        }
+
+    }  // namespace nbinmap5
+
     namespace nbinmap6
     {
         static constexpr bintype binconstant = (bintype) ~(bintype)0;

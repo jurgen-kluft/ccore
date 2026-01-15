@@ -2,7 +2,7 @@
 #define __CCORE_BINMAPS_V2_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
-    #pragma once
+#    pragma once
 #endif
 
 namespace ncore
@@ -48,6 +48,23 @@ namespace ncore
     // --------------------------------------------------------------------------------------------
     // 1 level binmaps
     // --------------------------------------------------------------------------------------------
+
+    // 2^5 binmap, can handle a maximum of 32 bits.
+    namespace nbinmap5
+    {
+        typedef u32 bintype;
+
+        void set(bintype *bin0, u32 maxbits, u32 bit);
+        void clr(bintype *bin0, u32 maxbits, u32 bit);
+        bool get(bintype const *bin0, u32 maxbits, u32 bit);
+        s32  find(bintype const *bin0, u32 maxbits);
+        s32  find_and_set(bintype *bin0, u32 maxbits);
+
+        s32 find_last(bintype *bin0, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype *bin0, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype *bin0, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype *bin0, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
+    }  // namespace nbinmap5
 
     // 2^6 binmap, can handle a maximum of 64 bits.
     namespace nbinmap6
