@@ -285,10 +285,10 @@ namespace ncore
                 return -1;
 
             u32 wi = 0;
-            s8  bi = math::findLastBit(~*_bin0);
+            u8  bi = (u8)math::findLastBit(~*_bin0);
             ASSERT(bi >= 0 && bi < binbits);
             {
-                wi = (wi << bin0shift) + bi;
+                wi = (wi << binshift) + bi;
                 ASSERT(~_bin1[wi] != 0);
                 bi = math::findLastBit(~_bin1[wi]);
                 ASSERT(bi >= 0 && bi < binbits);
@@ -635,8 +635,7 @@ namespace ncore
     // --------------------------------------------------------------------------------
     namespace nbinmap15
     {
-        // constexpr u32 bin0shift = 5;
-        constexpr u32 binshift = 5;
+        // constexpr u32 binshift = 5;
         constexpr u32 binshift = 5;
 
         void setup_free_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits) { binmap_bin0_bin1_bin2_t<bintype, binshift>::setup_free_lazy(_bin0, _bin1, _bin2, maxbits); }
@@ -653,8 +652,7 @@ namespace ncore
 
     namespace nbinmap18
     {
-        // constexpr u32 bin0shift = 6;
-        constexpr u32 binshift = 6;
+        // constexpr u32 binshift = 6;
         constexpr u32 binshift = 6;
 
         void setup_free_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits) { binmap_bin0_bin1_bin2_t<bintype, binshift>::setup_free_lazy(_bin0, _bin1, _bin2, maxbits); }
