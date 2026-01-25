@@ -8,7 +8,7 @@
 namespace ncore
 {
     // TODO add duomap functionality, once done remove duomap from cbase
-    
+
     // --------------------------------------------------------------------------------------------
     // binmap functionality for 1, 2, 3, and 4 level binmaps
     // --------------------------------------------------------------------------------------------
@@ -188,6 +188,35 @@ namespace ncore
         bool get(bintype const *bin0, bintype const *bin1, bintype const *bin2, u32 maxbits, u32 bit);
         s32  find(bintype const *bin0, bintype const *bin1, bintype const *bin2, u32 maxbits);
         s32  find_and_set(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
+    }  // namespace nbinmap18
+
+    namespace nbinmap18dual
+    {
+        // max bits = 2^18 = 262144 bits
+        //
+        // bin0x, tracking 0 bits in bin2
+        // bin00 = u64 (6)
+        // bin01 = an array of u64, max u64[64] (6)
+        //
+        // bin1x, tracking 1 bits in bin2
+        // bin10 = u64 (6)
+        // bin11 = an array of u64, max u64[64] (6)
+        //
+        // bin2 = an array of u64, max u64[64*64] (6)
+        typedef u64 bintype;
+
+        void setup_free_lazy(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits);
+        void tick_free_lazy(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits, u32 bit);
+        void setup_used_lazy(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits);
+        void tick_used_lazy(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits, u32 bit);
+
+        void clear(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits);
+
+        void set(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits, u32 bit);
+        void clr(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits, u32 bit);
+        bool get(bintype const *bin00, bintype const *bin01, bintype const *bin10, bintype const *bin11, bintype const *bin2, u32 maxbits, u32 bit);
+        s32  find(bintype const *bin00, bintype const *bin01, bintype const *bin10, bintype const *bin11, bintype const *bin2, u32 maxbits);
+        s32  find_and_set(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits);
     }  // namespace nbinmap18
 
     // --------------------------------------------------------------------------------------------

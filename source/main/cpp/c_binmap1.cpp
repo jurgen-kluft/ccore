@@ -152,14 +152,7 @@ namespace ncore
     class binmap_bin0_bin1_t
     {
     public:
-        template <typename T>
-        static constexpr inline T invert(T value)
-        {
-            return (T)~value;
-        }
-
-        static constexpr u32 binbits = sizeof(bintype) * 8;
-
+        static constexpr u32     binbits     = sizeof(bintype) * 8;
         static constexpr bintype binconstant = (bintype) ~(bintype)0;
 
         static void setup_free_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits) { *_bin0 = binconstant; }
@@ -437,12 +430,6 @@ namespace ncore
     class binmap_bin0_bin1_bin2_t
     {
     public:
-        template <typename T>
-        static constexpr inline T invert(T value)
-        {
-            return (T)~value;
-        }
-
         static constexpr u32     binbits     = sizeof(bintype) * 8;
         static constexpr bintype binconstant = (bintype) ~(bintype)0;
 
@@ -675,14 +662,7 @@ namespace ncore
     class binmap_bin0_bin1_bin2_bin3_t
     {
     public:
-        template <typename T>
-        static constexpr inline T invert(T value)
-        {
-            return (T)~value;
-        }
-
-        static constexpr u32 binbits = sizeof(bintype) * 8;
-
+        static constexpr u32     binbits     = sizeof(bintype) * 8;
         static constexpr bintype binconstant = (bintype) ~(bintype)0;
 
         static void setup_free_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, bintype* _bin3, u32 maxbits) { *_bin0 = binconstant; }
