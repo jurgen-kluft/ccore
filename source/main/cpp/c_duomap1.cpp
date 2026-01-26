@@ -6,7 +6,6 @@ namespace ncore
 {
     // --------------------------------------------------------------------------------
     // --------------------------------------------------------------------------------
-    // binmap, these functions are tracking '0' bits.
 
 #define D_INVERT(value)        ((bintype) ~(value))
 #define D_BIT_CLEAR(word, bit) ((word) & ~((bintype)1 << (bit)))
@@ -15,10 +14,10 @@ namespace ncore
 
     // --------------------------------------------------------------------------------
     // --------------------------------------------------------------------------------
-    // binmaps with two levels
+    // duomaps with two levels
 
     template <typename bintype, u32 binshift>
-    class binmap_bin00_bin10_bin1_t
+    class duomap_bin00_bin10_bin1_t
     {
     public:
         static constexpr u32     binbits     = sizeof(bintype) * 8;
@@ -148,7 +147,7 @@ namespace ncore
             {                                          // no more '0' bits at this index in bin1
                 _bin00[0] = D_BIT_SET(_bin00[0], i0);  // set bit in bin00, tracking '0' bits
             }
-            _bin10[0] = _bin10[0] & D_INVERT((bintype)1 << i0);  // clear bit in bin10, tracking '1' bits
+            _bin10[0] = D_BIT_CLEAR(_bin10[0], i0);  // clear bit in bin10, tracking '1' bits
 
             const s32 bit = b1 + (i0 << binshift);
             return bit < (s32)maxbits ? bit : -1;
@@ -161,8 +160,8 @@ namespace ncore
 
             s32 const i0 = math::findFirstBit(D_INVERT(_bin10[0]));
             ASSERT(_bin1[i0] != 0);
-            const s32     b1 = math::findFirstBit(_bin1[i0]);
-            bintype const v1 = D_BIT_CLEAR(_bin1[i0], b1);
+            const s32     b1 = math::findFirstBit(_bin1[i0]);  // at bin1, find a '1' bit
+            bintype const v1 = D_BIT_CLEAR(_bin1[i0], b1);     // clear that '1' bit
             _bin1[i0]        = v1;
             _bin00[0]        = D_BIT_CLEAR(_bin00[0], i0);  // clear bit in bin00, tracking '0' bits
             if (v1 == 0)
@@ -179,15 +178,12 @@ namespace ncore
             if (_bin00[0] == binconstant)
                 return -1;
 
-            u32 wi = 0;
             u8  bi = (u8)math::findLastBit(D_INVERT(_bin00[0]));
             ASSERT(bi >= 0 && bi < binbits);
-            {
-                wi = (wi << binshift) + bi;
-                ASSERT(D_INVERT(_bin1[wi]) != 0);
-                bi = math::findLastBit(D_INVERT(_bin1[wi]));
-                ASSERT(bi >= 0 && bi < binbits);
-            }
+            u32 wi = bi;
+            ASSERT(D_INVERT(_bin1[wi]) != 0);
+            bi = math::findLastBit(D_INVERT(_bin1[wi]));
+            ASSERT(bi >= 0 && bi < binbits);
 
             u32 const found_bit = (wi << binshift) + bi;
             return (found_bit < maxbits) ? found_bit : -1;
@@ -219,7 +215,7 @@ namespace ncore
                 bintype const w = (il == 0 ? D_INVERT(_bin00[0]) : D_INVERT(_bin1[iw])) & (binconstant << ib);
                 if (w != 0)
                 {
-                    iw = (iw * binbits) + math::findFirstBit(w);
+                    iw = (iw << binshift) + math::findFirstBit(w);
                     if (il == ml)
                         return iw < maxbits ? (s32)iw : -1;
                     il += 1;  // Go down one level
@@ -248,8 +244,8 @@ namespace ncore
             if (pivot >= maxbits)
                 return -1;
 
-            u32 iw = (pivot >> binshift);  // The index of a 32-bit word in level 0
-            u32 ib = (pivot & binmask);    // The bit number in that 32-bit word
+            u32 iw = (pivot >> binshift);  // The index of a word in level 0
+            u32 ib = (pivot & binmask);    // The bit number in that word
 
             s8 const ml = 1;
             s8       il = ml;
@@ -258,7 +254,7 @@ namespace ncore
                 bintype const w = (il == 0 ? _bin00[0] : D_INVERT(_bin1[iw])) & (binconstant >> (binbits - 1 - ib));
                 if (w != 0)
                 {
-                    iw = (iw * binbits) + (u32)math::findFirstBit(w);
+                    iw = (iw << binshift) + (u32)math::findFirstBit(w);
                     if (il == ml)
                         return iw < maxbits ? (s32)iw : -1;
                     il += 1;  // Go down one level
@@ -285,15 +281,12 @@ namespace ncore
             if (_bin10[0] == binconstant)
                 return -1;
 
-            u32 wi = 0;
             u8  bi = (u8)math::findLastBit(D_INVERT(_bin10[0]));
             ASSERT(bi >= 0 && bi < binbits);
-            {
-                wi = (wi << binshift) + bi;
-                ASSERT(_bin1[wi] != 0);
-                bi = math::findLastBit(_bin1[wi]);
-                ASSERT(bi >= 0 && bi < binbits);
-            }
+            u32 wi = bi;
+            ASSERT(_bin1[wi] != 0);
+            bi = math::findLastBit(_bin1[wi]);
+            ASSERT(bi >= 0 && bi < binbits);
 
             u32 const found_bit = (wi << binshift) + bi;
             return (found_bit < maxbits) ? found_bit : -1;
@@ -322,10 +315,10 @@ namespace ncore
             s8       il = ml;
             while (il >= 0 && il <= ml)
             {
-                bintype const w = (il == 0 ? D_INVERT(_bin10[0]) : level[iw]) & (binconstant << ib);
+                bintype const w = (il == 0 ? D_INVERT(_bin10[0]) : _bin1[iw]) & (binconstant << ib);
                 if (w != 0)
                 {
-                    iw = (iw * binbits) + math::findFirstBit(w);
+                    iw = (iw << binshift) + math::findFirstBit(w);
                     if (il == ml)
                         return iw < maxbits ? (s32)iw : -1;
                     il += 1;  // Go down one level
@@ -364,7 +357,7 @@ namespace ncore
                 bintype const w = (il == 0 ? _bin00[0] : D_INVERT(_bin1[iw])) & (binconstant >> (binbits - 1 - ib));
                 if (w != 0)
                 {
-                    iw = (iw * binbits) + (u32)math::findFirstBit(w);
+                    iw = (iw << binshift) + (u32)math::findFirstBit(w);
                     if (il == ml)
                         return iw < maxbits ? (s32)iw : -1;
                     il += 1;  // Go down one level
