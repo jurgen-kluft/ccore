@@ -166,6 +166,11 @@ namespace ncore
         bool get(bintype const *bin0, bintype const *bin1, bintype const *bin2, u32 maxbits, u32 bit);
         s32  find(bintype const *bin0, bintype const *bin1, bintype const *bin2, u32 maxbits);
         s32  find_and_set(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
+
+        s32 find_last(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap15
 
     namespace nbinmap18
@@ -188,35 +193,11 @@ namespace ncore
         bool get(bintype const *bin0, bintype const *bin1, bintype const *bin2, u32 maxbits, u32 bit);
         s32  find(bintype const *bin0, bintype const *bin1, bintype const *bin2, u32 maxbits);
         s32  find_and_set(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
-    }  // namespace nbinmap18
 
-    namespace nbinmap18dual
-    {
-        // max bits = 2^18 = 262144 bits
-        //
-        // bin0x, tracking 0 bits in bin2
-        // bin00 = u64 (6)
-        // bin01 = an array of u64, max u64[64] (6)
-        //
-        // bin1x, tracking 1 bits in bin2
-        // bin10 = u64 (6)
-        // bin11 = an array of u64, max u64[64] (6)
-        //
-        // bin2 = an array of u64, max u64[64*64] (6)
-        typedef u64 bintype;
-
-        void setup_free_lazy(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits);
-        void tick_free_lazy(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits, u32 bit);
-        void setup_used_lazy(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits);
-        void tick_used_lazy(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits, u32 bit);
-
-        void clear(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits);
-
-        void set(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits, u32 bit);
-        void clr(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits, u32 bit);
-        bool get(bintype const *bin00, bintype const *bin01, bintype const *bin10, bintype const *bin11, bintype const *bin2, u32 maxbits, u32 bit);
-        s32  find(bintype const *bin00, bintype const *bin01, bintype const *bin10, bintype const *bin11, bintype const *bin2, u32 maxbits);
-        s32  find_and_set(bintype *bin00, bintype *bin01, bintype *bin10, bintype *bin11, bintype *bin2, u32 maxbits);
+        s32 find_last(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap18
 
     // --------------------------------------------------------------------------------------------
@@ -245,6 +226,11 @@ namespace ncore
         bool get(bintype const *bin0, bintype const *bin1, bintype const *bin2, bintype const *bin3, u32 maxbits, u32 bit);
         s32  find(bintype const *bin0, bintype const *bin1, bintype const *bin2, bintype const *bin3, u32 maxbits);
         s32  find_and_set(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
+
+        s32 find_last(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap20
 
     namespace nbinmap24
@@ -269,6 +255,11 @@ namespace ncore
         bool get(bintype const *bin0, bintype const *bin1, bintype const *bin2, bintype const *bin3, u32 maxbits, u32 bit);
         s32  find(bintype const *bin0, bintype const *bin1, bintype const *bin2, bintype const *bin3, u32 maxbits);
         s32  find_and_set(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
+
+        s32 find_last(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap24
 
 }  // namespace ncore
