@@ -96,10 +96,8 @@ namespace ncore
         // bin1 = an array of u32, max u32[32] (5)
         typedef u32 bintype;
 
-        void setup_free_lazy(bintype *bin0, bintype *bin1, u32 maxbits);
-        void tick_free_lazy(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
-        void setup_used_lazy(bintype *bin0, bintype *bin1, u32 maxbits);
-        void tick_used_lazy(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
+        void setup_lazy(bintype *bin0, bintype *bin1, u32 maxbits);
+        void tick_lazy(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
 
         void clear(bintype *bin0, bintype *bin1, u32 maxbits);
 
@@ -123,10 +121,8 @@ namespace ncore
         // bin1 = an array of u64, max u64[64]
         typedef u64 bintype;
 
-        void setup_free_lazy(bintype *bin0, bintype *bin1, u32 maxbits);
-        void tick_free_lazy(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
-        void setup_used_lazy(bintype *bin0, bintype *bin1, u32 maxbits);
-        void tick_used_lazy(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
+        void setup_lazy(bintype *bin0, bintype *bin1, u32 maxbits);
+        void tick_lazy(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
 
         void clear(bintype *bin0, bintype *bin1, u32 maxbits);
 
@@ -154,10 +150,8 @@ namespace ncore
         // bin2 = an array of u32, max u32[32*32*32] (5)
         typedef u32 bintype;
 
-        void setup_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
-        void tick_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
-        void setup_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
-        void tick_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
+        void setup_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
+        void tick_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
 
         void clear(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
 
@@ -181,10 +175,8 @@ namespace ncore
         // bin2 = an array of u64, max u64[64*64] (6)
         typedef u64 bintype;
 
-        void setup_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
-        void tick_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
-        void setup_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
-        void tick_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
+        void setup_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
+        void tick_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
 
         void clear(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
 
@@ -214,10 +206,8 @@ namespace ncore
 
         typedef u32 bintype;
 
-        void setup_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
-        void tick_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
-        void setup_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
-        void tick_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
+        void setup_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
+        void tick_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
 
         void clear(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
 
@@ -243,10 +233,8 @@ namespace ncore
 
         typedef u64 bintype;
 
-        void setup_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
-        void tick_free_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
-        void setup_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
-        void tick_used_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
+        void setup_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
+        void tick_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
 
         void clear(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
 

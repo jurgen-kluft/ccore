@@ -174,9 +174,9 @@ namespace ncore
 
                 switch (bin->m_bin_level_count)
                 {
-                    case 3: nbinmap24::tick_used_lazy(bm0, bm0 + 1, bm0 + bin->m_bin2_offset, bm0 + bin->m_bin3_offset, bin->m_items_capacity, bin->m_items_free_index); break;
-                    case 2: nbinmap18::tick_used_lazy(bm0, bm0 + 1, bm0 + bin->m_bin2_offset, bin->m_items_capacity, bin->m_items_free_index); break;
-                    case 1: nbinmap12::tick_used_lazy(bm0, bm0 + 1, bin->m_items_capacity, bin->m_items_free_index); break;
+                    case 3: nbinmap24::tick_lazy(bm0, bm0 + 1, bm0 + bin->m_bin2_offset, bm0 + bin->m_bin3_offset, bin->m_items_capacity, bin->m_items_free_index); break;
+                    case 2: nbinmap18::tick_lazy(bm0, bm0 + 1, bm0 + bin->m_bin2_offset, bin->m_items_capacity, bin->m_items_free_index); break;
+                    case 1: nbinmap12::tick_lazy(bm0, bm0 + 1, bin->m_items_capacity, bin->m_items_free_index); break;
                     case 0: break;
                 }
                 const s32 item_index = bin->m_items_free_index++;

@@ -17,7 +17,6 @@ UNITTEST_SUITE_BEGIN(binmap1)
             u64       bin0;
             u64       bin1[64];
 
-            g_memclr(&bin0, sizeof(bin0));
             g_memclr(bin1, sizeof(bin1));
 
             const u32 maxbits = 512;
@@ -25,12 +24,12 @@ UNITTEST_SUITE_BEGIN(binmap1)
             u64 expected_bin0 = D_U64_MAX;
             u64 expected_bin1 = D_U64_MAX;
 
-            nbinmap12::setup_free_lazy(&bin0, bin1, maxbits);
+            nbinmap12::setup_lazy(&bin0, bin1, maxbits);
 
             CHECK_EQUAL(expected_bin0, bin0);
             for (u32 i = 0; i < maxbits; i++)
             {
-                nbinmap12::tick_free_lazy(&bin0, (u64*)bin1, maxbits, i);
+                nbinmap12::tick_lazy(&bin0, (u64*)bin1, maxbits, i);
                 if ((i & 63) == 0)
                 {
                     expected_bin0 = (expected_bin0 << 1);

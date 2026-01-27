@@ -23,10 +23,8 @@ namespace ncore
         // bin1 = an array of u32, max u32[32] (5)
         typedef u32 bintype;
 
-        void setup_free_lazy(bintype *bin00, bintype *bin10, bintype *bin1, u32 maxbits);
-        void tick_free_lazy(bintype *bin00, bintype *bin10, bintype *bin1, u32 maxbits, u32 bit);
-        void setup_used_lazy(bintype *bin00, bintype *bin10, bintype *bin1, u32 maxbits);
-        void tick_used_lazy(bintype *bin00, bintype *bin10, bintype *bin1, u32 maxbits, u32 bit);
+        void setup_lazy(bintype *bin00, bintype *bin10, bintype *bin1, u32 maxbits);
+        void tick_lazy(bintype *bin00, bintype *bin10, bintype *bin1, u32 maxbits, u32 bit);
 
         void clear(bintype *bin00, bintype *bin10, bintype *bin1, u32 maxbits);
 
@@ -60,10 +58,8 @@ namespace ncore
         // bin1 = an array of u64, max u64[64] (6)
         typedef u64 bintype;
 
-        void setup_free_lazy(bintype *bin00, bintype *bin10, bintype *bin1, u32 maxbits);
-        void tick_free_lazy(bintype *bin00, bintype *bin10, bintype *bin1, u32 maxbits, u32 bit);
-        void setup_used_lazy(bintype *bin00, bintype *bin10, bintype *bin1, u32 maxbits);
-        void tick_used_lazy(bintype *bin00, bintype *bin10, bintype *bin1, u32 maxbits, u32 bit);
+        void setup_lazy(bintype *bin00, bintype *bin10, bintype *bin1, u32 maxbits);
+        void tick_lazy(bintype *bin00, bintype *bin10, bintype *bin1, u32 maxbits, u32 bit);
 
         void clear(bintype *bin00, bintype *bin10, bintype *bin1, u32 maxbits);
 
@@ -87,7 +83,61 @@ namespace ncore
         s32 find1_after(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits, u32 pivot);   // Finds the first '1' bit after the pivot
         s32 find1_before(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits, u32 pivot);  // Finds the first '1' bit before the pivot (high to low)
 
-    }  // namespace nduomap10
+    }  // namespace nduomap12
+
+    // --------------------------------------------------------------------------------------------
+    // 3 level duomaps
+    // --------------------------------------------------------------------------------------------
+
+    namespace nduomap15
+    {
+        // max 2^15 = 32768 bits
+        // bin0 = u32 (5)
+        // bin1 = an array of u32, max u32[32] (5)
+        // bin2 = an array of u32, max u32[32*32*32] (5)
+        typedef u32 bintype;
+
+        void setup_lazy(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits);
+        void tick_lazy(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit);
+
+        void clear(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits);
+
+        void set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit);
+        void clr(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit);
+        bool get(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 bit);
+        s32  find(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits);
+        s32  find_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits);
+
+        s32 find_last(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
+    }  // namespace nduomap15
+
+    namespace nduomap18
+    {
+        // max bits = 2^18 = 262144 bits
+        // bin0 = u64 (6)
+        // bin1 = an array of u64, max u64[64] (6)
+        // bin2 = an array of u64, max u64[64*64] (6)
+        typedef u64 bintype;
+
+        void setup_lazy(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits);
+        void tick_lazy(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit);
+
+        void clear(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits);
+
+        void set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit);
+        void clr(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit);
+        bool get(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 bit);
+        s32  find(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits);
+        s32  find_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits);
+
+        s32 find_last(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
+    }  // namespace nduomap18
 
 }  // namespace ncore
 

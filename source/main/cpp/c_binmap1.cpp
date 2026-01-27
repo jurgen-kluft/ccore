@@ -158,51 +158,23 @@ namespace ncore
         static constexpr u32     binbits     = sizeof(bintype) * 8;
         static constexpr bintype binconstant = (bintype) ~(bintype)0;
 
-        static void setup_free_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits) { *_bin0 = binconstant; }
-        static void tick_free_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit)
+        static void setup_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits) { *_bin0 = binconstant; }
+        static void tick_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit)
         {
             if (bit < maxbits)
             {
-                u32 wi = bit;
+                u32       wi      = bit;
 
-                // bin1
+                const u32 bi1     = wi & (binbits - 1);
+                wi                = wi >> binshift;
+                const bintype wd1 = (bi1 == 0) ? binconstant : _bin1[wi];
+                _bin1[wi]         = D_BIT_CLEAR(wd1, bi1);
+
+                if (bi1 == 0)
                 {
-                    const u32 bi1     = wi & (binbits - 1);
-                    wi                = wi >> binshift;
-                    const bintype wd1 = (bi1 == 0) ? binconstant : _bin1[wi];
-                    _bin1[wi]         = wd1 & D_INVERT(1 << bi1);
-
-                    // bin0
-                    if (wd1 == binconstant)
-                    {
-                        const u32     bi0 = wi & (binbits - 1);
-                        const bintype wd0 = (bi0 == 0) ? binconstant : *_bin0;
-                        *_bin0            = wd0 & D_INVERT(1 << bi0);
-                    }
-                }
-            }
-        }
-
-        static void setup_used_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits) { *_bin0 = binconstant; }
-        static void tick_used_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit)
-        {
-            if (bit < maxbits)
-            {
-                u32 wi = bit;
-                // bin1
-                {
-                    const u32 bi1     = wi & (binbits - 1);
-                    wi                = wi >> binshift;
-                    const bintype wd1 = (bi1 == 0) ? binconstant : (_bin1[wi] | D_INVERT(1 << bi1));
-                    _bin1[wi]         = wd1;
-
-                    // bin0
-                    if (wd1 == binconstant)
-                    {
-                        const u32     bi0 = wi & (binbits - 1);
-                        const bintype wd0 = (bi0 == 0) ? binconstant : (*_bin0 | D_INVERT(1 << bi0));
-                        *_bin0            = wd0;
-                    }
+                    const u32     bi0 = wi & (binbits - 1);
+                    const bintype wd0 = (bi0 == 0) ? binconstant : *_bin0;
+                    *_bin0            = D_BIT_CLEAR(wd0, bi0);
                 }
             }
         }
@@ -390,42 +362,34 @@ namespace ncore
 
     namespace nbinmap10
     {
-        constexpr u32 binshift = 5;
-
-        void setup_free_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits) { binmap_bin0_bin1_t<bintype, binshift>::setup_free_lazy(_bin0, _bin1, maxbits); }
-        void tick_free_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, binshift>::tick_free_lazy(_bin0, _bin1, maxbits, bit); }
-        void setup_used_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits) { binmap_bin0_bin1_t<bintype, binshift>::setup_used_lazy(_bin0, _bin1, maxbits); }
-        void tick_used_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, binshift>::tick_used_lazy(_bin0, _bin1, maxbits, bit); }
-        void clear(bintype* _bin0, bintype* _bin1, u32 maxbits) { binmap_bin0_bin1_t<bintype, binshift>::clear(_bin0, _bin1, maxbits); }
-        void set(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, binshift>::set(_bin0, _bin1, maxbits, bit); }
-        void clr(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, binshift>::clr(_bin0, _bin1, maxbits, bit); }
-        bool get(bintype const* _bin0, bintype const* _bin1, u32 maxbits, u32 bit) { return binmap_bin0_bin1_t<bintype, binshift>::get(_bin0, _bin1, maxbits, bit); }
-        s32  find(bintype const* _bin0, bintype const* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, binshift>::find(_bin0, _bin1, maxbits); }
-        s32  find_and_set(bintype* _bin0, bintype* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, binshift>::find_and_set(_bin0, _bin1, maxbits); }
-        s32  find_last(bintype* _bin0, bintype* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, binshift>::find_last(_bin0, _bin1, maxbits); }
-        s32  find_last_and_set(bintype* _bin0, bintype* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, binshift>::find_last_and_set(_bin0, _bin1, maxbits); }
-        s32  find_after(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 pivot) { return binmap_bin0_bin1_t<bintype, binshift>::find_after(_bin0, _bin1, maxbits, pivot); }
-        s32  find_before(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 pivot) { return binmap_bin0_bin1_t<bintype, binshift>::find_before(_bin0, _bin1, maxbits, pivot); }
+        void setup_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits) { binmap_bin0_bin1_t<bintype, 5>::setup_lazy(_bin0, _bin1, maxbits); }
+        void tick_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, 5>::tick_lazy(_bin0, _bin1, maxbits, bit); }
+        void clear(bintype* _bin0, bintype* _bin1, u32 maxbits) { binmap_bin0_bin1_t<bintype, 5>::clear(_bin0, _bin1, maxbits); }
+        void set(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, 5>::set(_bin0, _bin1, maxbits, bit); }
+        void clr(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, 5>::clr(_bin0, _bin1, maxbits, bit); }
+        bool get(bintype const* _bin0, bintype const* _bin1, u32 maxbits, u32 bit) { return binmap_bin0_bin1_t<bintype, 5>::get(_bin0, _bin1, maxbits, bit); }
+        s32  find(bintype const* _bin0, bintype const* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 5>::find(_bin0, _bin1, maxbits); }
+        s32  find_and_set(bintype* _bin0, bintype* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 5>::find_and_set(_bin0, _bin1, maxbits); }
+        s32  find_last(bintype* _bin0, bintype* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 5>::find_last(_bin0, _bin1, maxbits); }
+        s32  find_last_and_set(bintype* _bin0, bintype* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 5>::find_last_and_set(_bin0, _bin1, maxbits); }
+        s32  find_after(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 pivot) { return binmap_bin0_bin1_t<bintype, 5>::find_after(_bin0, _bin1, maxbits, pivot); }
+        s32  find_before(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 pivot) { return binmap_bin0_bin1_t<bintype, 5>::find_before(_bin0, _bin1, maxbits, pivot); }
     }  // namespace nbinmap10
 
     namespace nbinmap12
     {
-        constexpr u32 binshift = 6;
-
-        void setup_free_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits) { binmap_bin0_bin1_t<bintype, binshift>::setup_free_lazy(_bin0, _bin1, maxbits); }
-        void tick_free_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, binshift>::tick_free_lazy(_bin0, _bin1, maxbits, bit); }
-        void setup_used_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits) { binmap_bin0_bin1_t<bintype, binshift>::setup_used_lazy(_bin0, _bin1, maxbits); }
-        void tick_used_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, binshift>::tick_used_lazy(_bin0, _bin1, maxbits, bit); }
-        void clear(bintype* _bin0, bintype* _bin1, u32 maxbits) { binmap_bin0_bin1_t<bintype, binshift>::clear(_bin0, _bin1, maxbits); }
-        void set(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, binshift>::set(_bin0, _bin1, maxbits, bit); }
-        void clr(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, binshift>::clr(_bin0, _bin1, maxbits, bit); }
-        bool get(bintype const* _bin0, bintype const* _bin1, u32 maxbits, u32 bit) { return binmap_bin0_bin1_t<bintype, binshift>::get(_bin0, _bin1, maxbits, bit); }
-        s32  find(bintype const* _bin0, bintype const* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, binshift>::find(_bin0, _bin1, maxbits); }
-        s32  find_and_set(bintype* _bin0, bintype* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, binshift>::find_and_set(_bin0, _bin1, maxbits); }
-        s32  find_last(bintype* _bin0, bintype* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, binshift>::find_last(_bin0, _bin1, maxbits); }
-        s32  find_last_and_set(bintype* _bin0, bintype* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, binshift>::find_last_and_set(_bin0, _bin1, maxbits); }
-        s32  find_after(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 pivot) { return binmap_bin0_bin1_t<bintype, binshift>::find_after(_bin0, _bin1, maxbits, pivot); }
-        s32  find_before(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 pivot) { return binmap_bin0_bin1_t<bintype, binshift>::find_before(_bin0, _bin1, maxbits, pivot); }
+        void setup_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits) { binmap_bin0_bin1_t<bintype, 6>::setup_lazy(_bin0, _bin1, maxbits); }
+        void tick_lazy(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, 6>::tick_lazy(_bin0, _bin1, maxbits, bit); }
+        void clear(bintype* _bin0, bintype* _bin1, u32 maxbits) { binmap_bin0_bin1_t<bintype, 6>::clear(_bin0, _bin1, maxbits); }
+        void set(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, 6>::set(_bin0, _bin1, maxbits, bit); }
+        void clr(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, 6>::clr(_bin0, _bin1, maxbits, bit); }
+        bool get(bintype const* _bin0, bintype const* _bin1, u32 maxbits, u32 bit) { return binmap_bin0_bin1_t<bintype, 6>::get(_bin0, _bin1, maxbits, bit); }
+        s32  find(bintype const* _bin0, bintype const* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 6>::find(_bin0, _bin1, maxbits); }
+        s32  find_and_set(bintype* _bin0, bintype* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 6>::find_and_set(_bin0, _bin1, maxbits); }
+        s32  find_last(bintype* _bin0, bintype* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 6>::find_last(_bin0, _bin1, maxbits); }
+        s32  find_last_and_set(bintype* _bin0, bintype* _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 6>::find_last_and_set(_bin0, _bin1, maxbits); }
+        s32  find_after(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 pivot) { return binmap_bin0_bin1_t<bintype, 6>::find_after(_bin0, _bin1, maxbits, pivot); }
+        s32  find_before(bintype* _bin0, bintype* _bin1, u32 maxbits, u32 pivot) { return binmap_bin0_bin1_t<bintype, 6>::find_before(_bin0, _bin1, maxbits, pivot); }
     }  // namespace nbinmap12
 
     // --------------------------------------------------------------------------------
@@ -439,67 +403,30 @@ namespace ncore
         static constexpr u32     binbits     = sizeof(bintype) * 8;
         static constexpr bintype binconstant = (bintype) ~(bintype)0;
 
-        static void setup_free_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits) { *_bin0 = binconstant; }
-        static void tick_free_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits, u32 bit)
+        static void setup_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits) { *_bin0 = binconstant; }
+        static void tick_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits, u32 bit)
         {
             if (bit < maxbits)
             {
                 u32 wi = bit;
-                // bin2
+
+                const u32 bi2     = wi & (binbits - 1);
+                wi                = wi >> binshift;
+                const bintype wd2 = (bi2 == 0) ? binconstant : _bin2[wi];
+                _bin2[wi]         = wd2 & D_INVERT((bintype)1 << bi2);
+
+                if (bi2 == 0)
                 {
-                    const u32 bi2     = wi & (binbits - 1);
+                    const u32 bi1     = wi & (binbits - 1);
                     wi                = wi >> binshift;
-                    const bintype wd2 = (bi2 == 0) ? binconstant : _bin2[wi];
-                    _bin2[wi]         = wd2 & D_INVERT((bintype)1 << bi2);
+                    const bintype wd1 = (bi1 == 0) ? binconstant : _bin1[wi];
+                    _bin1[wi]         = wd1 & D_INVERT((bintype)1 << bi1);
 
-                    // bin1
-                    if (wd2 == binconstant)
+                    if (bi1 == 0)
                     {
-                        const u32 bi1     = wi & (binbits - 1);
-                        wi                = wi >> binshift;
-                        const bintype wd1 = (bi1 == 0) ? binconstant : _bin1[wi];
-                        _bin1[wi]         = wd1 & D_INVERT((bintype)1 << bi1);
-
-                        // bin0
-                        if (wd1 == binconstant)
-                        {
-                            const u32     bi0 = wi & (binbits - 1);
-                            const bintype wd0 = (bi0 == 0) ? binconstant : *_bin0;
-                            *_bin0            = wd0 & D_INVERT((bintype)1 << bi0);
-                        }
-                    }
-                }
-            }
-        }
-
-        static void setup_used_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits) { *_bin0 = binconstant; }
-        static void tick_used_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits, u32 bit)
-        {
-            if (bit < maxbits)
-            {
-                u32 wi = bit;
-                // bin2
-                {
-                    const u32 bi2     = wi & (binbits - 1);
-                    wi                = wi >> binshift;
-                    const bintype wd2 = (bi2 == 0) ? binconstant : (_bin2[wi] | D_INVERT((bintype)1 << bi2));
-                    _bin2[wi]         = wd2;
-
-                    // bin1
-                    if (wd2 == binconstant)
-                    {
-                        const u32 bi1     = wi & (binbits - 1);
-                        wi                = wi >> binshift;
-                        const bintype wd1 = (bi1 == 0) ? binconstant : (_bin1[wi] | D_INVERT((bintype)1 << bi1));
-                        _bin1[wi]         = wd1;
-
-                        // bin0
-                        if (wd1 == binconstant)
-                        {
-                            const u32     bi0 = wi & (binbits - 1);
-                            const bintype wd0 = (bi0 == 0) ? binconstant : (*_bin0 | D_INVERT((bintype)1 << bi0));
-                            *_bin0            = wd0;
-                        }
+                        const u32     bi0 = wi & (binbits - 1);
+                        const bintype wd0 = (bi0 == 0) ? binconstant : *_bin0;
+                        *_bin0            = wd0 & D_INVERT((bintype)1 << bi0);
                     }
                 }
             }
@@ -744,10 +671,8 @@ namespace ncore
         // constexpr u32 binshift = 5;
         constexpr u32 binshift = 5;
 
-        void setup_free_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits) { binmap_bin0_bin1_bin2_t<bintype, binshift>::setup_free_lazy(_bin0, _bin1, _bin2, maxbits); }
-        void tick_free_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::tick_free_lazy(_bin0, _bin1, _bin2, maxbits, bit); }
-        void setup_used_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits) { binmap_bin0_bin1_bin2_t<bintype, binshift>::setup_used_lazy(_bin0, _bin1, _bin2, maxbits); }
-        void tick_used_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::tick_used_lazy(_bin0, _bin1, _bin2, maxbits, bit); }
+        void setup_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits) { binmap_bin0_bin1_bin2_t<bintype, binshift>::setup_lazy(_bin0, _bin1, _bin2, maxbits); }
+        void tick_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::tick_lazy(_bin0, _bin1, _bin2, maxbits, bit); }
         void clear(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits) { binmap_bin0_bin1_bin2_t<bintype, binshift>::clear(_bin0, _bin1, _bin2, maxbits); }
         void set(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::set(_bin0, _bin1, _bin2, maxbits, bit); }
         void clr(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::clr(_bin0, _bin1, _bin2, maxbits, bit); }
@@ -766,10 +691,8 @@ namespace ncore
         // constexpr u32 binshift = 6;
         constexpr u32 binshift = 6;
 
-        void setup_free_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits) { binmap_bin0_bin1_bin2_t<bintype, binshift>::setup_free_lazy(_bin0, _bin1, _bin2, maxbits); }
-        void tick_free_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::tick_free_lazy(_bin0, _bin1, _bin2, maxbits, bit); }
-        void setup_used_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits) { binmap_bin0_bin1_bin2_t<bintype, binshift>::setup_used_lazy(_bin0, _bin1, _bin2, maxbits); }
-        void tick_used_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::tick_used_lazy(_bin0, _bin1, _bin2, maxbits, bit); }
+        void setup_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits) { binmap_bin0_bin1_bin2_t<bintype, binshift>::setup_lazy(_bin0, _bin1, _bin2, maxbits); }
+        void tick_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::tick_lazy(_bin0, _bin1, _bin2, maxbits, bit); }
         void clear(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits) { binmap_bin0_bin1_bin2_t<bintype, binshift>::clear(_bin0, _bin1, _bin2, maxbits); }
         void set(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::set(_bin0, _bin1, _bin2, maxbits, bit); }
         void clr(bintype* _bin0, bintype* _bin1, bintype* _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::clr(_bin0, _bin1, _bin2, maxbits, bit); }
@@ -794,86 +717,38 @@ namespace ncore
         static constexpr u32     binbits     = sizeof(bintype) * 8;
         static constexpr bintype binconstant = (bintype) ~(bintype)0;
 
-        static void setup_free_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, bintype* _bin3, u32 maxbits) { *_bin0 = binconstant; }
-        static void tick_free_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, bintype* _bin3, u32 maxbits, u32 bit)
+        static void setup_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, bintype* _bin3, u32 maxbits) { *_bin0 = binconstant; }
+        static void tick_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, bintype* _bin3, u32 maxbits, u32 bit)
         {
             if (bit < maxbits)
             {
                 u32 wi = bit;
 
                 // bin3
+                const u32 bi3     = wi & (binbits - 1);
+                wi                = wi >> binshift;
+                const bintype wd3 = (bi3 == 0) ? binconstant : _bin3[wi];
+                _bin3[wi]         = wd3 & D_INVERT((bintype)1 << bi3);
+
+                if (bi3 == 0)
                 {
-                    const u32 bi3     = wi & (binbits - 1);
+                    const u32 bi2     = wi & (binbits - 1);
                     wi                = wi >> binshift;
-                    const bintype wd3 = (bi3 == 0) ? binconstant : _bin3[wi];
-                    _bin3[wi]         = wd3 & D_INVERT((bintype)1 << bi3);
+                    const bintype wd2 = (bi2 == 0) ? binconstant : _bin2[wi];
+                    _bin2[wi]         = wd2 & D_INVERT((bintype)1 << bi2);
 
-                    // bin2
-                    if (wd3 == binconstant)
+                    if (bi2 == 0)
                     {
-                        const u32 bi2     = wi & (binbits - 1);
+                        const u32 bi1     = wi & (binbits - 1);
                         wi                = wi >> binshift;
-                        const bintype wd2 = (bi2 == 0) ? binconstant : _bin2[wi];
-                        _bin2[wi]         = wd2 & D_INVERT((bintype)1 << bi2);
+                        const bintype wd1 = (bi1 == 0) ? binconstant : _bin1[wi];
+                        _bin1[wi]         = wd1 & D_INVERT((bintype)1 << bi1);
 
-                        // bin1
-                        if (wd2 == binconstant)
+                        if (bi1 == 0)
                         {
-                            const u32 bi1     = wi & (binbits - 1);
-                            wi                = wi >> binshift;
-                            const bintype wd1 = (bi1 == 0) ? binconstant : _bin1[wi];
-                            _bin1[wi]         = wd1 & D_INVERT((bintype)1 << bi1);
-
-                            // bin0
-                            if (wd1 == binconstant)
-                            {
-                                const u32     bi0 = wi & (binbits - 1);
-                                const bintype wd0 = (bi0 == 0) ? binconstant : *_bin0;
-                                *_bin0            = wd0 & D_INVERT((bintype)1 << bi0);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        static void setup_used_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, bintype* _bin3, u32 maxbits) { *_bin0 = binconstant; }
-        static void tick_used_lazy(bintype* _bin0, bintype* _bin1, bintype* _bin2, bintype* _bin3, u32 maxbits, u32 bit)
-        {
-            if (bit < maxbits)
-            {
-                u32 wi = bit;
-
-                // bin3
-                {
-                    const u32 bi3     = wi & (binbits - 1);
-                    wi                = wi >> binshift;
-                    const bintype wd3 = (bi3 == 0) ? binconstant : (_bin3[wi] | D_INVERT((bintype)1 << bi3));
-                    _bin3[wi]         = wd3;
-
-                    // bin2
-                    if (wd3 == binconstant)
-                    {
-                        const u32 bi2     = wi & (binbits - 1);
-                        wi                = wi >> binshift;
-                        const bintype wd2 = (bi2 == 0) ? binconstant : (_bin2[wi] | D_INVERT((bintype)1 << bi2));
-                        _bin2[wi]         = wd2;
-
-                        // bin1
-                        if (wd2 == binconstant)
-                        {
-                            const u32 bi1     = wi & (binbits - 1);
-                            wi                = wi >> binshift;
-                            const bintype wd1 = (bi1 == 0) ? binconstant : (_bin1[wi] | D_INVERT((bintype)1 << bi1));
-                            _bin1[wi]         = wd1;
-
-                            // bin0
-                            if (wd1 == binconstant)
-                            {
-                                const u32     bi0 = wi & (binbits - 1);
-                                const bintype wd0 = (bi0 == 0) ? binconstant : (*_bin0 | D_INVERT((bintype)1 << bi0));
-                                *_bin0            = wd0;
-                            }
+                            const u32     bi0 = wi & (binbits - 1);
+                            const bintype wd0 = (bi0 == 0) ? binconstant : *_bin0;
+                            *_bin0            = wd0 & D_INVERT((bintype)1 << bi0);
                         }
                     }
                 }
@@ -1144,10 +1019,8 @@ namespace ncore
 
     namespace nbinmap20
     {
-        void setup_free_lazy(bintype* bin0, bintype* bin1, bintype* bin2, bintype* bin3, u32 maxbits) { binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::setup_free_lazy(bin0, bin1, bin2, bin3, maxbits); }
-        void tick_free_lazy(bintype* bin0, bintype* bin1, bintype* bin2, bintype* bin3, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::tick_free_lazy(bin0, bin1, bin2, bin3, maxbits, bit); }
-        void setup_used_lazy(bintype* bin0, bintype* bin1, bintype* bin2, bintype* bin3, u32 maxbits) { binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::setup_used_lazy(bin0, bin1, bin2, bin3, maxbits); }
-        void tick_used_lazy(bintype* bin0, bintype* bin1, bintype* bin2, bintype* bin3, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::tick_used_lazy(bin0, bin1, bin2, bin3, maxbits, bit); }
+        void setup_lazy(bintype* bin0, bintype* bin1, bintype* bin2, bintype* bin3, u32 maxbits) { binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::setup_lazy(bin0, bin1, bin2, bin3, maxbits); }
+        void tick_lazy(bintype* bin0, bintype* bin1, bintype* bin2, bintype* bin3, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::tick_lazy(bin0, bin1, bin2, bin3, maxbits, bit); }
 
         void clear(bintype* bin0, bintype* bin1, bintype* bin2, bintype* bin3, u32 maxbits) { binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::clear(bin0, bin1, bin2, bin3, maxbits); }
 
@@ -1165,10 +1038,8 @@ namespace ncore
 
     namespace nbinmap24
     {
-        void setup_free_lazy(bintype* bin0, bintype* bin1, bintype* bin2, bintype* bin3, u32 maxbits) { binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::setup_free_lazy(bin0, bin1, bin2, bin3, maxbits); }
-        void tick_free_lazy(bintype* bin0, bintype* bin1, bintype* bin2, bintype* bin3, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::tick_free_lazy(bin0, bin1, bin2, bin3, maxbits, bit); }
-        void setup_used_lazy(bintype* bin0, bintype* bin1, bintype* bin2, bintype* bin3, u32 maxbits) { binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::setup_used_lazy(bin0, bin1, bin2, bin3, maxbits); }
-        void tick_used_lazy(bintype* bin0, bintype* bin1, bintype* bin2, bintype* bin3, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::tick_used_lazy(bin0, bin1, bin2, bin3, maxbits, bit); }
+        void setup_lazy(bintype* bin0, bintype* bin1, bintype* bin2, bintype* bin3, u32 maxbits) { binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::setup_lazy(bin0, bin1, bin2, bin3, maxbits); }
+        void tick_lazy(bintype* bin0, bintype* bin1, bintype* bin2, bintype* bin3, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::tick_lazy(bin0, bin1, bin2, bin3, maxbits, bit); }
 
         void clear(bintype* bin0, bintype* bin1, bintype* bin2, bintype* bin3, u32 maxbits) { binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::clear(bin0, bin1, bin2, bin3, maxbits); }
 
