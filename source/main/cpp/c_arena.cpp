@@ -39,14 +39,14 @@ namespace ncore
 
     bool v_alloc_decommit(void *addr, int_t size)
     {
-        // VirtualFree(base_addr + 1MB, MEM_DECOMMIT, size);
+        // VirtualFree(base_addr + 1MB, size, MEM_DECOMMIT);
         /*
             "The VirtualFree function can decommit a range of pages that are in
             different states, some committed and some uncommitted. This means
             that you can decommit a range of pages without first determining
             the state of each page."
         */
-        BOOL success = VirtualFree(addr, MEM_DECOMMIT, (DWORD)size);
+        BOOL success = VirtualFree(addr, (DWORD)size, MEM_DECOMMIT);
         return success ? true : false;
     }
 
