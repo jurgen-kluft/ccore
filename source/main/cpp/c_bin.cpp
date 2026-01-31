@@ -222,5 +222,20 @@ namespace ncore
             bin->m_items_count -= 1;
         }
 
+        // highest index of free item in the bin
+        s32 highest_free(bin_t* bin)
+        {
+            s32  hi  = -1;
+            u64* bm0 = (u64*)&bin->m_bin0;
+            switch (bin->m_bin_level_count)
+            {
+                case 3: hi = nbinmap24::find_last(bm0, bm0 + 1, bm0 + bin->m_bin2_offset, bm0 + bin->m_bin3_offset, bin->m_items_capacity); break;
+                case 2: hi = nbinmap18::find_last(bm0, bm0 + 1, bm0 + bin->m_bin2_offset, bin->m_items_capacity); break;
+                case 1: hi = nbinmap12::find_last(bm0, bm0 + 1, bin->m_items_capacity); break;
+                case 0: hi = nbinmap6::find_last(bm0, bin->m_items_capacity); break;
+            }
+            return hi;
+        }
+
     }  // namespace nbin
 }  // namespace ncore
