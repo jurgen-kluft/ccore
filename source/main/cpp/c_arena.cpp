@@ -213,7 +213,8 @@ namespace ncore
             arena->m_reserved_pages  = (s32)(reserved_size >> page_size_shift);
             arena->m_committed_pages = (s32)(commit_size >> page_size_shift);
             arena->m_page_size_shift = page_size_shift;
-            arena->m_alignment_shift = _arena_alignment_shift;
+            arena->m_padding0        = 0xFF;
+            arena->m_padding1        = 0xFFFFFFFF;
 
             return arena;
         }
@@ -264,13 +265,10 @@ namespace ncore
 
         // commits (allocate) size number of bytes and possibly grows the committed region.
         // returns a pointer to the allocated memory or nullptr if allocation failed.
-        void *alloc(arena_t *ar, int_t size)
+        void *alloc(arena_t *ar, int_t size_in_bytes)
         {
-            if (size == 0)
+            if (size_in_bytes == 0)
                 return nullptr;  // we will consider this an error
-
-            // align the size to the minimum alignment for this arena
-            const int_t size_in_bytes = math::alignUp(size, narena::alignment(ar));
 
             // When allocating, will our pointer stay within our committed region, if not we
             // need to see if we can commit the needed extra pages.
@@ -293,8 +291,6 @@ namespace ncore
         {
             if (size == 0)
                 return nullptr;
-
-            align = math::max(align, narena::alignment(ar));
 
             // ensure alignment is a power of two
             ASSERTS(math::ispo2(align), "Error: alignment value should be a power of 2");
@@ -386,7 +382,7 @@ namespace ncore
             if (ar == nullptr)
                 return false;
 
-            ASSERT(ar->m_header_pages > 0);
+            ASSERT(ar->m_header_pages >= 0);
 
             // decommit all committed pages and release the reserved region
             // check if the header and base have a gap in committed memory
@@ -520,7 +516,6 @@ namespace ncore
                 a->m_reserved_pages  = arena_reserve_pages;
                 a->m_committed_pages = 0;
                 a->m_page_size_shift = region->m_arena->m_page_size_shift;
-                a->m_alignment_shift = region->m_arena->m_alignment_shift;
 
                 base_address += (arena_reserve_pages << a->m_page_size_shift);
             }

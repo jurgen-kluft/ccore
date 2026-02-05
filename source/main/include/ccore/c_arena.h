@@ -2,7 +2,7 @@
 #define __CCORE_VMEM_ALLOC_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
-    #pragma once
+#    pragma once
 #endif
 
 #include "ccore/c_allocator.h"
@@ -17,8 +17,8 @@ namespace ncore
         u32   m_committed_pages;  // (unit = pages) number of committed pages (relative to arena)
         u16   m_header_pages;     // (unit = pages) number of header pages (before m_base)
         u8    m_page_size_shift;  // page size in shift (from system)
-        u8    m_alignment_shift;  // default minimum alignment for allocations (default is 4 = (1<<4) = 16 bytes)
-        u32   m_padding;          // padding to make the structure aligned to 16 bytes
+        u8    m_padding0;         // default minimum alignment for allocations (default is 4 = (1<<4) = 16 bytes)
+        u32   m_padding1;         // padding to make the structure aligned to 16 bytes
     };
 
     namespace narena
@@ -37,11 +37,10 @@ namespace ncore
         // usage: advanced, multiple arenas within the same virtual address space
         // example: A 1GB region with 32 arenas of 32MB each
         struct region_t;
-        region_t* new_region(int_t region_reserve_size, int_t arena_reserve_size, s8 arena_alignment_shift, u16 num_arenas);  // a virtual memory arena in a larger region
-        void      destroy(region_t* region);                                                                                  // destroy the virtual memory arena region
-        arena_t*  get_arena(region_t* region, s16 index);                                                                     // get the arena at the given index within the region
+        region_t* new_region(int_t region_reserve_size, int_t arena_reserve_size, u16 num_arenas);  // a virtual memory arena in a larger region
+        void      destroy(region_t* region);                                                        // destroy the virtual memory arena region
+        arena_t*  get_arena(region_t* region, s16 index);                                           // get the arena at the given index within the region
 
-        inline u32    alignment(arena_t* ar) { return (u32)1 << ar->m_alignment_shift; }
         inline uint_t reserved_size(arena_t* ar) { return (uint_t)ar->m_reserved_pages << ar->m_page_size_shift; }
         inline uint_t committed_size(arena_t* ar) { return (uint_t)ar->m_committed_pages << ar->m_page_size_shift; }
         inline byte*  base(arena_t* ar) { return ar->m_base; }
@@ -68,7 +67,7 @@ namespace ncore
         inline arena_alloc_t(arena_t* vmem) : m_arena(vmem) {}
         virtual ~arena_alloc_t() {}
 
-        arena_t* m_arena; 
+        arena_t* m_arena;
 
         virtual void* v_allocate(u32 size, u32 alignment) { return narena::alloc(m_arena, (int_t)size, alignment); }
         virtual void  v_deallocate(void*) {}
@@ -76,7 +75,7 @@ namespace ncore
         DCORE_CLASS_PLACEMENT_NEW_DELETE
     };
     // clang-format on
-    
+
     // Some C++ style helper functions
     template <typename T>
     inline T* g_allocate(arena_t* a, u32 alignment = sizeof(void*))
