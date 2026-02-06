@@ -161,49 +161,24 @@ namespace ncore
 {
     namespace narena
     {
-        arena_t *sNewArena(int_t _header_size, int_t _reserve_size, int_t _commit_size, s8 _arena_alignment_shift)
+        arena_t *s_new_arena(int_t _header_size, int_t _reserve_size, int_t _commit_size)
         {
             const s32   page_size       = v_alloc_get_page_size();
             const u8    page_size_shift = v_alloc_get_page_size_shift();
             const int_t reserved_size   = math::alignUp(_reserve_size, (int_t)page_size);
             const int_t header_size     = math::alignUp(_header_size, (int_t)page_size);
-            const int_t alignment_size  = math::alignUp(header_size, 1 << _arena_alignment_shift);
             const int_t commit_size     = math::alignUp(_commit_size, (int_t)page_size);
-            const int_t base_size       = math::max(header_size, alignment_size);
+            const int_t base_size       = header_size;
 
             byte *base_address = (byte *)v_alloc_reserve(reserved_size + base_size);
             if (base_address == nullptr)
                 return nullptr;
 
-            if (header_size == base_size)
+            const bool result = v_alloc_commit(base_address, header_size + commit_size);
+            if (!result)
             {
-                // Header and Alignment don't generate a gap, can commit in one go
-                const bool result = v_alloc_commit(base_address, header_size + commit_size);
-                if (!result)
-                {
-                    v_alloc_release(base_address, reserved_size + base_size);
-                    return nullptr;
-                }
-            }
-            else
-            {
-                // A gap exists between Header and the Alignment, commit separately, instead of wasting memory
-                {
-                    const bool result = v_alloc_commit(base_address, header_size);
-                    if (!result)
-                    {
-                        v_alloc_release(base_address, reserved_size + base_size);
-                        return nullptr;
-                    }
-                }
-                {
-                    const bool result = v_alloc_commit(base_address + alignment_size, commit_size);
-                    if (!result)
-                    {
-                        v_alloc_release(base_address, reserved_size + base_size);
-                        return nullptr;
-                    }
-                }
+                v_alloc_release(base_address, reserved_size + base_size);
+                return nullptr;
             }
 
             arena_t *arena           = (arena_t *)base_address;
@@ -213,16 +188,43 @@ namespace ncore
             arena->m_reserved_pages  = (s32)(reserved_size >> page_size_shift);
             arena->m_committed_pages = (s32)(commit_size >> page_size_shift);
             arena->m_page_size_shift = page_size_shift;
-            arena->m_padding0        = 0xFF;
+            arena->m_owner           = 1;  // we own the virtual memory
             arena->m_padding1        = 0xFFFFFFFF;
-
             return arena;
         }
 
-        arena_t *new_arena(int_t reserve_size, int_t commit_size, s8 arena_alignment_shift)
+        arena_t *new_arena(int_t reserve_size, int_t commit_size)
         {
-            arena_t *arena = sNewArena(sizeof(arena_t), reserve_size, commit_size, arena_alignment_shift);
+            arena_t *arena = s_new_arena(sizeof(arena_t), reserve_size, commit_size);
             return arena;
+        }
+
+        arena_t *init_arena(void *base, int_t arena_reserve_size, int_t arena_commit_size)
+        {
+            const int_t header_size = v_alloc_get_page_size();
+            arena_t    *ar          = (arena_t *)base;
+            base                    = (byte *)base + header_size;
+            init_arena(ar, base, arena_reserve_size, arena_commit_size);
+            ar->m_header_pages = 1;
+            ar->m_owner        = 0;
+            return ar;
+        }
+
+        void init_arena(arena_t *ar, void *base, int_t arena_reserve_size, int_t arena_commit_size)
+        {
+            const s32   page_size       = v_alloc_get_page_size();
+            const u8    page_size_shift = v_alloc_get_page_size_shift();
+            const int_t reserved_size   = math::alignUp(arena_reserve_size, (int_t)page_size);
+            const int_t commit_size     = math::alignUp(arena_commit_size, (int_t)page_size);
+
+            ar->m_base            = (byte *)base;
+            ar->m_pos             = 0;
+            ar->m_header_pages    = 0;
+            ar->m_reserved_pages  = (s32)(reserved_size >> page_size_shift);
+            ar->m_committed_pages = (s32)(commit_size >> page_size_shift);
+            ar->m_page_size_shift = page_size_shift;
+            ar->m_owner           = 0;  // we don't own the virtual memory
+            ar->m_padding1        = 0xFFFFFFFF;
         }
 
         bool commit(arena_t *ar, int_t committed_size_in_bytes)
@@ -422,7 +424,7 @@ namespace ncore
 
             const s32 header_size = (s32)(sizeof(arena_t) + sizeof(stack_t) + (sizeof(void *) * max_depth));
 
-            arena_t *arena = sNewArena(header_size, reserve_size, commit_size, 3);
+            arena_t *arena = s_new_arena(header_size, reserve_size, commit_size);
 
             stack_t *stack     = (stack_t *)(arena + 1);
             stack->m_arena     = arena;
@@ -472,7 +474,7 @@ namespace ncore
             s16      m_num_arenas;
         };
 
-        region_t *new_region(int_t region_reserve_size, int_t arena_reserve_size, s8 arena_alignment_shift, u16 num_arenas)
+        region_t *new_region(int_t region_reserve_size, int_t arena_reserve_size, u16 num_arenas)
         {
             // What is sane for the amount of requested arenas?
             ASSERT(num_arenas <= 256 && num_arenas > 0);
@@ -484,7 +486,7 @@ namespace ncore
             // Align the header size to pages
             const s32 header_size  = (s32)(sizeof(arena_t) + sizeof(region_t) + (sizeof(arena_t) * num_arenas));
             const s32 header_pages = (s32)(math::alignUp(header_size, (int_t)1 << page_size_shift) >> page_size_shift);
-            arena_t  *arena        = sNewArena((int_t)header_pages << page_size_shift, (int_t)region_reserve_pages << page_size_shift, 0, arena_alignment_shift);
+            arena_t  *arena        = s_new_arena((int_t)header_pages << page_size_shift, (int_t)region_reserve_pages << page_size_shift, 0);
 
             // Align the arena reserve size to page size
             const u32 arena_reserve_pages = (u32)(math::alignUp(arena_reserve_size, (int_t)1 << arena->m_page_size_shift) >> arena->m_page_size_shift);

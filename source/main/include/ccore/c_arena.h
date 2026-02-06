@@ -17,14 +17,16 @@ namespace ncore
         u32   m_committed_pages;  // (unit = pages) number of committed pages (relative to arena)
         u16   m_header_pages;     // (unit = pages) number of header pages (before m_base)
         u8    m_page_size_shift;  // page size in shift (from system)
-        u8    m_padding0;         // default minimum alignment for allocations (default is 4 = (1<<4) = 16 bytes)
+        u8    m_owner;            // owner identifier, if 0, then this arena owns the virtual memory
         u32   m_padding1;         // padding to make the structure aligned to 16 bytes
     };
 
     namespace narena
     {
         // usage: basic arena
-        arena_t* new_arena(int_t arena_reserve_size, int_t arena_commit_size, s8 arena_alignment_shift = 3);
+        arena_t* new_arena(int_t arena_reserve_size, int_t arena_commit_size);
+        arena_t* init_arena(void* base, int_t arena_reserve_size, int_t arena_commit_size);
+        void     init_arena(arena_t* ar, void* base, int_t arena_reserve_size, int_t arena_commit_size);
         bool     destroy(arena_t*& ar);
 
         // usage: stack like arena
