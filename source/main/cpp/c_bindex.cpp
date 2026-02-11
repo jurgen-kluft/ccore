@@ -87,7 +87,6 @@ namespace ncore
             if (bin->m_items_count >= bin->m_items_capacity)
                 return -1;  // bin is full
 
-            byte*     items = bin->m_items;
             const u32 index = bin->m_items_count;
             bin->m_items_count += 1;
 
