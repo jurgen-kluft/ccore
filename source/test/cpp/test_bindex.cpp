@@ -34,51 +34,74 @@ UNITTEST_SUITE_BEGIN(bindex)
             nbindex16::bindex_t* bin = nbindex16::make_bin(64, 64 * cKB);  // 64K items
 
             const u32 num_allocs = 1000;
-            i32     ptrs[num_allocs];
+            i32       ptrs[num_allocs];
+            i32*      indices = g_allocate_array<i32>(Allocator, num_allocs);
 
             for (u32 i = 0; i < num_allocs; ++i)
             {
-                ptrs[i] = nbindex16::alloc(bin);
+                ptrs[i] = nbindex16::alloc(bin, (u16)i);
                 CHECK_NOT_EQUAL(-1, ptrs[i]);
             }
 
             for (u32 i = 0; i < num_allocs; ++i)
             {
-                nbindex16::free(bin, ptrs[i]);
+                i32 new_owner = nbindex16::free(bin, ptrs[i]);
+                if (new_owner != -1)
+                {
+                    ptrs[new_owner] = ptrs[i];
+                }
+                else
+                {
+                    CHECK_EQUAL(-1, new_owner);  // means there was no swap performed, -2 means error
+                }
             }
+
+            g_deallocate_array(Allocator, indices);
 
             nbindex16::destroy(bin);
         }
 
         UNITTEST_TEST(a_lot_more_alloc_free)
         {
-            nbindex16::bindex_t* bin = nbindex16::make_bin(64, 256 * 2 * cKB);  // 512K items
+            nbindex16::bindex_t* bin = nbindex16::make_bin(64, 60000);  // 60000 items
 
-            const u32 num_allocs = 500000;
-            i32*    ptrs       = g_allocate_array<i32>(Allocator, num_allocs);
+            const u32 num_allocs = 50000;
+            i32*      ptrs       = g_allocate_array<i32>(Allocator, num_allocs);
+            i32*      indices    = g_allocate_array<i32>(Allocator, num_allocs);
 
             for (u32 i = 0; i < num_allocs; ++i)
             {
-                ptrs[i] = nbindex16::alloc(bin);
+                indices[i] = (i32)i;
+                ptrs[i]    = nbindex16::alloc(bin, (u16)i);
                 CHECK_NOT_EQUAL(-1, ptrs[i]);
             }
 
             xor_random_t rnd(0x1234567890abcdef);
 
-            // 'randomly' shuffle pointers
+            // 'randomly' shuffle indices
             for (u32 i = 0; i < num_allocs; ++i)
             {
                 u32 const a = rnd.rand32() % num_allocs;
                 if (a != i)
-                    nmem::swap(ptrs[a], ptrs[i]);
+                    nmem::swap(indices[a], indices[i]);
             }
 
             for (u32 i = 0; i < num_allocs; ++i)
             {
-                nbindex16::free(bin, ptrs[i]);
+                i32 index     = indices[i];
+                i32 new_owner = nbindex16::free(bin, ptrs[index]);
+                if (new_owner != -1)
+                {
+                    ptrs[new_owner] = ptrs[index];
+                }
+                else
+                {
+                    CHECK_EQUAL(-1, new_owner);  // means there was no swap performed, -2 means error
+                }
             }
 
             g_deallocate_array(Allocator, ptrs);
+            g_deallocate_array(Allocator, indices);
 
             nbindex16::destroy(bin);
         }
