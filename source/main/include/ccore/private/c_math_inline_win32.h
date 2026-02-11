@@ -115,7 +115,7 @@ namespace ncore
         inline s8 findLastBit(u16 value) 
         { 
             unsigned long i;
-            return ::_BitScanReverse(&i, (u32)value) == 0 ? -1 : (s8)i;
+            return ::_BitScanReverse(&i, (u32)value) == 0 ? -1 : (s8)(15-i);
         }
 
         // find the bit position/index of the first bit from low to high
@@ -131,7 +131,7 @@ namespace ncore
         inline s8 findLastBit(u32 value) 
         {
             unsigned long i;
-            return ::_BitScanReverse(&i, value) == 0 ? -1 : (s8)i;
+            return ::_BitScanReverse(&i, value) == 0 ? -1 : (s8)(31-i);
         }
 
         // find the bit position/index of the first bit from low to high
@@ -147,7 +147,7 @@ namespace ncore
         inline s8 findLastBit(u64 value) 
         { 
             unsigned long i;
-            return ::_BitScanReverse64(&i, value) == 0 ? -1 : (s8)i;
+            return ::_BitScanReverse64(&i, value) == 0 ? -1 : (s8)(63-i);
         }
 
         /**

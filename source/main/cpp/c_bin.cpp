@@ -79,7 +79,7 @@ namespace ncore
 
             bin_t* bin                 = (bin_t*)base_address;
             bin->m_items               = (byte*)(base_address + bin_maximum_size);
-            bin->m_items_end           = bin->m_items + (item_pages_committed << page_size_shift);
+            bin->m_items_end           = bin->m_items + ((int_t)item_pages_committed << page_size_shift);
             bin->m_items_maximum_pages = (u32)(items_memory_size >> page_size_shift);
             bin->m_items_free_index    = 0;
             bin->m_items_count         = 0;
@@ -95,7 +95,7 @@ namespace ncore
             u64* bin0 = (u64*)(bin + 1);
             *bin0     = D_U64_MAX;
 
-            const u32 bin_index_commit = (bin_commit_size - ((binmap_level0_offset + bin->m_bin3_offset) * sizeof(u64))) * 8;
+            const u32 bin_index_commit = (u32)((bin_commit_size - ((binmap_level0_offset + bin->m_bin3_offset) * sizeof(u64))) * 8);
             bin->m_bin_commit_index    = math::min(bin_index_commit, bin->m_items_capacity);
 
             return bin;

@@ -55,7 +55,7 @@ namespace ncore
 
             bindex_t* bin                      = (bindex_t*)base_address;
             bin->m_index_array                 = (u16*)(bin + 1);
-            bin->m_index_commit_index          = ((((int_t)index_pages_committed << page_size_shift) - (int_t)bin->m_index_array) / sizeof(u16));
+            bin->m_index_commit_index          = (u32)((((int_t)index_pages_committed << page_size_shift) - (int_t)sizeof(bindex_t)) / sizeof(u16));
             bin->m_index_array_committed_pages = index_pages_committed;
             bin->m_index_array_maximum_pages   = (u32)(index_array_size >> page_size_shift);
             bin->m_items                       = base_address + (int_t)index_array_size;
@@ -88,14 +88,17 @@ namespace ncore
             if (bin->m_items_count >= bin->m_items_capacity)
                 return -1;  // bin is full
 
-            u16*  index_array = bin->m_index_array;
-            byte* items       = bin->m_items;
+            u16*      index_array = bin->m_index_array;
+            byte*     items       = bin->m_items;
+            const u32 index       = bin->m_items_count;
+            bin->m_items_count += 1;
 
+            // check if we need to commit more pages for the index array
             if (bin->m_items_count >= bin->m_index_commit_index)
             {
                 // commit one more page for the index array
                 const u32 page_size = (1 << bin->m_pagesize_shift);
-                if (!v_alloc_commit((byte*)bin + (bin->m_index_array_committed_pages << bin->m_pagesize_shift), page_size))
+                if (!v_alloc_commit((byte*)bin + ((int_t)bin->m_index_array_committed_pages << bin->m_pagesize_shift), page_size))
                 {
                     bin->m_items_count -= 1;
                     return -1;
@@ -104,14 +107,24 @@ namespace ncore
                 bin->m_index_commit_index += (page_size / sizeof(u16));
             }
 
+            // check if we need to commit more pages for the items
+            if ((bin->m_items + ((int_t)bin->m_items_count * bin->m_item_sizeof)) >= bin->m_items_end)
+            {
+                // commit one more page for the items
+                const u32 page_size = (1 << bin->m_pagesize_shift);
+                if (!v_alloc_commit(bin->m_items_end, page_size))
+                {
+                    bin->m_items_count -= 1;
+                    return -1;
+                }
+                bin->m_items_end += page_size;
+                bin->m_items_committed_pages += 1;
+            }
+
             // We assume that there are no gaps in the index bin, so 'count' is always the next free index
             // The user is responsible for calling 'remove' to remove gaps from the array, so a deallocate
             // should be followed by a remove to keep the bin compact.
-
-            const u32 index    = bin->m_items_count;
             index_array[index] = (u16)index;
-            bin->m_items_count += 1;
-
             return (i32)index;
         }
 
@@ -140,11 +153,20 @@ namespace ncore
             return -1;  // no swap performed
         }
 
-        // (swap) remove an index (return index used to fill the gap)
-        i32 remove(bindex_t* bin, u32 index)
+        void* idx2ptr(bindex_t const* bin, u32 index)
         {
-            if (index >= bin->m_items_count)
-                return -1;  // invalid index
+            if (index < bin->m_items_count)
+            {
+                return bin->m_items + (index * bin->m_item_sizeof);
+            }
+            return nullptr;  // invalid index
+        }
+
+        i32 ptr2idx(bindex_t const* bin, void const* ptr)
+        {
+            const byte* base = bin->m_items;
+            const byte* end  = base + (bin->m_items_count * bin->m_item_sizeof);
+            return (ptr >= base && ptr < end) ? (i32)(((const byte*)ptr - base) / bin->m_item_sizeof) : -1;
         }
 
         u32 size(bindex_t const* bin) { return bin->m_items_count; }
