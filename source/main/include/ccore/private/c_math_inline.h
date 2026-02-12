@@ -119,7 +119,7 @@ namespace ncore
         {
             while (valueB != 0)
             {
-                T t  = valueA % valueB;
+                T t    = valueA % valueB;
                 valueA = valueB;
                 valueB = t;
             }
@@ -141,8 +141,9 @@ namespace ncore
         }
 
         // Return the power-of-two larger than or equal to value
-        inline u32 ceilpo2(u32 value) { return 1 << (32 - countLeadingZeros(value - 1)); }
-        inline u64 ceilpo2(u64 value) { return (u64)1 << (64 - countLeadingZeros(value - 1)); }
+        inline u16 ceilpo2(u16 value) { return (u16)1 << (16 - countLeadingZeros((u16)(value - 1))); }
+        inline u32 ceilpo2(u32 value) { return (u32)1 << (32 - countLeadingZeros((u32)(value - 1))); }
+        inline u64 ceilpo2(u64 value) { return (u64)1 << (64 - countLeadingZeros((u64)(value - 1))); }
         inline s64 ceilpo2(s64 value) { return (s64)1 << (64 - countLeadingZeros((u64)value - 1)); }
 
         // Return the power-of-two smaller than or equal to value
@@ -152,7 +153,7 @@ namespace ncore
         inline s8 ilog2(u32 value) { return 31 - countLeadingZeros(value); }
         inline s8 ilog2(u64 value) { return 63 - countLeadingZeros(value); }
 
-             // Return the mask of the value
+        // Return the mask of the value
         inline u64 getMaskForValue(u64 value)
         {
             if (value == 0)
@@ -173,5 +174,5 @@ namespace ncore
             shift = shift & 31;
             return (value >> shift) | (value << (32 - shift));
         }
-   }  // namespace math
+    }  // namespace math
 }  // namespace ncore

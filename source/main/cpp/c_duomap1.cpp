@@ -438,20 +438,20 @@ namespace ncore
             u32       wi      = bit;
             const u32 bi2     = wi & (binbits - 1);
             wi                = wi >> binshift;
-            const bintype wd2 = (bi2 == 0) ? binconstant : _bin2[wi];
-            _bin2[wi]         = D_BIT_CLEAR(wd2, bi2);
             if (bi2 == 0)
             {
+                _bin2[wi]         = binconstant;
+
                 const u32 bi1     = wi & (binbits - 1);
                 wi                = wi >> binshift;
-                const bintype wd1 = (bi1 == 0) ? binconstant : _bin01[wi];
-                _bin01[wi]        = D_BIT_CLEAR(wd1, bi1);
+                const bintype wd1 = (bi1 == 0) ? binconstant : _bin11[wi];
+                _bin11[wi]        = D_BIT_CLEAR(wd1, bi1);
                 if (bi1 == 0)
                 {
-                    _bin11[wi]        = binconstant;
+                    _bin01[wi]        = binconstant;
                     const u32     bi0 = wi & (binbits - 1);
-                    const bintype wd0 = (bi0 == 0) ? binconstant : *_bin00;
-                    *_bin00           = D_BIT_CLEAR(wd0, bi0);
+                    const bintype wd0 = (bi0 == 0) ? binconstant : *_bin10;
+                    *_bin10           = D_BIT_CLEAR(wd0, bi0);
                 }
             }
         }
@@ -504,13 +504,13 @@ namespace ncore
                 // to reflect that there is a one '1' bit at this location
                 u32 const     i1 = i2 >> binshift;
                 u32 const     b1 = i2 & (binbits - 1);
-                bintype const v1 = D_BIT_SET(_bin11[i1], b1);
+                bintype const v1 = D_BIT_CLEAR(_bin11[i1], b1);
                 _bin11[i1]       = v1;
-                if (v1 == binconstant)
+                if (v1 == 0)
                 {
                     u32 const     b0 = i1 & (binbits - 1);
                     bintype const v0 = *_bin10;
-                    *_bin10          = D_BIT_SET(v0, b0);
+                    *_bin10          = D_BIT_CLEAR(v0, b0);
                 }
             }
         }
@@ -530,12 +530,12 @@ namespace ncore
                 u32 const     i1 = i2 >> binshift;
                 u32 const     b1 = i2 & (binbits - 1);
                 bintype const v1 = _bin01[i1];
-                _bin01[i1]       = D_BIT_SET(v1, b1);
+                _bin01[i1]       = D_BIT_CLEAR(v1, b1);
                 if (v1 == binconstant)
                 {
                     u32 const     b0 = i1 & (binbits - 1);
                     bintype const v0 = *_bin00;
-                    *_bin00          = D_BIT_SET(v0, b0);
+                    *_bin00          = D_BIT_CLEAR(v0, b0);
                 }
             }
             if (vo == 0)
@@ -1216,13 +1216,13 @@ namespace ncore
             if (_bin00[0] == binconstant)
                 return -1;
 
-            s32 const b0  = math::findLastBit(D_INVERT(_bin00[0]));
-            s32 const w1  = b0;
-            s32 const b1  = math::findLastBit(D_INVERT(_bin01[w1]));
-            s32 const w2  = b1 + (w1 << binshift);
-            s32 const b2  = math::findLastBit(D_INVERT(_bin02[w2]));
-            s32 const w3  = b2 + (w2 << binshift);
-            s32 const b3  = math::findLastBit(D_INVERT(_bin3[w3]));
+            s32 const b0 = math::findLastBit(D_INVERT(_bin00[0]));
+            s32 const w1 = b0;
+            s32 const b1 = math::findLastBit(D_INVERT(_bin01[w1]));
+            s32 const w2 = b1 + (w1 << binshift);
+            s32 const b2 = math::findLastBit(D_INVERT(_bin02[w2]));
+            s32 const w3 = b2 + (w2 << binshift);
+            s32 const b3 = math::findLastBit(D_INVERT(_bin3[w3]));
 
             s32 const bit = b3 + (w3 << binshift);
             return bit < (s32)maxbits ? bit : -1;
@@ -1337,13 +1337,13 @@ namespace ncore
             if (_bin10[0] == binconstant)
                 return -1;
 
-            s32 const b0  = math::findLastBit(D_INVERT(_bin10[0]));
-            s32 const w1  = b0;
-            s32 const b1  = math::findLastBit(D_INVERT(_bin11[w1]));
-            s32 const w2  = b1 + (w1 << binshift);
-            s32 const b2  = math::findLastBit(D_INVERT(_bin12[w2]));
-            s32 const w3  = b2 + (w2 << binshift);
-            s32 const b3  = math::findLastBit(_bin3[w3]);
+            s32 const b0 = math::findLastBit(D_INVERT(_bin10[0]));
+            s32 const w1 = b0;
+            s32 const b1 = math::findLastBit(D_INVERT(_bin11[w1]));
+            s32 const w2 = b1 + (w1 << binshift);
+            s32 const b2 = math::findLastBit(D_INVERT(_bin12[w2]));
+            s32 const w3 = b2 + (w2 << binshift);
+            s32 const b3 = math::findLastBit(_bin3[w3]);
 
             s32 const bit = b3 + (w3 << binshift);
             return bit < (s32)maxbits ? bit : -1;

@@ -19,19 +19,19 @@ UNITTEST_SUITE_BEGIN(bindex)
 
         UNITTEST_TEST(create_destroy_1)
         {
-            nbindex16::bindex_t* bin = nbindex16::make_bin(64, 63 * cKB);  // 63K items
+            nbindex16::bindex_t* bin = nbindex16::make_bin(64);
             nbindex16::destroy(bin);
         }
 
         UNITTEST_TEST(create_destroy_2)
         {
-            nbindex16::bindex_t* bin = nbindex16::make_bin(64, 63 * cKB);  // 63K items
+            nbindex16::bindex_t* bin = nbindex16::make_bin(64);
             nbindex16::destroy(bin);
         }
 
         UNITTEST_TEST(a_few_alloc_free)
         {
-            nbindex16::bindex_t* bin = nbindex16::make_bin(64, 63 * cKB);  // 63K items
+            nbindex16::bindex_t* bin = nbindex16::make_bin(64);
 
             const u32 num_allocs = 1000;
             i32       ptrs[num_allocs];
@@ -63,7 +63,7 @@ UNITTEST_SUITE_BEGIN(bindex)
 
         UNITTEST_TEST(a_lot_more_alloc_free)
         {
-            nbindex16::bindex_t* bin = nbindex16::make_bin(64, 60000);  // 60000 items
+            nbindex16::bindex_t* bin = nbindex16::make_bin(64);
 
             const u32 num_allocs = 50000;
             i32*      ptrs       = g_allocate_array<i32>(Allocator, num_allocs);
