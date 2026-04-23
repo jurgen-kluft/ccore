@@ -18,6 +18,8 @@ namespace ncore
 
     namespace math
     {
+        const f32 PI = 3.14159265358979323846f;
+
         template <class T>
         T min(T integerA, T integerB);  // Return the smallest value of 2
         template <class T>
