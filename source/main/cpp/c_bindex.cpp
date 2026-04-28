@@ -95,7 +95,7 @@ namespace ncore
             // calculate how many pages to commit for items
             const int_t current_items_size       = math::alignUp((int_t)bin->m_items_end - (int_t)bin->m_items, page_size);
             const int_t required_items_size      = math::alignUp((int_t)num_elements * (int_t)bin->m_item_sizeof, page_size);
-            const u32   size_to_commit_for_items = (required_items_size > current_items_size) ? (required_items_size - current_items_size) : 0;
+            const int_t size_to_commit_for_items = (required_items_size > current_items_size) ? (required_items_size - current_items_size) : 0;
             if (size_to_commit_for_items > 0)
             {
                 if (!v_alloc_commit(bin->m_items_end, size_to_commit_for_items))
