@@ -13,13 +13,6 @@ namespace ncore
     ///@note:			In DEBUG these functions should perform sanity checks on the source and destination memory blocks
     namespace nmem
     {
-        void*       memset(void* inDest, u32 inValue, int_t inLength);
-        void*       memcpy(void* inDest, const void* inSrc, int_t inLength);
-        s32         memcmp(const void* inLHS, const void* inRHS, int_t inLength);
-        void        memswap(void* inLHS, void* inRHS, int_t inLength);
-        void*       memmove(void* inDest, const void* inSrc, int_t inLength);
-        inline void memclr(void* inDest, int_t inLength) { memset(inDest, 0, inLength); }
-
         template <class T>
         inline void swap(T& a, T& b)
         {
@@ -31,9 +24,7 @@ namespace ncore
         ///@name Pointer arithmetic
         template <typename T>
         inline T* ptr_add(T* ptr, int_t size)
-        {
-            return (T*)((u8*)ptr + size);
-        }
+        { return (T*)((u8*)ptr + size); }
 
         template <typename T>
         inline T* ptr_add_clamp(T* ptr, int_t size, T* lower, T* upper)
@@ -48,15 +39,11 @@ namespace ncore
 
         template <typename T>
         inline T* ptr_align(T* ptr, u32 alignment)
-        {
-            return (T*)(((ptr_t)ptr + (ptr_t)(alignment - 1)) & ~((ptr_t)(alignment - 1)));
-        }
+        { return (T*)(((ptr_t)ptr + (ptr_t)(alignment - 1)) & ~((ptr_t)(alignment - 1))); }
 
         template <typename T>
         inline bool ptr_is_aligned(T* ptr, u32 alignment)
-        {
-            return ((ptr_t)ptr & (ptr_t)(alignment - 1)) == 0;
-        }
+        { return ((ptr_t)ptr & (ptr_t)(alignment - 1)) == 0; }
 
         inline int_t ptr_diff(void* ptr, void* other) { return (int_t)((u8*)other - (u8*)ptr); }
 
@@ -64,13 +51,19 @@ namespace ncore
         inline s64 toKb(s64 inNumBytes) { return (inNumBytes + (s64)512) / (s64)1024; }
         inline s64 toMb(s64 inNumBytes) { return (inNumBytes + (s64)(512 * 1024)) / (s64)((s64)1024 * 1024); }
         inline s64 toGb(s64 inNumBytes) { return (inNumBytes + (s64)(512 * 1024 * 1024)) / (s64)(1024 * 1024 * 1024); }
-    };  // namespace nmem
+    }  // namespace nmem
+}  // namespace ncore
 
+// Only for Windows, MacOS and Linux
+#if defined(TARGET_MAC) || defined(TARGET_PC) || defined(TARGET_LINUX)
+#    include "ccore/private/c_memory_inline.h"
+#endif
+
+namespace ncore
+{
     template <class T>
     inline void g_swap(T& a, T& b)
-    {
-        nmem::swap(a, b);
-    }
+    { nmem::swap(a, b); }
 
     inline void g_memset(void* inBlock, u32 inValue, int_t inLength) { nmem::memset(inBlock, inValue, inLength); }
     inline void g_memcpy(void* inDest, const void* inSource, int_t inLength) { nmem::memcpy(inDest, inSource, inLength); }

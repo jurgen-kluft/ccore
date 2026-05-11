@@ -1,5 +1,3 @@
-#include "ccore/c_memory.h"
-
 namespace ncore
 {
     namespace nmem
