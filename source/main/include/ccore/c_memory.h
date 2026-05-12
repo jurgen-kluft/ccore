@@ -57,6 +57,8 @@ namespace ncore
 // Only for Windows, MacOS and Linux
 #if defined(TARGET_MAC) || defined(TARGET_PC) || defined(TARGET_LINUX)
 #    include "ccore/private/c_memory_inline.h"
+#else
+#    include "ccore/private/c_memory_portable.h"
 #endif
 
 namespace ncore

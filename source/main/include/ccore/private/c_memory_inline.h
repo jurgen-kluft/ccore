@@ -4,7 +4,7 @@ namespace ncore
     {
 #define wsize (int_t)sizeof(u32)
 #define wmask (wsize - 1)
-        void *memcpy(void *dst0, const void *src0, int_t length)
+        inline void *memcpy(void *dst0, const void *src0, int_t length)
         {
             // Copy a block of memory, handling overlap.
             // This is the routine that actually implements
@@ -84,7 +84,7 @@ namespace ncore
             return (dst0);
         }
 
-        void *memset(void *dest, u32 c, int_t n)
+        inline void *memset(void *dest, u32 c, int_t n)
         {
             unsigned char *s = (unsigned char *)dest;
             ptr_t          k;
@@ -128,9 +128,9 @@ namespace ncore
             return dest;
         }
 
-        void *memmove(void *inDest, const void *inSrc, int_t inLength) { return memcpy(inDest, inSrc, inLength); }
+        inline void *memmove(void *inDest, const void *inSrc, int_t inLength) { return memcpy(inDest, inSrc, inLength); }
 
-        s32 memcmp(const void *p1, const void *p2, int_t inLength)
+        inline s32 memcmp(const void *p1, const void *p2, int_t inLength)
         {
             u32 i;
 
@@ -155,7 +155,7 @@ namespace ncore
             return (i == inLength) ? 0 : (*(u8 *)p1 - *(u8 *)p2);
         }
 
-        void memswap(void *inLHS, void *inRHS, int_t inLength)
+        inline void memswap(void *inLHS, void *inRHS, int_t inLength)
         {
             u8 *lhs = (u8 *)inLHS;
             u8 *rhs = (u8 *)inRHS;
