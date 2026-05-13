@@ -6,6 +6,7 @@
 #endif
 
 #include "ccore/c_debug.h"
+#include "ccore/c_limits.h"
 
 namespace ncore
 {
@@ -93,8 +94,8 @@ namespace ncore
 
     // =========================================================
 
-    template <typename T, typename ...A>
-    inline T* g_construct(alloc_t* a, A ...args)
+    template <typename T, typename... A>
+    inline T* g_construct(alloc_t* a, A... args)
     {
         void* mem = a->allocate(sizeof(T));
         return new (mem) T(args...);
@@ -109,9 +110,7 @@ namespace ncore
 
     template <typename T, uint_t N>
     constexpr u32 g_array_size(T (&)[N])
-    {
-        return (u32)N;
-    }
+    { return (u32)N; }
 
     inline void g_memory_fill(void* ptr, u32 value, u32 size)
     {
@@ -216,7 +215,7 @@ namespace ncore
     }
 
     char* g_duplicate_string(alloc_t* alloc, const char* str);
-    void g_deallocate_string(alloc_t* alloc, const char*& str);
+    void  g_deallocate_string(alloc_t* alloc, const char*& str);
 
     void* g_reallocate(alloc_t* alloc, void* ptr, u32 size, u32 new_size);
 
@@ -233,18 +232,27 @@ namespace ncore
     // helper functions
     template <typename T>
     inline T* g_ptr_advance(T* ptr, uint_t size)
-    {
-        return (T*)((ptr_t)ptr + size);
-    }
+    { return (T*)((ptr_t)ptr + size); }
 
     template <typename T>
     inline T* g_ptr_align(T* ptr, u32 alignment)
+    { return (T*)(((ptr_t)ptr + (alignment - 1)) & ~((ptr_t)alignment - 1)); }
+
+    template <typename T>
+    inline T g_ptr_diff_in_bytes(void* ptr, void* next_ptr)
     {
-        return (T*)(((ptr_t)ptr + (alignment - 1)) & ~((ptr_t)alignment - 1));
+        if (next_ptr < ptr)
+        {
+            void* temp = ptr;
+            ptr        = next_ptr;
+            next_ptr   = temp;
+        }
+
+        ASSERT(((ptr_t)next_ptr - (ptr_t)ptr) <= (ptr_t)type_t<T>::max);
+        return (T)((ptr_t)next_ptr - (ptr_t)ptr);
     }
 
-    inline uint_t g_ptr_diff_in_bytes(void* ptr, void* next_ptr) { return (uint_t)((ptr_t)next_ptr - (ptr_t)ptr); }
-    inline bool   g_ptr_inside_range(void* buffer, uint_t size_in_bytes, void* ptr) { return (ptr >= buffer) && g_ptr_diff_in_bytes(buffer, ptr) <= size_in_bytes; }
+    inline bool g_ptr_inside_range(void* buffer, uint_t size_in_bytes, void* ptr) { return (ptr >= buffer) && g_ptr_diff_in_bytes<uint_t>(buffer, ptr) <= size_in_bytes; }
 
 }  // namespace ncore
 

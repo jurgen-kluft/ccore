@@ -4,27 +4,19 @@ namespace ncore
     {
         template <class T>
         inline T min(T integerA, T integerB)
-        {
-            return integerA <= integerB ? integerA : integerB;
-        }
+        { return integerA <= integerB ? integerA : integerB; }
 
         template <class T>
         inline T min(T integerA, T integerB, T integerC)
-        {
-            return min(integerC, min(integerA, integerB));
-        }
+        { return min(integerC, min(integerA, integerB)); }
 
         template <class T>
         inline T max(T integerA, T integerB)
-        {
-            return integerA >= integerB ? integerA : integerB;
-        }
+        { return integerA >= integerB ? integerA : integerB; }
 
         template <class T>
         T max(T integerA, T integerB, T integerC)
-        {
-            return max(integerC, max(integerA, integerB));
-        }
+        { return max(integerC, max(integerA, integerB)); }
 
         // Function template, integerA = smallest value, integerB = biggest value
         template <class T>
@@ -67,6 +59,14 @@ namespace ncore
             return (value + ((T)alignment - 1)) & (~((T)alignment - 1));
         }
 
+        template <typename T>
+        inline T alignUp4(T value)
+        { return (value + 3) & (~(T)3); }
+
+        template <typename T>
+        inline T alignUp8(T value)
+        { return (value + 7) & (~(T)7); }
+
         // Return the rounded up value as a power of 2
         inline u32 roundUpPow2(u32 value, u32 alignment)
         {
@@ -84,9 +84,7 @@ namespace ncore
         // Return the absolute value of value
         template <typename T>
         inline T abs(T value)
-        {
-            return (value >= 0) ? value : -value;
-        }
+        { return (value >= 0) ? value : -value; }
 
         // Return the negated value of value
         // value:		Input value to negate if inNegate is false.
@@ -101,9 +99,7 @@ namespace ncore
         // Return the square of value
         template <typename T>
         inline T sqr(T value)
-        {
-            return static_cast<T>(value * value);
-        }
+        { return static_cast<T>(value * value); }
 
         // Return the modulo of value using inModuloValue
         template <typename T>
@@ -129,16 +125,12 @@ namespace ncore
         // Calculate average of A & B without overflow or s64 use
         template <typename T>
         inline T average(T valueA, T valueB)
-        {
-            return (valueA & valueB) + ((valueA ^ valueB) >> 1);
-        }
+        { return (valueA & valueB) + ((valueA ^ valueB) >> 1); }
 
         // Check if value is a power-of-two
         template <typename T>
         inline bool ispo2(T value)
-        {
-            return (value != 0) && ((value & (value - 1)) == 0);
-        }
+        { return (value != 0) && ((value & (value - 1)) == 0); }
 
         // Return the power-of-two larger than or equal to value
         inline u16 ceilpo2(u16 value) { return (u16)1 << (16 - countLeadingZeros((u16)(value - 1))); }
@@ -175,4 +167,17 @@ namespace ncore
             return (value >> shift) | (value << (32 - shift));
         }
     }  // namespace math
+
+    template <typename T>
+    inline T g_alignUp4(T value)
+    { return (value + 3) & (~(T)3); }
+
+    template <typename T>
+    inline T g_alignUp8(T value)
+    { return (value + 7) & (~(T)7); }
+
+    template <typename T>
+    inline T g_alignUp16(T value)
+    { return (value + 15) & (~(T)15); }
+
 }  // namespace ncore

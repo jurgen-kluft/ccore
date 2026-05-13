@@ -96,15 +96,15 @@ namespace ncore
             if (!n)
                 return dest;
 
-            int_t const r = 8 ^ ((n ^ 8) & -(n < 8)); // min(x, y)
+            int_t const r = 8 ^ ((n ^ 8) & -(n < 8));  // min(x, y)
             switch (((r - 1) & 7) >> 1)
             {
-                case 3: s[3] = c; s[n-4] = c;
-                case 2: s[2] = c; s[n-3] = c;
-                case 1: s[1] = c; s[n-2] = c;
-                case 0: s[0] = c; s[n-1] = c;
+                case 3: s[3] = c; s[n - 4] = c;
+                case 2: s[2] = c; s[n - 3] = c;
+                case 1: s[1] = c; s[n - 2] = c;
+                case 0: s[0] = c; s[n - 1] = c;
             }
-            if (((n-1) & ~7) == 0)
+            if (((n - 1) & ~7) == 0)
                 return dest;
 
             // Advance pointer to align it at a 4-byte boundary,
@@ -127,6 +127,8 @@ namespace ncore
 
             return dest;
         }
+
+        inline void *memclr(void *dest, int_t n) { return memset(dest, 0, n); }
 
         inline void *memmove(void *inDest, const void *inSrc, int_t inLength) { return memcpy(inDest, inSrc, inLength); }
 

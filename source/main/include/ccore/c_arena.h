@@ -2,10 +2,11 @@
 #define __CCORE_VMEM_ALLOC_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
-    #pragma once
+#    pragma once
 #endif
 
 #include "ccore/c_allocator.h"
+#include "ccore/c_limits.h"
 
 namespace ncore
 {
@@ -130,80 +131,32 @@ namespace ncore
         return (T*)ptr;
     }
 
-    struct arena_checkout_t
+    struct arena_point_t
     {
         arena_t* m_arena;
-        void*    m_save_address;
-        void*    m_checkpoint;
-        void*    m_advanced;
+        void*    m_address;
     };
 
-    static inline arena_checkout_t checkout(arena_t* arena)
+    static inline arena_point_t save_point(arena_t* arena)
     {
-        arena_checkout_t c;
-        c.m_arena        = arena;
-        c.m_save_address = narena::current_address(arena);
-        c.m_checkpoint   = c.m_save_address;
-        c.m_advanced     = c.m_save_address;
-        return c;
-    }
-
-    template <typename T>
-    inline T* g_allocate(arena_checkout_t& a, u32 alignment = sizeof(void*))
-    {
-        void* ptr    = a.m_advanced;
-        a.m_advanced = (void*)(((ptr_t)a.m_advanced + sizeof(T) + alignment - 1) & ~(alignment - 1));
-        return (T*)ptr;
-    }
-
-    template <typename T>
-    inline T* g_allocate_memory(arena_checkout_t& a, u32 size, u32 alignment = sizeof(void*))
-    {
-        ASSERT(size >= sizeof(T));
-        void* ptr    = a.m_advanced;
-        a.m_advanced = (void*)(((ptr_t)a.m_advanced + size + alignment - 1) & ~(alignment - 1));
-        return (T*)ptr;
-    }
-
-    // Compute the checked out size and commit to the arena
-    static inline u64 commit(arena_checkout_t& c)
-    {
-        // Verify that the save address is still the same
-        ASSERT(narena::current_address(c.m_arena) == c.m_checkpoint);
-
-        int_t size_to_commit = (int_t)c.m_advanced - (int_t)c.m_checkpoint;
-        if (size_to_commit > 0)
-        {
-            narena::commit(c.m_arena, size_to_commit);
-            c.m_checkpoint = c.m_advanced;
-        }
-        return (u64)size_to_commit;
-    }
-
-    static inline u64 finalize(arena_checkout_t& c)
-    {
-        commit(c);
-        u64 size_allocated = (u64)c.m_advanced - (u64)c.m_save_address;
-        return size_allocated;
-    }
-
-    struct arena_scratch_t
-    {
-        arena_t* m_arena;
-        void*    m_save_address;
-    };
-
-    static inline arena_scratch_t begin_scratch(arena_t* arena)
-    {
-        arena_scratch_t s;
-        s.m_arena        = arena;
-        s.m_save_address = narena::current_address(arena);
+        arena_point_t s;
+        s.m_arena   = arena;
+        s.m_address = narena::current_address(arena);
         return s;
     }
 
-    static inline void end_scratch(arena_scratch_t& s)
+    template<typename T>
+    static inline T diff_point(arena_point_t const& start, arena_point_t const& end)
     {
-        narena::restore_address(s.m_arena, s.m_save_address);
+        ASSERT(start.m_arena == end.m_arena);
+        uint_t diff = g_ptr_diff_in_bytes<uint_t>(end.m_address, start.m_address);
+        ASSERT(diff <= type_t<T>::max);
+        return (T)diff;
+    }
+
+    static inline void restore_point(arena_point_t& s)
+    {
+        narena::restore_address(s.m_arena, s.m_address);
         s.m_arena = nullptr;
     }
 
