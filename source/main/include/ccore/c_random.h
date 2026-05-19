@@ -33,13 +33,37 @@ namespace ncore
         u32 val = rng->rand32();
         return (val >> (32 - inBits));
     }
-    inline s32 g_random_u32_max(random_t* rng, u32 max) { return g_random_u32(rng) % max; }
+    inline u32 g_random_u32_max(random_t* rng, u32 max)
+    {
+        const u64 product = (u64)rng->rand32() * max;
+        return (u32)(product >> 32);
+    }
+    inline u32 g_random_u32_range(random_t* rng, u32 min, u32 max)
+    {
+        const u64 product = (u64)g_random_u32(rng) * (max - min);
+        return min + (u32)(product >> 32);
+    }
     inline s32 g_random_s32(random_t* rng) { return (s32)(g_random_u32(rng) & 0x7fffffff); }
     inline s32 g_random_s32(random_t* rng, s8 inBits)
     {
         ASSERT(inBits <= 31);
         return ((s32)g_random_u32(rng, inBits + 1) - (s32)(1 << inBits));
     }
+    inline s32 g_random_s32_max(random_t* rng, s32 max)
+    {
+        const u64 product = (u64)g_random_u32(rng) * max;
+        return (s32)(product >> 32);
+    }
+    inline s32 g_random_s32_range(random_t* rng, s32 min, s32 max)
+    {
+        const u64 product = (u64)g_random_u32(rng) * (max - min);
+        return min + (s32)(product >> 32);
+    }
+    inline s32 g_random_s32_0_max(random_t* rng, s32 max) { return g_random_s32_range(rng, 0, max); }
+    inline s32 g_random_s32_min_max(random_t* rng, s32 min, s32 max) { return g_random_s32_range(rng, min, max); }
+    inline s32 g_random_s32_0_1(random_t* rng) { return g_random_s32_0_max(rng, 2); }
+    inline s32 g_random_s32_neg1_pos1(random_t* rng) { return g_random_s32_range(rng, -1, 1); }
+
     inline u64 g_random_u64(random_t* rng) { return rng->rand64(); }
     inline u64 g_random_u64(random_t* rng, s8 inBits)
     {
@@ -54,23 +78,14 @@ namespace ncore
         return ((s64)g_random_u64(rng, inBits + 1) - ((s64)1 << inBits));
     }
     inline f32 g_random_f32(random_t* rng) { return (f32)g_random_u32(rng) / (f32)cU32Max; }
-    inline f32 g_random_f32_min_max(random_t* rng, f32 _min, f32 _max) { return _min + (g_random_f32(rng) * (_max - _min)); }
-    inline f32 g_random_f32S(random_t* rng) { return ((g_random_f32(rng) - 0.5f) * 2.0f); }
-    inline s32 g_random_s32_max(random_t* rng, s32 max) { return g_random_s32(rng, 31) % max; }
-    inline s32 g_random_s32_0_max(random_t* rng, s32 max) { return (s32)g_random_u32(rng, 31) % max; }
-    inline s32 g_random_s32_min_max(random_t* rng, s32 min, s32 max) { return min + ((s32)g_random_u32(rng, 31) % (max-min)); }
-    inline s32 g_random_s32_0_1(random_t* rng) { return g_random_s32_0_max(rng, 2); }
-    inline s32 g_random_s32_neg1_pos1(random_t* rng)
-    {
-        u32 const val = g_random_u32(rng, 2);
-        if (val < (cU32Max / 3))
-            return -1;
-        if (val < (cU32Max * 2 / 3))
-            return 0;
-        return 1;
-    }
     inline f32 g_random_f32_0_1(random_t* rng) { return g_random_f32(rng); }
+    inline f32 g_random_f32_min_max(random_t* rng, f32 _min, f32 _max) { return _min + (g_random_f32(rng) * (_max - _min)); }
+    inline f32 g_random_f32S(random_t* rng) { return g_random_f32_min_max(rng, -1.0f, 1.0f); }
+
+    inline f64 g_random_f64(random_t* rng) { return ((f64)g_random_u64(rng) / (f64)cU64Max); }
     inline f64 g_random_f64_0_1(random_t* rng) { return ((f64)g_random_u64(rng) / (f64)cU64Max); }
+    inline f64 g_random_f64_min_max(random_t* rng, f64 _min, f64 _max) { return _min + (g_random_f64(rng) * (_max - _min)); }
+    inline f64 g_random_f64S(random_t* rng) { return g_random_f64_min_max(rng, -1.0, 1.0); }
 
     class xor_random_t : public random_t
     {
@@ -179,7 +194,7 @@ namespace ncore
     private:
         u64 m_seed;
     };
-
+    
 };  // namespace ncore
 
 #endif  // __CCORE_RANDOM_H__
