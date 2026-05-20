@@ -2,7 +2,7 @@
 #define __CCORE_ALLOCATOR_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
-#    pragma once
+    #pragma once
 #endif
 
 #include "ccore/c_debug.h"
@@ -237,6 +237,10 @@ namespace ncore
     template <typename T>
     inline T* g_ptr_align(T* ptr, u32 alignment)
     { return (T*)(((ptr_t)ptr + (alignment - 1)) & ~((ptr_t)alignment - 1)); }
+
+    template <typename T>
+    inline bool g_ptr_is_aligned(T* ptr, u32 alignment)
+    { return ((ptr_t)ptr & (alignment - 1)) == 0; }
 
     template <typename T>
     inline T g_ptr_diff_in_bytes(void* ptr, void* next_ptr)

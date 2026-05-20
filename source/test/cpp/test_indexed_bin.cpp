@@ -1,6 +1,6 @@
 #include "ccore/c_target.h"
 #include "ccore/c_allocator.h"
-#include "ccore/c_bindex.h"
+#include "ccore/c_indexed_bin.h"
 #include "ccore/c_memory.h"
 #include "ccore/c_random.h"
 
@@ -8,9 +8,9 @@
 
 using namespace ncore;
 
-UNITTEST_SUITE_BEGIN(bindex)
+UNITTEST_SUITE_BEGIN(indexed_bin)
 {
-    UNITTEST_FIXTURE(bindex16)
+    UNITTEST_FIXTURE(bin16)
     {
         UNITTEST_FIXTURE_SETUP() {}
         UNITTEST_FIXTURE_TEARDOWN() {}
@@ -19,19 +19,19 @@ UNITTEST_SUITE_BEGIN(bindex)
 
         UNITTEST_TEST(create_destroy_1)
         {
-            nbindex16::bindex_t* bin = nbindex16::make_bin(64);
-            nbindex16::destroy(bin);
+            indexed_bin16_t* bin = make_bin(64);
+            destroy(bin);
         }
 
         UNITTEST_TEST(create_destroy_2)
         {
-            nbindex16::bindex_t* bin = nbindex16::make_bin(64);
-            nbindex16::destroy(bin);
+            indexed_bin16_t* bin = make_bin(64);
+            destroy(bin);
         }
 
         UNITTEST_TEST(a_few_alloc_free)
         {
-            nbindex16::bindex_t* bin = nbindex16::make_bin(64);
+            indexed_bin16_t* bin = make_bin(64);
 
             const u32 num_allocs = 1000;
             i32       ptrs[num_allocs];
@@ -39,13 +39,13 @@ UNITTEST_SUITE_BEGIN(bindex)
 
             for (u32 i = 0; i < num_allocs; ++i)
             {
-                ptrs[i] = nbindex16::alloc(bin, (u16)i);
+                ptrs[i] = alloc(bin, (u16)i);
                 CHECK_NOT_EQUAL(-1, ptrs[i]);
             }
 
             for (u32 i = 0; i < num_allocs; ++i)
             {
-                i32 new_owner = nbindex16::free(bin, ptrs[i]);
+                i32 new_owner = free(bin, ptrs[i]);
                 if (new_owner != -1)
                 {
                     ptrs[new_owner] = ptrs[i];
@@ -58,12 +58,12 @@ UNITTEST_SUITE_BEGIN(bindex)
 
             g_deallocate_array(Allocator, indices);
 
-            nbindex16::destroy(bin);
+            destroy(bin);
         }
 
         UNITTEST_TEST(a_lot_more_alloc_free)
         {
-            nbindex16::bindex_t* bin = nbindex16::make_bin(64);
+            indexed_bin16_t* bin = make_bin(64);
 
             const u32 num_allocs = 50000;
             i32*      ptrs       = g_allocate_array<i32>(Allocator, num_allocs);
@@ -72,7 +72,7 @@ UNITTEST_SUITE_BEGIN(bindex)
             for (u32 i = 0; i < num_allocs; ++i)
             {
                 indices[i] = (i32)i;
-                ptrs[i]    = nbindex16::alloc(bin, (u16)i);
+                ptrs[i]    = alloc(bin, (u16)i);
                 CHECK_NOT_EQUAL(-1, ptrs[i]);
             }
 
@@ -89,7 +89,7 @@ UNITTEST_SUITE_BEGIN(bindex)
             for (u32 i = 0; i < num_allocs; ++i)
             {
                 i32 index     = indices[i];
-                i32 new_owner = nbindex16::free(bin, ptrs[index]);
+                i32 new_owner = free(bin, ptrs[index]);
                 if (new_owner != -1)
                 {
                     ptrs[new_owner] = ptrs[index];
@@ -103,7 +103,7 @@ UNITTEST_SUITE_BEGIN(bindex)
             g_deallocate_array(Allocator, ptrs);
             g_deallocate_array(Allocator, indices);
 
-            nbindex16::destroy(bin);
+            destroy(bin);
         }
     }
 }
