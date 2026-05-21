@@ -26,7 +26,7 @@ namespace ncore
             {
                 T t      = integerA;
                 integerA = integerB;
-                integerA = t;
+                integerB = t;
             }
         }
 
@@ -157,14 +157,14 @@ namespace ncore
         inline u32 rol32(u32 value, u32 shift)
         {
             shift = shift & 31;
-            return (value << shift) | (value >> (32 - shift));
+            return shift == 0 ? value : (value << shift) | (value >> (32 - shift));
         }
 
         // Roll all the bits in value to the right by shift number of bits
         inline u32 ror32(u32 value, u32 shift)
         {
             shift = shift & 31;
-            return (value >> shift) | (value << (32 - shift));
+            return shift == 0 ? value : (value >> shift) | (value << (32 - shift));
         }
     }  // namespace math
 
