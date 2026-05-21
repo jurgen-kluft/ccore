@@ -168,9 +168,15 @@ UNITTEST_SUITE_BEGIN(integer)
 
 		UNITTEST_TEST(CeilPower2)
 		{
-			u32 a = 13, b = 64;
+			u32 a = 13, b = 64, c = 1, d = 2, e = 3, f = 63, g = 65, h = 0x7fffffff;
 			CHECK_EQUAL((u32)16, math::ceilpo2(a));
 			CHECK_EQUAL((u32)64, math::ceilpo2(b));
+			CHECK_EQUAL((u32)1, math::ceilpo2(c));
+			CHECK_EQUAL((u32)2, math::ceilpo2(d));
+			CHECK_EQUAL((u32)4, math::ceilpo2(e));
+			CHECK_EQUAL((u32)64, math::ceilpo2(f));
+			CHECK_EQUAL((u32)128, math::ceilpo2(g));
+			CHECK_EQUAL((u32)0x80000000, math::ceilpo2(h));
 		}
 
 		UNITTEST_TEST(FloorPower2)
