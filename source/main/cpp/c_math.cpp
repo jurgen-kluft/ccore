@@ -8,59 +8,28 @@ namespace ncore
 {
     namespace math
     {
-        // CORDIC based integer square root calculation
-        s16 sqrt(s16 x)
-        {
-            s16 base = 128;
-            s16 y    = 0;
-            for (s32 i = 1; i <= 8; i++)
-            {
-                y += base;
-                if ((y * y) > x)
-                {
-                    y -= base;  // base should not have been added, so we substract again
-                }
-                base >>= 1;  // shift 1 digit to the right = divide by 2
-            }
-            return y;
-        }
+        f32 atanf(f32 v) { return ::atanf(v); }
+        f32 cosf(f32 v) { return ::cosf(v); }
+        f32 sinf(f32 v) { return ::sinf(v); }
+        f32 tanf(f32 v) { return ::tanf(v); }
+        f32 tanhf(f32 v) { return ::tanhf(v); }
+        f32 frexpf(f32 v, i32* p) { return ::frexpf(v, p); }
+        f32 modff(f32 v, f32* p) { return ::modff(v, p); }
+        f32 ceilf(f32 v) { return ::ceilf(v); }
+        f32 fabsf(f32 v) { return ::fabsf(v); }
+        f32 floorf(f32 v) { return ::floorf(v); }
 
-        s32 sqrt(s32 value)
-        {
-            s32 base = D_CONSTANT_U64(1) << 30;
-            s32 y    = 0;
-            for (s32 i = 1; i <= 16; i++)
-            {
-                y += base;
-                if ((y * y) > value)
-                {
-                    y -= base;  // base should not have been added, so we substract again
-                }
-                base >>= 1;  // shift 1 digit to the right = divide by 2
-            }
-            return y;
-        }
-
-        s64 sqrt(s64 value)
-        {
-            s64 base = D_CONSTANT_U64(1) << 62;
-            s64 y    = 0;
-            for (s32 i = 1; i <= 32; i++)
-            {
-                y += base;
-                if ((y * y) > value)
-                {
-                    y -= base;  // base should not have been added, so we substract again
-                }
-                base >>= 1;  // shift 1 digit to the right = divide by 2
-            }
-            return y;
-        }
-
-#ifdef TARGET_MAC
-        f32 sqrt(f32 value) { return (f32)::sqrtf((float)value); }  // Return the square root of value
-        f64 sqrt(f64 value) { return (f64)::sqrt((double)value); }  // Return the square root of value
-#endif
-
+        f32 acosf(f32 v) { return ::acosf(v); }
+        f32 asinf(f32 v) { return ::asinf(v); }
+        f32 atan2f(f32 v, f32 w) { return ::atan2f(v, w); }
+        f32 coshf(f32 v) { return ::coshf(v); }
+        f32 sinhf(f32 v) { return ::sinhf(v); }
+        f32 expf(f32 v) { return ::expf(v); }
+        f32 ldexpf(f32 v, i32 w) { return ::ldexpf(v, w); }
+        f32 logf(f32 v) { return ::logf(v); }
+        f32 log10f(f32 v) { return ::log10f(v); }
+        f32 powf(f32 v, f32 w) { return ::powf(v, w); }
+        f32 sqrtf(f32 v) { return ::sqrtf(v); }
+        f32 fmodf(f32 v, f32 w) { return ::fmodf(v, w); }
     }  // namespace math
 }  // namespace ncore

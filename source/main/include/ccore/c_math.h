@@ -34,9 +34,7 @@ namespace ncore
 
         template <class T>
         T sign(T integerA)
-        {
-            return (integerA > 0) ? 1 : ((integerA < 0) ? -1 : 0);
-        }
+        { return (integerA > 0) ? 1 : ((integerA < 0) ? -1 : 0); }
 
         template <class T>
         T clamp(T integerA, T low, T high);  // Return the clamp value
@@ -74,13 +72,6 @@ namespace ncore
         inline T average(T integerA, T integerB);  // Calculate average of A & B without overflow or s64 use
         template <typename T>
         inline bool ispo2(T integer);  // Check if integer is a power-of-two
-
-        s16 sqrt(s16 value);  // Return the square root of value
-        s32 sqrt(s32 value);  // Return the square root of value
-        s64 sqrt(s64 value);  // Return the square root of value
-
-        f32 sqrt(f32 value);  // Return the square root of value
-        f64 sqrt(f64 value);  // Return the square root of value
 
         inline u32 ceilpo2(u32 integer);   // Return the smallest power-of-two larger than integer
         inline u64 ceilpo2(u64 integer);   // Return the smallest power-of-two larger than integer
@@ -120,6 +111,31 @@ namespace ncore
         inline s8  findLastBit(u64 integer);               // find the bit position/index of the first bit from high to low
         inline u32 rol32(u32 integer, u32 shift);          // Roll all the bits in integer to the left by shift number of bits
         inline u32 ror32(u32 integer, u32 shift);          // Roll all the bits in integer to the right by shift number of bits
+
+        // floating point math functions
+        f32 atanf(f32);
+        f32 cosf(f32);
+        f32 sinf(f32);
+        f32 tanf(f32);
+        f32 tanhf(f32);
+        f32 frexpf(f32, i32*);
+        f32 modff(f32, f32*);
+        f32 ceilf(f32);
+        f32 fabsf(f32);
+        f32 floorf(f32);
+
+        f32 acosf(f32);
+        f32 asinf(f32);
+        f32 atan2f(f32, f32);
+        f32 coshf(f32);
+        f32 sinhf(f32);
+        f32 expf(f32);
+        f32 ldexpf(f32, i32);
+        f32 logf(f32);
+        f32 log10f(f32);
+        f32 powf(f32, f32);
+        f32 sqrtf(f32);
+        f32 fmodf(f32, f32);
 
     }  // namespace math
 };  // namespace ncore
