@@ -161,6 +161,12 @@ namespace ncore
 {
     namespace narena
     {
+        enum ownership_t
+        {
+            ARENA_IS_OWNER  = 0,
+            ARENA_NOT_OWNER = 1
+        };
+
         arena_t *s_new_arena(int_t _header_size, int_t _reserve_size, int_t _commit_size)
         {
             const s32   page_size       = v_alloc_get_page_size();
@@ -188,8 +194,8 @@ namespace ncore
             arena->m_reserved_pages  = (s32)(reserved_size >> page_size_shift);
             arena->m_committed_pages = (s32)(commit_size >> page_size_shift);
             arena->m_page_size_shift = page_size_shift;
-            arena->m_owner           = 1;  // we own the virtual memory
-            arena->m_padding1        = 0xFFFFFFFF;
+            arena->m_ownership       = ARENA_IS_OWNER;
+            arena->m_padding1        = 0;
             return arena;
         }
 
@@ -199,32 +205,38 @@ namespace ncore
             return arena;
         }
 
-        arena_t *init_arena(void *base, int_t arena_reserve_size, int_t arena_commit_size)
+        arena_t *init_arena(void *base, int_t reserve_size, int_t commit_size)
         {
-            const int_t header_size = v_alloc_get_page_size();
-            arena_t    *ar          = (arena_t *)base;
-            base                    = (byte *)base + header_size;
-            init_arena(ar, base, arena_reserve_size, arena_commit_size);
-            ar->m_header_pages = 1;
-            ar->m_owner        = 0;
+            const u8    page_size_shift = v_alloc_get_page_size_shift();
+            const u32   page_size       = (u32)1u << page_size_shift;
+            const int_t header_size     = page_size;
+            arena_t    *ar              = (arena_t *)base;
+            if (!v_alloc_commit(base, header_size + commit_size))
+                return nullptr;
+
+            ar->m_base            = (byte *)base + header_size;
+            ar->m_pos             = 0;
+            ar->m_header_pages    = 1;
+            ar->m_reserved_pages  = (s32)(reserve_size >> page_size_shift);
+            ar->m_committed_pages = (s32)(commit_size >> page_size_shift);
+            ar->m_page_size_shift = page_size_shift;
+            ar->m_ownership       = ARENA_NOT_OWNER;
+            ar->m_padding1        = 0;
+
             return ar;
         }
 
-        void init_arena(arena_t *ar, void *base, int_t arena_reserve_size, int_t arena_commit_size)
+        void init_arena(arena_t *ar, void *base, int_t reserve_size, int_t commit_size)
         {
-            const s32   page_size       = v_alloc_get_page_size();
-            const u8    page_size_shift = v_alloc_get_page_size_shift();
-            const int_t reserved_size   = math::alignUp(arena_reserve_size, (int_t)page_size);
-            const int_t commit_size     = math::alignUp(arena_commit_size, (int_t)page_size);
-
-            ar->m_base            = (byte *)base;
-            ar->m_pos             = 0;
-            ar->m_header_pages    = 0;
-            ar->m_reserved_pages  = (s32)(reserved_size >> page_size_shift);
-            ar->m_committed_pages = (s32)(commit_size >> page_size_shift);
-            ar->m_page_size_shift = page_size_shift;
-            ar->m_owner           = 0;  // we don't own the virtual memory
-            ar->m_padding1        = 0xFFFFFFFF;
+            const u8 page_size_shift = v_alloc_get_page_size_shift();
+            ar->m_base               = (byte *)base;
+            ar->m_pos                = 0;
+            ar->m_header_pages       = 0;
+            ar->m_reserved_pages     = (s32)(reserve_size >> page_size_shift);
+            ar->m_committed_pages    = (s32)(commit_size >> page_size_shift);
+            ar->m_page_size_shift    = page_size_shift;
+            ar->m_ownership          = ARENA_NOT_OWNER;
+            ar->m_padding1           = 0;
         }
 
         bool commit(arena_t *ar, int_t committed_size_in_bytes)
@@ -233,7 +245,7 @@ namespace ncore
             const s32 total_reserved_pages = ar->m_reserved_pages;
             const s8  page_size_shift      = ar->m_page_size_shift;
 
-            byte *base_address            = base(ar);
+            byte *base_address            = base_ptr(ar);
             s32   current_committed_pages = ar->m_committed_pages;
 
             if (want_committed_pages > current_committed_pages)
@@ -279,12 +291,12 @@ namespace ncore
             {
                 if (need_committed_pages > ar->m_reserved_pages)
                     return nullptr;
-                const bool result = v_alloc_commit(base(ar) + ((int_t)ar->m_committed_pages << ar->m_page_size_shift), (need_committed_pages - ar->m_committed_pages) << ar->m_page_size_shift);
+                const bool result = v_alloc_commit(base_ptr(ar) + ((int_t)ar->m_committed_pages << ar->m_page_size_shift), (need_committed_pages - ar->m_committed_pages) << ar->m_page_size_shift);
                 if (!result)
                     return nullptr;
                 ar->m_committed_pages = need_committed_pages;
             }
-            void *ptr = base(ar) + ar->m_pos;
+            void *ptr = base_ptr(ar) + ar->m_pos;
             ar->m_pos += size_in_bytes;
             return ptr;
         }
@@ -341,18 +353,18 @@ namespace ncore
         }
 
         // save the address of the current allocation point
-        void *current_address(arena_t *ar) { return (void *)(base(ar) + ar->m_pos); }
+        void *current_address(arena_t *ar) { return (void *)(base_ptr(ar) + ar->m_pos); }
 
         // restore the arena to a saved address
         void restore_address(arena_t *ar, void *ptr)
         {
-            ASSERT(ptr >= base(ar));
-            const int_t position = (int_t)((byte *)ptr - base(ar));
+            ASSERT(ptr >= base_ptr(ar));
+            const int_t position = (int_t)((byte *)ptr - base_ptr(ar));
             ASSERT(position >= 0 && position < (ar->m_committed_pages << ar->m_page_size_shift));
 #    ifdef TARGET_DEBUG
             // clear the memory that is being 'freed' for debug purposes
             if ((ar->m_pos - position) > 0)
-                nmem::memset(base(ar) + position, 0xFEFEFEFE, ar->m_pos - position);
+                nmem::memset(base_ptr(ar) + position, 0xFEFEFEFE, ar->m_pos - position);
 #    endif
             ar->m_pos = position;
         }
@@ -365,7 +377,7 @@ namespace ncore
 
             if (used_committed_pages < ar->m_committed_pages)
             {
-                byte       *decommit_start         = base(ar) + used_bytes;
+                byte       *decommit_start         = base_ptr(ar) + used_bytes;
                 const int_t decommit_size_in_bytes = (int_t)(ar->m_committed_pages - used_committed_pages) << ar->m_page_size_shift;
                 if (decommit_size_in_bytes > 0)
                 {
@@ -384,18 +396,36 @@ namespace ncore
             if (ar == nullptr)
                 return false;
 
-            ASSERT(ar->m_header_pages >= 0);
+            if (ar->m_ownership == ARENA_NOT_OWNER)
+            {
+                if (ar->m_header_pages > 0)
+                {
+                    // decommit (header region + committed region) at once since they are contiguous
+                    v_alloc_decommit((byte *)ar, ((ar->m_header_pages + ar->m_committed_pages) << ar->m_page_size_shift));
+                }
+                else
+                {
+                    // arena is not part of the virtual memory, so we just decommit the committed region if there is
+                    // one, and we don't have to worry about the header region since it's not part of the virtual memory
+                    if (ar->m_committed_pages > 0)
+                    {
+                        v_alloc_decommit(base_ptr(ar), (ar->m_committed_pages << ar->m_page_size_shift));
+                    }
+                }
+                ar = nullptr;
+                return true;  // we don't own the virtual memory, so we just nullify the pointer
+            }
 
             // decommit all committed pages and release the reserved region
             // check if the header and base have a gap in committed memory
             byte       *reserved_address      = (byte *)ar;
-            const int_t reserved_address_size = (ar->m_base + ((int_t)ar->m_reserved_pages << ar->m_page_size_shift)) - reserved_address;
-            if (reserved_address + (ar->m_header_pages << ar->m_page_size_shift) < ar->m_base)
+            const int_t reserved_address_size = (base_ptr(ar) + ((int_t)ar->m_reserved_pages << ar->m_page_size_shift)) - reserved_address;
+            if (reserved_address + (ar->m_header_pages << ar->m_page_size_shift) < base_ptr(ar))
             {
                 // decommit header region
                 v_alloc_decommit(reserved_address, (ar->m_header_pages << ar->m_page_size_shift));
                 // decommit committed region
-                v_alloc_decommit(ar->m_base, (ar->m_committed_pages << ar->m_page_size_shift));
+                v_alloc_decommit(base_ptr(ar), (ar->m_committed_pages << ar->m_page_size_shift));
             }
             else
             {
@@ -408,132 +438,6 @@ namespace ncore
 
             ar = nullptr;
             return true;
-        }
-
-        struct stack_t
-        {
-            arena_t *m_arena;
-            s32      m_cur_depth;
-            s32      m_max_depth;
-            void   **m_stack;
-        };
-
-        stack_t *new_stack(int_t reserve_size, int_t commit_size, s32 max_depth)
-        {
-            ASSERT(max_depth <= 1024 && max_depth > 0);
-
-            const s32 header_size = (s32)(sizeof(arena_t) + sizeof(stack_t) + (sizeof(void *) * max_depth));
-
-            arena_t *arena = s_new_arena(header_size, reserve_size, commit_size);
-
-            stack_t *stack     = (stack_t *)(arena + 1);
-            stack->m_arena     = arena;
-            stack->m_cur_depth = 0;
-            stack->m_max_depth = max_depth;
-            stack->m_stack     = (void **)(stack + 1);
-
-            return stack;
-        }
-
-        void destroy(stack_t *&s)
-        {
-            if (s != nullptr && s->m_arena != nullptr)
-            {
-                narena::destroy(s->m_arena);
-                s = nullptr;
-            }
-        }
-
-        arena_t *push_stack(stack_t *s)
-        {
-            if (s->m_cur_depth >= s->m_max_depth)
-                return nullptr;
-
-            s->m_stack[s->m_cur_depth] = narena::current_address(s->m_arena);
-            s->m_cur_depth++;
-
-            return s->m_arena;
-        }
-
-        bool pop_stack(stack_t *s)
-        {
-            if (s->m_cur_depth <= 0)
-                return false;
-
-            s->m_cur_depth--;
-            void *addr = s->m_stack[s->m_cur_depth];
-            narena::restore_address(s->m_arena, addr);
-
-            return true;
-        }
-
-        struct region_t
-        {
-            arena_t *m_arena;
-            arena_t *m_arena_array;
-            s16      m_num_arenas;
-        };
-
-        region_t *new_region(int_t region_reserve_size, int_t arena_reserve_size, u16 num_arenas)
-        {
-            // What is sane for the amount of requested arenas?
-            ASSERT(num_arenas <= 256 && num_arenas > 0);
-
-            // Align the requested region size to page size
-            const u8  page_size_shift      = v_alloc_get_page_size_shift();
-            const s32 region_reserve_pages = (s32)(math::alignUp(region_reserve_size, (int_t)1 << page_size_shift) >> page_size_shift);
-
-            // Align the header size to pages
-            const s32 header_size  = (s32)(sizeof(arena_t) + sizeof(region_t) + (sizeof(arena_t) * num_arenas));
-            const s32 header_pages = (s32)(math::alignUp(header_size, (int_t)1 << page_size_shift) >> page_size_shift);
-            arena_t  *arena        = s_new_arena((int_t)header_pages << page_size_shift, (int_t)region_reserve_pages << page_size_shift, 0);
-
-            // Align the arena reserve size to page size
-            const u32 arena_reserve_pages = (u32)(math::alignUp(arena_reserve_size, (int_t)1 << arena->m_page_size_shift) >> arena->m_page_size_shift);
-
-            // Does this compute? arena->m_reserved_pages should be enough to hold all the arenas
-            if (arena == nullptr || (arena->m_reserved_pages < (arena_reserve_pages * num_arenas)))
-            {
-                if (arena != nullptr)
-                {
-                    v_alloc_release((byte *)arena, (int_t)region_reserve_pages << page_size_shift);
-                }
-                return nullptr;
-            }
-
-            region_t *region      = (region_t *)(arena + 1);
-            region->m_arena       = arena;
-            region->m_arena_array = (arena_t *)(region + 1);
-            region->m_num_arenas  = num_arenas;
-
-            // initialize the arena's, handout 'arena_reserve_size' to each arena
-            arena_t *arena_array  = region->m_arena_array;
-            byte    *base_address = (byte *)region->m_arena->m_base;
-            for (s16 i = 0; i < num_arenas; i++)
-            {
-                arena_t *a           = &arena_array[i];
-                a->m_base            = base_address;
-                a->m_pos             = 0;
-                a->m_header_pages    = 0;
-                a->m_reserved_pages  = arena_reserve_pages;
-                a->m_committed_pages = 0;
-                a->m_page_size_shift = region->m_arena->m_page_size_shift;
-
-                base_address += (arena_reserve_pages << a->m_page_size_shift);
-            }
-
-            return region;
-        }
-
-        void destroy(region_t *region)
-        {
-            // todo
-        }
-
-        arena_t *get_arena(region_t *region, s16 index)
-        {
-            // todo
-            return nullptr;
         }
 
     }  // namespace narena

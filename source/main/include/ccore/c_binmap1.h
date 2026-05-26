@@ -24,11 +24,11 @@ namespace ncore
             u8  m_levels;   // number of levels (0 = bin0, 1 = bin0+bin1, 2 = bin0+bin1+bin2, 3 = bin0+bin1+bin2+bin3)
         };
 
-        void compute(u32 number_of_bits, layout64_t &l);
-        void pointers(byte *ptr, layout64_t const &l, u64 *&bin0, u64 *&bin1, u64 *&bin2, u64 *&bin3);
-        u32  sizeof_data(layout64_t const &l);  // u64[N], where N is computed based on layout
+        void compute(u32 number_of_bits, layout64_t& l);
+        void pointers(byte* ptr, layout64_t const & l, u64*& bin0, u64*& bin1, u64*& bin2, u64*& bin3);
+        u32  sizeof_data(layout64_t const & l);  // u64[N], where N is computed based on layout
         // This will compute the data size in u64[N], where the full level is considered 'growable' up to 'bit'
-        u32 sizeof_data(layout64_t const &l, u32 bit);
+        u32 sizeof_data(layout64_t const & l, u32 bit);
 
         struct layout32_t
         {
@@ -39,11 +39,11 @@ namespace ncore
             u8  m_bin0;     // number of u32 at this level (unit = number of u32, should always be == 1)
             u8  m_levels;   // number of levels (0 = bin0, 1 = bin0+bin1, 2 = bin0+bin1+bin2, 3 = bin0+bin1+bin2+bin3)
         };
-        void compute(u32 number_of_bits, layout32_t &l);
-        void pointers(byte *ptr, layout32_t const &l, u32 *&bin0, u32 *&bin1, u32 *&bin2, u32 *&bin3);
-        u32  sizeof_data(layout32_t const &l);  // u32[N], where N is computed based on layout
+        void compute(u32 number_of_bits, layout32_t& l);
+        void pointers(byte* ptr, layout32_t const & l, u32*& bin0, u32*& bin1, u32*& bin2, u32*& bin3);
+        u32  sizeof_data(layout32_t const & l);  // u32[N], where N is computed based on layout
         // This will compute the data size in u32[N], where the full level is considered 'growable' up to 'bit'
-        u32 sizeof_data(layout32_t const &l, u32 bit);
+        u32 sizeof_data(layout32_t const & l, u32 bit);
 
     }  // namespace nbinmap
 
@@ -56,16 +56,16 @@ namespace ncore
     {
         typedef u32 bintype;
 
-        void set(bintype *bin0, u32 maxbits, u32 bit);
-        void clr(bintype *bin0, u32 maxbits, u32 bit);
-        bool get(bintype const *bin0, u32 maxbits, u32 bit);
-        s32  find(bintype const *bin0, u32 maxbits);
-        s32  find_and_set(bintype *bin0, u32 maxbits);
+        void set(bintype* CC_RESTRICT bin0, u32 maxbits, u32 bit);
+        void clr(bintype* CC_RESTRICT bin0, u32 maxbits, u32 bit);
+        bool get(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 bit);
+        s32  find(bintype const * CC_RESTRICT bin0, u32 maxbits);
+        s32  find_and_set(bintype* CC_RESTRICT bin0, u32 maxbits);
 
-        s32 find_last(bintype *bin0, u32 maxbits);               // Finds the last free bit and returns the bit index
-        s32 find_last_and_set(bintype *bin0, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
-        s32 find_after(bintype *bin0, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
-        s32 find_before(bintype *bin0, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
+        s32 find_last(bintype const * CC_RESTRICT bin0, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype* CC_RESTRICT bin0, u32 maxbits);              // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap5
 
     // 2^6 binmap, can handle a maximum of 64 bits.
@@ -73,16 +73,16 @@ namespace ncore
     {
         typedef u64 bintype;
 
-        void set(bintype *bin0, u32 maxbits, u32 bit);
-        void clr(bintype *bin0, u32 maxbits, u32 bit);
-        bool get(bintype const *bin0, u32 maxbits, u32 bit);
-        s32  find(bintype const *bin0, u32 maxbits);
-        s32  find_and_set(bintype *bin0, u32 maxbits);
+        void set(bintype* CC_RESTRICT bin0, u32 maxbits, u32 bit);
+        void clr(bintype* CC_RESTRICT bin0, u32 maxbits, u32 bit);
+        bool get(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 bit);
+        s32  find(bintype const * CC_RESTRICT bin0, u32 maxbits);
+        s32  find_and_set(bintype* CC_RESTRICT bin0, u32 maxbits);
 
-        s32 find_last(bintype *bin0, u32 maxbits);               // Finds the last free bit and returns the bit index
-        s32 find_last_and_set(bintype *bin0, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
-        s32 find_after(bintype *bin0, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
-        s32 find_before(bintype *bin0, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
+        s32 find_last(bintype const * CC_RESTRICT bin0, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype* CC_RESTRICT bin0, u32 maxbits);              // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap6
 
     // --------------------------------------------------------------------------------------------
@@ -96,21 +96,21 @@ namespace ncore
         // bin1 = an array of u32, max u32[32] (5)
         typedef u32 bintype;
 
-        void setup_lazy(bintype *bin0, bintype *bin1, u32 maxbits);
-        void tick_lazy(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
+        void setup_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
+        void tick_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits, u32 bit);
 
-        void clear(bintype *bin0, bintype *bin1, u32 maxbits);
+        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
 
-        void set(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
-        void clr(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
-        bool get(bintype const *bin0, bintype const *bin1, u32 maxbits, u32 bit);
-        s32  find(bintype const *bin0, bintype const *bin1, u32 maxbits);
-        s32  find_and_set(bintype *bin0, bintype *bin1, u32 maxbits);
+        void set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits, u32 bit);
+        void clr(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits, u32 bit);
+        bool get(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, u32 maxbits, u32 bit);
+        s32  find(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, u32 maxbits);
+        s32  find_and_set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
 
-        s32 find_last(bintype *_bin0, bintype *_bin1, u32 maxbits);               // Finds the last free bit and returns the bit index
-        s32 find_last_and_set(bintype *_bin0, bintype *_bin1, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
-        s32 find_after(bintype *_bin0, bintype *_bin1, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
-        s32 find_before(bintype *_bin0, bintype *_bin1, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
+        s32 find_last(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);                     // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap10
 
     // 2^12 binmap, can handle a maximum of 4096 bits.
@@ -121,21 +121,21 @@ namespace ncore
         // bin1 = an array of u64, max u64[64]
         typedef u64 bintype;
 
-        void setup_lazy(bintype *bin0, bintype *bin1, u32 maxbits);
-        void tick_lazy(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
+        void setup_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
+        void tick_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits, u32 bit);
 
-        void clear(bintype *bin0, bintype *bin1, u32 maxbits);
+        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
 
-        void set(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
-        void clr(bintype *bin0, bintype *bin1, u32 maxbits, u32 bit);
-        bool get(bintype const *bin0, bintype const *bin1, u32 maxbits, u32 bit);
-        s32  find(bintype const *bin0, bintype const *bin1, u32 maxbits);
-        s32  find_and_set(bintype *bin0, bintype *bin1, u32 maxbits);
+        void set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits, u32 bit);
+        void clr(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits, u32 bit);
+        bool get(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, u32 maxbits, u32 bit);
+        s32  find(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, u32 maxbits);
+        s32  find_and_set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
 
-        s32 find_last(bintype *_bin0, bintype *_bin1, u32 maxbits);               // Finds the last free bit and returns the bit index
-        s32 find_last_and_set(bintype *_bin0, bintype *_bin1, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
-        s32 find_after(bintype *_bin0, bintype *_bin1, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
-        s32 find_before(bintype *_bin0, bintype *_bin1, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
+        s32 find_last(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);                     // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap12
 
     // --------------------------------------------------------------------------------------------
@@ -150,21 +150,21 @@ namespace ncore
         // bin2 = an array of u32, max u32[32*32*32] (5)
         typedef u32 bintype;
 
-        void setup_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
-        void tick_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
+        void setup_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
+        void tick_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits, u32 bit);
 
-        void clear(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
+        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
 
-        void set(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
-        void clr(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
-        bool get(bintype const *bin0, bintype const *bin1, bintype const *bin2, u32 maxbits, u32 bit);
-        s32  find(bintype const *bin0, bintype const *bin1, bintype const *bin2, u32 maxbits);
-        s32  find_and_set(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
+        void set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits, u32 bit);
+        void clr(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits, u32 bit);
+        bool get(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, u32 maxbits, u32 bit);
+        s32  find(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, u32 maxbits);
+        s32  find_and_set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
 
-        s32 find_last(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits);               // Finds the last free bit and returns the bit index
-        s32 find_last_and_set(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
-        s32 find_after(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
-        s32 find_before(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
+        s32 find_last(bintype const * _bin0, bintype const * _bin1, bintype const * _bin2, u32 maxbits);                                                // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);                            // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap15
 
     namespace nbinmap18
@@ -175,21 +175,21 @@ namespace ncore
         // bin2 = an array of u64, max u64[64*64] (6)
         typedef u64 bintype;
 
-        void setup_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
-        void tick_lazy(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
+        void setup_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
+        void tick_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits, u32 bit);
 
-        void clear(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
+        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
 
-        void set(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
-        void clr(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits, u32 bit);
-        bool get(bintype const *bin0, bintype const *bin1, bintype const *bin2, u32 maxbits, u32 bit);
-        s32  find(bintype const *bin0, bintype const *bin1, bintype const *bin2, u32 maxbits);
-        s32  find_and_set(bintype *bin0, bintype *bin1, bintype *bin2, u32 maxbits);
+        void set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits, u32 bit);
+        void clr(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits, u32 bit);
+        bool get(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, u32 maxbits, u32 bit);
+        s32  find(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, u32 maxbits);
+        s32  find_and_set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
 
-        s32 find_last(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits);               // Finds the last free bit and returns the bit index
-        s32 find_last_and_set(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
-        s32 find_after(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
-        s32 find_before(bintype *_bin0, bintype *_bin1, bintype *_bin2, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
+        s32 find_last(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);                            // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap18
 
     // --------------------------------------------------------------------------------------------
@@ -206,21 +206,21 @@ namespace ncore
 
         typedef u32 bintype;
 
-        void setup_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
-        void tick_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
+        void setup_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);
+        void tick_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit);
 
-        void clear(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
+        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);
 
-        void set(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
-        void clr(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
-        bool get(bintype const *bin0, bintype const *bin1, bintype const *bin2, bintype const *bin3, u32 maxbits, u32 bit);
-        s32  find(bintype const *bin0, bintype const *bin1, bintype const *bin2, bintype const *bin3, u32 maxbits);
-        s32  find_and_set(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
+        void set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit);
+        void clr(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit);
+        bool get(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits, u32 bit);
+        s32  find(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits);
+        s32  find_and_set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);
 
-        s32 find_last(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits);               // Finds the last free bit and returns the bit index
-        s32 find_last_and_set(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
-        s32 find_after(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
-        s32 find_before(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
+        s32 find_last(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits);  // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);                      // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap20
 
     namespace nbinmap24
@@ -233,21 +233,21 @@ namespace ncore
 
         typedef u64 bintype;
 
-        void setup_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
-        void tick_lazy(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
+        void setup_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);
+        void tick_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit);
 
-        void clear(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
+        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);
 
-        void set(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
-        void clr(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits, u32 bit);
-        bool get(bintype const *bin0, bintype const *bin1, bintype const *bin2, bintype const *bin3, u32 maxbits, u32 bit);
-        s32  find(bintype const *bin0, bintype const *bin1, bintype const *bin2, bintype const *bin3, u32 maxbits);
-        s32  find_and_set(bintype *bin0, bintype *bin1, bintype *bin2, bintype *bin3, u32 maxbits);
+        void set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit);
+        void clr(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit);
+        bool get(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits, u32 bit);
+        s32  find(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits);
+        s32  find_and_set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);
 
-        s32 find_last(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits);               // Finds the last free bit and returns the bit index
-        s32 find_last_and_set(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits);       // Finds the last free bit and sets it to used and returns the bit index
-        s32 find_after(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
-        s32 find_before(bintype *_bin0, bintype *_bin1, bintype *_bin2, bintype *_bin3, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
+        s32 find_last(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits);  // Finds the last free bit and returns the bit index
+        s32 find_last_and_set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);                      // Finds the last free bit and sets it to used and returns the bit index
+        s32 find_after(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32 find_before(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbinmap24
 
 }  // namespace ncore
