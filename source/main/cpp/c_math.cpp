@@ -4,6 +4,10 @@
 #    include <math.h>
 #endif
 
+#ifdef TARGET_PC
+#    include <math.h>
+#endif
+
 namespace ncore
 {
     namespace math

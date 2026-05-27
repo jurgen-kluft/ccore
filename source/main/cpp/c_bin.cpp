@@ -323,7 +323,7 @@ namespace ncore
             bin->m_bin_level_count         = layout.m_levels;
             bin->m_bin2.m_base             = base_address;
             bin->m_bin2.m_committed_pages  = 1;
-            bin->m_bin2.m_reserved_pages   = bin_maximum_size >> page_size_shift;
+            bin->m_bin2.m_reserved_pages   = (u32)(bin_maximum_size >> page_size_shift);
             bin->m_bin0                    = D_U64_MAX;
 
             return bin;
