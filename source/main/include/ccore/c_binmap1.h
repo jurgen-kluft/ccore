@@ -7,8 +7,6 @@
 
 namespace ncore
 {
-    // TODO add duomap functionality, once done remove duomap from cbase
-
     // --------------------------------------------------------------------------------------------
     // binmap functionality for 1, 2, 3, and 4 level binmaps
     // --------------------------------------------------------------------------------------------

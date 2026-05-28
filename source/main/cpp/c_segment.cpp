@@ -113,7 +113,7 @@ namespace ncore
             chain->m_next = cINVALID_INDEX;
             *list         = cINVALID_INDEX;
 
-            const u32 new_index = offset - (offset_t*)narena::base_ptr(allocator->m_offsets);
+            const u32 new_index = (u32)(offset - (offset_t*)narena::base_ptr(allocator->m_offsets));
             return new_index;
         }
 
