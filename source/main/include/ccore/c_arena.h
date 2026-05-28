@@ -71,7 +71,14 @@ namespace ncore
 
     // Some C++ style helper functions
     template <typename T>
-    inline T* g_allocate(arena_t* arena, u32 alignment = sizeof(void*))
+    inline T* g_allocate(arena_t* arena)
+    {
+        void* ptr = narena::alloc(arena, sizeof(T));
+        return (T*)ptr;
+    }
+
+    template <typename T>
+    inline T* g_allocate(arena_t* arena, u32 alignment)
     {
         void* ptr = narena::alloc(arena, sizeof(T), alignment);
         return (T*)ptr;

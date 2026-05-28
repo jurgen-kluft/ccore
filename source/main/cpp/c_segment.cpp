@@ -31,13 +31,16 @@ namespace ncore
             u32 m_prev;  // index of the previous node in the chain, or 0 if this is the first node in the chain
         };
 
+        const u32 cINVALID_INDEX = ~0u;
+
         typedef u32 offset_t;
         typedef u8  flags_t;
 
         enum flags_e
         {
-            FLAG_FREE_USED  = 0x1,  // bit 0 indicates if the node is free(0) or used(1)
-            FLAG_LEFT_RIGHT = 0x2,  // bit 1 indicates if the node is the left(0) or right(1) buddy
+            FLAG_FREE_USED        = 0x1,  // bit 0 indicates if the node is free(0) or used(1)
+            FLAG_LEFT_RIGHT       = 0x2,  // bit 1 indicates if the node is the left(0) or right(1) buddy
+            FLAG_LEFT_RIGHT_SHIFT = 1,    // number of bits to shift for the left/right buddy flag
         };
 
         static inline bool is_free(flags_t flags) { return (flags & FLAG_FREE_USED) == 0; }
@@ -48,6 +51,71 @@ namespace ncore
         static inline void set_used(flags_t& flags) { flags |= FLAG_FREE_USED; }
         static inline void set_left(flags_t& flags) { flags &= ~FLAG_LEFT_RIGHT; }
         static inline void set_right(flags_t& flags) { flags |= FLAG_LEFT_RIGHT; }
+        static inline void set_side(flags_t& flags, i32 side) { flags = (flags & ~FLAG_LEFT_RIGHT) | ((side & 1) << FLAG_LEFT_RIGHT_SHIFT); }
+
+        // Helper: Convert bytes to page count, round up to power-of-two
+        static inline u32 bytes_to_pages(u64 size_bytes, u32 page_size)
+        {
+            const u64 pages = (size_bytes + page_size - 1) / page_size;
+            return (u32)math::ceilpo2((u32)math::min((u64)~0u, pages));
+        }
+
+        // Helper: Map page count to class index relative to segment_min_pages (or return -1 if out of range)
+        static inline i32 pages_to_class_index(u32 num_pages, u32 segment_min_pages, u32 segment_max_pages)
+        {
+            ASSERT(math::ispo2(num_pages) && math::ispo2(segment_min_pages) && math::ispo2(segment_max_pages));
+
+            if (num_pages < segment_min_pages || num_pages > segment_max_pages)
+                return -1;  // out of range
+
+            // Class index = log2(num_pages / segment_min_pages)
+            return (i32)math::ilog2(num_pages / segment_min_pages);
+        }
+
+        // Helper: Pop a node from the free list at a given class
+        static inline u32 pop_free_list(allocator_t* allocator, i32 class_index, u32* list)
+        {
+            ASSERT(class_index >= 0 && class_index < 32);
+            u32 node_index = allocator->m_free_list_heads[class_index];
+            if (node_index != cINVALID_INDEX)
+            {
+                allocator->m_free_list_heads[class_index] = list[node_index];
+            }
+            return node_index;
+        }
+
+        // Helper: Push a node onto the free list at a given class
+        static inline void push_free_list(allocator_t* allocator, i32 class_index, u32 node_index, u32* list)
+        {
+            ASSERT(class_index >= 0 && class_index < 32);
+            list[node_index]                          = allocator->m_free_list_heads[class_index];
+            allocator->m_free_list_heads[class_index] = node_index;
+        }
+
+        // Helper: Allocate a new node slot from the arena (for splits)
+        static inline u32 alloc_node_slot(allocator_t* allocator)
+        {
+            ASSERT(allocator != nullptr);
+
+            offset_t* offset = g_allocate<offset_t>(allocator->m_offsets);
+            flags_t*  flags  = g_allocate<flags_t>(allocator->m_flags);
+            link_t*   chain  = g_allocate<link_t>(allocator->m_chain);
+            u32*      list   = g_allocate<u32>(allocator->m_list);
+
+            ASSERTS(offset != nullptr, "Segment allocator metadata arena exhausted (offsets)");
+            ASSERTS(flags != nullptr, "Segment allocator metadata arena exhausted (flags)");
+            ASSERTS(chain != nullptr, "Segment allocator metadata arena exhausted (chain)");
+            ASSERTS(list != nullptr, "Segment allocator metadata arena exhausted (list)");
+
+            *offset       = 0;
+            *flags        = 0;
+            chain->m_prev = cINVALID_INDEX;
+            chain->m_next = cINVALID_INDEX;
+            *list         = cINVALID_INDEX;
+
+            const u32 new_index = offset - (offset_t*)narena::base_ptr(allocator->m_offsets);
+            return new_index;
+        }
 
         // Merging:
         // Merging a node should only be done when the adjacent node is also free and of the same size and it should be the
@@ -70,35 +138,41 @@ namespace ncore
         void initialize(allocator_t* allocator, u32 address_space_num_pages, u32 segment_min_pages, u32 segment_max_pages)
         {
             ASSERT(allocator != nullptr);
-            ASSERT(address_space_num_pages > 0 && (address_space_num_pages & (address_space_num_pages - 1)) == 0);  // must be power of two
-            ASSERT(segment_min_pages > 0 && (segment_min_pages & (segment_min_pages - 1)) == 0);
-            ASSERT(segment_max_pages >= segment_min_pages && (segment_max_pages & (segment_max_pages - 1)) == 0);
+            ASSERT(address_space_num_pages > 0 && math::ispo2(address_space_num_pages) != 0);
+            ASSERT(math::ispo2(segment_min_pages) != 0 && math::ispo2(segment_max_pages) != 0);
+            ASSERT(segment_max_pages >= segment_min_pages);
+
+            allocator->m_total_pages  = address_space_num_pages;
+            allocator->m_base_address = v_alloc_reserve((u64)address_space_num_pages * (u64)v_alloc_get_page_size());
 
             allocator->m_segment_min_pages = segment_min_pages;
             allocator->m_segment_max_pages = segment_max_pages;
 
             // Worst-case node count: entire address space divided into minimum-size segments.
-            const u32 max_nodes      = address_space_num_pages / segment_min_pages;
-            const u32 initial_commit = 256;
+            const u32 max_nodes = address_space_num_pages / segment_min_pages;
+
+            // Size-class index for the top-level (largest) segments.
+            const u32 top_level     = (u32)math::ilog2(segment_max_pages / segment_min_pages);
+            const u32 num_top_nodes = address_space_num_pages / segment_max_pages;
+
+            // We already make sure we have enough space in the arena to hold the top nodes + some additional nodes
+            // for splitting, so we can commit some initial pages for the top-level nodes, and then we can commit
+            // more pages for the lower-level nodes as needed when splitting.
+            const u32 initial_commit = num_top_nodes + 256;
 
             allocator->m_offsets = narena::new_arena((int_t)max_nodes * sizeof(offset_t), (int_t)initial_commit * sizeof(offset_t));
             allocator->m_flags   = narena::new_arena((int_t)max_nodes * sizeof(flags_t), (int_t)initial_commit * sizeof(flags_t));
             allocator->m_chain   = narena::new_arena((int_t)max_nodes * sizeof(link_t), (int_t)initial_commit * sizeof(link_t));
             allocator->m_list    = narena::new_arena((int_t)max_nodes * sizeof(u32), (int_t)initial_commit * sizeof(u32));
 
-            for (u32 i = 0; i < 32; ++i)
-                allocator->m_free_list_heads[i] = nullptr;
-
-            // Size-class index for the top-level (largest) segments.
-            const u32 top_level     = (u32)math::ilog2(segment_max_pages / segment_min_pages);
-            const u32 num_top_nodes = address_space_num_pages / segment_max_pages;
-
             offset_t* offsets = (offset_t*)narena::base_ptr(allocator->m_offsets);
             flags_t*  flags   = (flags_t*)narena::base_ptr(allocator->m_flags);
             link_t*   chain   = (link_t*)narena::base_ptr(allocator->m_chain);
             u32*      list    = (u32*)narena::base_ptr(allocator->m_list);
 
-            u32 free_list_head = ~0u;
+            u32 free_list_head = cINVALID_INDEX;
+            for (u32 i = 0; i < 32; ++i)
+                allocator->m_free_list_heads[i] = cINVALID_INDEX;
 
             for (u32 i = 0; i < num_top_nodes; ++i)
             {
@@ -111,30 +185,119 @@ namespace ncore
 
                 flags_t f = 0;
                 set_free(f);
-                if (i & 1)
-                    set_right(f);
-                else
-                    set_left(f);
+                set_side(f, i & 1);
                 flags[i] = f;
 
-                chain[i].m_prev = (i > 0) ? i - 1 : ~0u;
-                chain[i].m_next = (i < num_top_nodes - 1) ? i + 1 : ~0u;
+                chain[i].m_prev = (i > 0) ? i - 1 : cINVALID_INDEX;
+                chain[i].m_next = (i < num_top_nodes - 1) ? i + 1 : cINVALID_INDEX;
 
                 // Push onto free list (LIFO): this node's list-next = current head, then update head.
                 list[i]        = free_list_head;
                 free_list_head = i;
             }
-
-            allocator->m_free_list_heads[top_level] = (num_top_nodes > 0) ? &chain[free_list_head] : nullptr;
+            allocator->m_free_list_heads[top_level] = free_list_head;
         }
 
         node_t alloc_node(allocator_t* allocator, u64 size)
         {
-            // allocate a node
-            // align to next power of two number of pages
-            // see if we have any free nodes for that size, if not we need to go look and split
+            ASSERT(allocator != nullptr);
 
-            return INVALID_NODE;
+            // Convert bytes to required pages (power-of-two aligned)
+            const u32 page_size      = v_alloc_get_page_size();
+            const u32 required_pages = bytes_to_pages(size, page_size);
+
+            // Map to target class index
+            const i32 target_class = pages_to_class_index(required_pages, allocator->m_segment_min_pages, allocator->m_segment_max_pages);
+            if (target_class < 0)
+                return INVALID_NODE;  // size out of range
+
+            offset_t* offsets = (offset_t*)narena::base_ptr(allocator->m_offsets);
+            flags_t*  flags   = (flags_t*)narena::base_ptr(allocator->m_flags);
+            link_t*   chain   = (link_t*)narena::base_ptr(allocator->m_chain);
+            u32*      list    = (u32*)narena::base_ptr(allocator->m_list);
+
+            // Find first non-empty free list at or above target class
+            i32 source_class = target_class;
+            u32 source_node  = cINVALID_INDEX;
+
+            for (i32 class_idx = target_class; class_idx < 32; ++class_idx)
+            {
+                source_node = allocator->m_free_list_heads[class_idx];
+                if (source_node != cINVALID_INDEX)
+                {
+                    source_class = class_idx;
+                    break;
+                }
+            }
+
+            if (source_node == cINVALID_INDEX)
+                return INVALID_NODE;  // no free nodes available
+
+            // Pop source node
+            source_node = pop_free_list(allocator, source_class, list);
+            ASSERT(source_node != cINVALID_INDEX);
+
+            // Split downward from source_class to target_class
+            i32 current_class = source_class;
+            u32 current_node  = source_node;
+
+            while (current_class > target_class)
+            {
+                // Create right buddy node
+                u32 right_buddy = alloc_node_slot(allocator);
+                if (right_buddy == cINVALID_INDEX)
+                    return INVALID_NODE;  // allocation failed
+
+                const u32 class_page_size = allocator->m_segment_min_pages << current_class;
+                const u32 half_page_size  = class_page_size >> 1;
+
+                // Right buddy gets second half of offset
+                offsets[right_buddy] = offsets[current_node] + half_page_size;
+
+                // Set flags: current is left, right is right
+                flags_t left_flag  = flags[current_node];
+                flags_t right_flag = left_flag;
+                set_left(left_flag);
+                set_right(right_flag);
+                set_free(right_flag);
+                flags[current_node] = left_flag;
+                flags[right_buddy]  = right_flag;
+
+                // Update chain links
+                chain[right_buddy].m_prev = current_node;
+                chain[right_buddy].m_next = chain[current_node].m_next;
+                if (chain[current_node].m_next != cINVALID_INDEX)
+                    chain[chain[current_node].m_next].m_prev = right_buddy;
+                chain[current_node].m_next = right_buddy;
+
+                // Push right buddy to lower class free list
+                current_class--;
+                push_free_list(allocator, current_class, right_buddy, list);
+
+                // Continue with left node (already at correct offset)
+            }
+
+            // Mark final node as USED
+            set_used(flags[current_node]);
+
+            return (node_t)current_node;
+        }
+
+        void teardown(allocator_t* allocator)
+        {
+            if (allocator == nullptr)
+                return;
+
+            // Clean up arenas
+            narena::destroy(allocator->m_offsets);
+            narena::destroy(allocator->m_flags);
+            narena::destroy(allocator->m_chain);
+            narena::destroy(allocator->m_list);
+
+            allocator->m_offsets = nullptr;
+            allocator->m_flags   = nullptr;
+            allocator->m_chain   = nullptr;
+            allocator->m_list    = nullptr;
         }
 
         void dealloc_node(allocator_t* allocator, node_t node)
@@ -157,7 +320,23 @@ namespace ncore
 
             // calculate the address of the node from its index and the base address of the arena
             // return the address and the number of pages in the node
-            return nullptr;
+            offset_t const * offsets = (offset_t const *)narena::base_ptr(allocator->m_offsets);
+            const offset_t   offset  = offsets[node];
+
+            // num_pages can be calculated from the node's offset and the next node's offset in the chain
+            // note: offset unit is pages
+            link_t const * chain = (link_t const *)narena::base_ptr(allocator->m_chain);
+            if (chain[node].m_next != cINVALID_INDEX)
+            {
+                num_pages = (offsets[chain[node].m_next] - offset);
+            }
+            else
+            {
+                num_pages = allocator->m_total_pages - offset;
+            }
+
+            const u32 page_size = v_alloc_get_page_size();
+            return (void*)((u8*)allocator->m_base_address + (offset * page_size));
         }
 
         // Virtual memory helper functions for committing and decommitting pages of a node, this should

@@ -365,7 +365,7 @@ namespace ncore
             // we let our core commit function handle the rest
             void *ptr = alloc(arena, size + aligning);
 
-            // out of memory ?
+            // OOM ?
             if (ptr == nullptr)
                 return nullptr;
 
