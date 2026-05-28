@@ -1,160 +1,144 @@
 #include "ccore/c_arena.h"
+#include "ccore/c_duomap1.h"
 #include "ccore/c_math.h"
 #include "ccore/c_memory.h"
 #include "ccore/c_indexed_bin.h"
 
 namespace ncore
 {
-    struct indexed_bin16_t
-    {
-        u16*  m_owner_index_array;      // pointer to index array (u16[])
-        u16*  m_owner_index_array_end;  // pointer to end of (committed) index array
-        byte* m_items;                  // pointer to items
-        byte* m_items_end;              // pointer to end of items where we need to commit more pages
-        byte* m_items_end_max;          // pointer to end of maximum items memory
-        u32   m_items_count;            // number of items currently in use
-        u16   m_item_sizeof;            // sizeof(item)
-        u8    m_pagesize_shift;         // page-size = 1 << pagesize_shift
-        u8    m_padding0;               // padding for 8 byte alignment
-    };
 
-    indexed_bin16_t* make_bin(u16 element_size)
-    {
-        const u32 max_elements = 65535;  // maximum number of elements is 65535 (u16 indices)
+    // indexed bin16
+    // Note: uses nduomap18 to track free and used items
 
+    void bin_setup(indexed_bin16_t* bin, u16 element_size)
+    {
         ASSERT(element_size > 0 && element_size <= 1024);  // element size should be reasonable
 
-        const s32 page_size       = v_alloc_get_page_size();
-        const u8  page_size_shift = v_alloc_get_page_size_shift();
+        const u32 max_elements = 65535;  // maximum number of elements is 65535 (u16 indices)
 
-        const uint_t index_array_size  = math::alignUp((uint_t)sizeof(indexed_bin16_t) + (uint_t)sizeof(u16) * max_elements, page_size);
-        const uint_t items_memory_size = math::alignUp((uint_t)element_size * max_elements, page_size);
+        bin->m_items = narena::new_arena((uint_t)element_size * max_elements, 0);
+        bin->m_owner = narena::new_arena((uint_t)sizeof(u16) * max_elements, 0);
 
-        byte* base_address = (byte*)v_alloc_reserve(index_array_size + items_memory_size);
-        if (!base_address)
-            return nullptr;
+        bin->m_items_count = 0;             // number of items currently in use
+        bin->m_item_sizeof = element_size;  // sizeof(item)
 
-        const u32 index_pages_committed = 1;
-        if (!v_alloc_commit(base_address, (uint_t)index_pages_committed << page_size_shift))
-        {
-            v_alloc_release(base_address, index_array_size + items_memory_size);
-            return nullptr;
-        }
+        bin->m_binmap = narena::new_arena((1 + 1 + 16 + 16 + 1024) * sizeof(u64), (1 + 1 + 16 + 16) * sizeof(u64));
 
-        const u32 item_pages_committed = 1;
-        if (!v_alloc_commit(base_address + index_array_size, (uint_t)item_pages_committed << page_size_shift))
-        {
-            v_alloc_release(base_address, index_array_size + items_memory_size);
-            return nullptr;
-        }
+        u64* used0 = (u64*)narena::base_ptr(bin->m_binmap);
+        u64* free0 = used0 + 1;
+        u64* used1 = free0 + 1;
+        u64* free1 = used1 + 16;
+        u64* bin2  = free1 + 16;
 
-        indexed_bin16_t* bin         = (indexed_bin16_t*)base_address;
-        bin->m_owner_index_array     = (u16*)(bin + 1);
-        bin->m_owner_index_array_end = (u16*)(base_address + ((uint_t)index_pages_committed << page_size_shift));
-        bin->m_items                 = base_address + (uint_t)index_array_size;
-        bin->m_items_end             = bin->m_items + ((uint_t)item_pages_committed << page_size_shift);
-        bin->m_items_end_max         = bin->m_items + items_memory_size;
-        bin->m_items_count           = 0;
-        bin->m_item_sizeof           = element_size;
-        bin->m_pagesize_shift        = page_size_shift;
-
-        return bin;
+        *used0 = D_U64_MAX;  // track '1' bits
+        *free0 = D_U64_MAX;  // track '0' bits
     }
 
-    void destroy(indexed_bin16_t* bin)
+    void bin_destroy(indexed_bin16_t* bin)
     {
-        byte*        base_address        = (byte*)bin;
-        const uint_t total_reserved_size = (uint_t)bin->m_items_end_max - (uint_t)base_address;
-        v_alloc_release(base_address, total_reserved_size);
+        if (bin->m_owner != nullptr)
+            narena::destroy(bin->m_owner);
+        if (bin->m_items != nullptr)
+            narena::destroy(bin->m_items);
+        if (bin->m_binmap != nullptr)
+            narena::destroy(bin->m_binmap);
     }
 
     // resize the bin to be able to hold new_max_elements
-    void commit(indexed_bin16_t* bin, u32 num_elements)
+    void bin_commit(indexed_bin16_t* bin, u32 num_elements)
     {
         ASSERT(num_elements > 0 && num_elements < 65536);  // maximum number of elements is 65535 (u16 indices)
 
-        const u8  page_size_shift = bin->m_pagesize_shift;
-        const s32 page_size       = (1 << page_size_shift);
-
-        // calculate how many pages to commit for index array
-        const uint_t current_index_array_size       = math::alignUp((uint_t)bin->m_owner_index_array_end - (uint_t)bin, page_size);
-        const uint_t required_index_array_size      = math::alignUp((uint_t)sizeof(indexed_bin16_t) + (uint_t)sizeof(u16) * num_elements, page_size);
-        const uint_t size_to_commit_for_index_array = (required_index_array_size > current_index_array_size) ? (required_index_array_size - current_index_array_size) : 0;
-        if (size_to_commit_for_index_array > 0)
-        {
-            if (!v_alloc_commit((byte*)bin->m_owner_index_array_end, size_to_commit_for_index_array))
-            {
-                return;  // failed to commit more memory for index array
-            }
-            bin->m_owner_index_array_end = (u16*)((byte*)bin + required_index_array_size);
-        }
-
-        // calculate how many pages to commit for items
-        const uint_t current_items_size       = math::alignUp((uint_t)bin->m_items_end - (uint_t)bin->m_items, page_size);
-        const uint_t required_items_size      = math::alignUp((uint_t)num_elements * (uint_t)bin->m_item_sizeof, page_size);
-        const uint_t size_to_commit_for_items = (required_items_size > current_items_size) ? (required_items_size - current_items_size) : 0;
-        if (size_to_commit_for_items > 0)
-        {
-            if (!v_alloc_commit(bin->m_items_end, size_to_commit_for_items))
-            {
-                return;  // failed to commit more memory for items
-            }
-            bin->m_items_end += size_to_commit_for_items;
-        }
+        narena::commit(bin->m_items, num_elements * bin->m_item_sizeof);
+        narena::commit(bin->m_owner, num_elements * sizeof(u16));
+        narena::commit(bin->m_binmap, (1 + 1 + 16 + 16 + ((num_elements + 63) / 64)) * sizeof(u64));
     }
 
-    i32 alloc(indexed_bin16_t* bin, u16 owner_index)
+    i32 bin_alloc(indexed_bin16_t* bin, u16 owner_index)
     {
         if (bin->m_items_count >= 65535)
             return -1;  // bin is full
 
-        const u32 index = bin->m_items_count;
-        bin->m_items_count += 1;
+        // We can figure out if we are 'compact' by looking at the arena position of the
+        // index array and see if 'm_items_count' is identical to the number of indices.
+        const bool is_compact = (narena::base_ptr(bin->m_owner) + (bin->m_items_count * sizeof(u16))) == narena::current_ptr(bin->m_items);
 
-        // check if we need to commit more pages for the index array
-        if (&bin->m_owner_index_array[index] >= bin->m_owner_index_array_end)
+        // 1. if we are compacted, just do an allocation at the end of the array's
+        //    - clear the free bit
+        //    - set the used bit
+        // 2. else find an empty slot by querying the free binmap
+        //    - clear the free bit
+        //    - set the used bit
+        u64* used0 = (u64*)narena::base_ptr(bin->m_binmap);
+        u64* free0 = used0 + 1;
+        u64* used1 = free0 + 1;
+        u64* free1 = used1 + 16;
+        u64* bin2  = free1 + 16;
+
+        if (!is_compact)
         {
-            // commit one more page for the index array
-            const u32 page_size = ((u32)1 << bin->m_pagesize_shift);
-            if (!v_alloc_commit((byte*)bin->m_owner_index_array_end, page_size))
-            {
-                bin->m_items_count -= 1;
-                return -1;
-            }
-            bin->m_owner_index_array_end += (page_size / sizeof(u16));
+            // The hierarchical duomap can be used to find a free entity index
+            const s32 item_index = nduomap18::find0_and_set(free0, free1, used0, used1, bin2, bin->m_items_count);
+            ASSERT(item_index >= 0 && (u32)item_index < bin->m_items_count);
+            u16* owner_array        = narena::base_ptr_as<u16>(bin->m_owner);
+            owner_array[item_index] = owner_index;
+            return item_index;
         }
 
-        // check if we need to commit more pages for the items
-        if ((bin->m_items + ((uint_t)bin->m_items_count * bin->m_item_sizeof)) >= bin->m_items_end)
-        {
-            // commit one more page for the items
-            const u32 page_size = ((u32)1 << bin->m_pagesize_shift);
-            if (!v_alloc_commit(bin->m_items_end, page_size))
-            {
-                bin->m_items_count -= 1;
-                return -1;
-            }
-            bin->m_items_end += page_size;
-        }
+        const s32 item_index = (s32)bin->m_items_count++;
 
-        bin->m_owner_index_array[index] = owner_index;
-        return (i32)index;
+        narena::alloc(bin->m_items, bin->m_item_sizeof);
+        narena::commit(bin->m_owner, bin->m_items_count * sizeof(u16));
+        narena::commit(bin->m_binmap, (1 + 1 + 16 + 16 + ((bin->m_items_count + 63) / 64)) * sizeof(u64));
+
+        nduomap18::tick_lazy(free0, free1, used0, used1, bin2, bin->m_items_count, item_index);
+        u16* owner_array        = narena::base_ptr_as<u16>(bin->m_owner);
+        owner_array[item_index] = owner_index;
+        return item_index;
+    }
+
+    void bin_free_normal(indexed_bin16_t* bin, u32 item_index)
+    {
+        ASSERT(item_index < bin->m_items_count);  // invalid index
+
+        // mark the item as free in the binmap, and unmark the used bit
+        // also decrease the item count, but do not move any items (no compaction)
+
+        u64* used0 = (u64*)narena::base_ptr(bin->m_binmap);
+        u64* free0 = used0 + 1;
+        u64* used1 = free0 + 1;
+        u64* free1 = used1 + 16;
+        u64* bin2  = free1 + 16;
+
+        nduomap18::clr(free0, free1, used0, used1, bin2, bin->m_items_count, item_index);
+
+        bin->m_items_count -= 1;
     }
 
     // free item at 'index' and return index of item that was moved
     // to fill the hole (likely last item), or -1 if no swap performed
     // returns -2 if error (invalid index)
-    i32 free(indexed_bin16_t* bin, u32 item_index)
+    i32 bin_free_compact(indexed_bin16_t* bin, u32 item_index)
     {
         if (item_index < bin->m_items_count)
         {
-            u16*  owner_index_array = bin->m_owner_index_array;
-            byte* items             = bin->m_items;
+            u16*  owner_index_array = narena::base_ptr_as<u16>(bin->m_owner);
+            byte* items             = narena::base_ptr(bin->m_items);
+
+            u64* used0 = (u64*)narena::base_ptr(bin->m_binmap);
+            u64* free0 = used0 + 1;
+            u64* used1 = free0 + 1;
+            u64* free1 = used1 + 16;
+            u64* bin2  = free1 + 16;
+
+            const s32 last_index = nduomap18::find1_last(free0, free1, used0, used1, bin2, bin->m_items_count);
+
+            // mark this last item in the binmap as free
+            nduomap18::clr(free0, free1, used0, used1, bin2, bin->m_items_count, last_index);
 
             // decrease number of used items
             bin->m_items_count -= 1;
 
-            const u32 last_index = bin->m_items_count;
             if (item_index != last_index)
             {
                 // move the item data
@@ -167,30 +151,40 @@ namespace ncore
                 return (i32)owner_index_array[item_index];
             }
 
-            // TODO : consider decommitting pages for index array and items
-
             return -1;  // no swap performed
         }
         return -2;  // error
     }
 
-    void* idx2ptr(indexed_bin16_t const* bin, u32 index)
+    i32 bin_compact(indexed_bin16_t* bin, u32& item_index)
+    {
+        // find the first free slot using the free binmap
+        // find the last used slot using the used binmap
+        // if the first free slot is before the last used slot, move the item from the
+        // last used slot to the first free slot, and update the binmaps and owner index array
+        // return the owner index of the item that was moved to fill the hole, and update
+        // item_index to the new index of the item
+
+        return -1;  // no swap performed
+    }
+
+    void* bin_idx2ptr(indexed_bin16_t const* bin, u32 index)
     {
         if (index < bin->m_items_count)
         {
-            return bin->m_items + ((int_t)index * bin->m_item_sizeof);
+            return narena::base_ptr(bin->m_items) + ((int_t)index * bin->m_item_sizeof);
         }
-        return nullptr;  // invalid index
+        return nullptr;
     }
 
-    i32 ptr2idx(indexed_bin16_t const* bin, void const* p)
+    i32 bin_ptr2idx(indexed_bin16_t const* bin, void const* p)
     {
         const byte* ptr  = (const byte*)p;
-        const byte* base = bin->m_items;
-        const byte* end  = bin->m_items + ((int_t)bin->m_items_count * bin->m_item_sizeof);
+        const byte* base = narena::base_ptr(bin->m_items);
+        const byte* end  = base + (bin->m_items_count * bin->m_item_sizeof);
         return (ptr >= base && ptr < end) ? (i32)((ptr - base) / bin->m_item_sizeof) : -1;
     }
 
-    u32 size(indexed_bin16_t const* bin) { return bin->m_items_count; }
+    u32 bin_size(indexed_bin16_t const* bin) { return bin->m_items_count; }
 
 }  // namespace ncore

@@ -37,7 +37,14 @@ namespace ncore
         inline uint_t reserved_size(arena_t* arena) { return (uint_t)arena->m_reserved_pages << arena->m_page_size_shift; }
         inline uint_t committed_size(arena_t* arena) { return (uint_t)arena->m_committed_pages << arena->m_page_size_shift; }
         inline byte*  base_ptr(arena_t* arena) { return arena->m_base; }
-        inline bool   within_committed(arena_t* arena, void* ptr) { return ((ptr_t)ptr >= (ptr_t)base_ptr(arena)) && ((ptr_t)ptr < (ptr_t)(base_ptr(arena) + committed_size(arena))); }
+        inline byte*  current_ptr(arena_t* arena) { return arena->m_base + arena->m_pos; }
+
+        // clang-format off
+        template <typename T> inline T* base_ptr_as(arena_t* arena) { return (T*)arena->m_base; }
+        template <typename T> inline T* current_ptr_as(arena_t* arena) { return (T*)(arena->m_base + arena->m_pos); }
+        // clang-format on
+
+        inline bool within_committed(arena_t* arena, void* ptr) { return ((ptr_t)ptr >= (ptr_t)base_ptr(arena)) && ((ptr_t)ptr < (ptr_t)(base_ptr(arena) + committed_size(arena))); }
 
         bool  commit(arena_t* arena, int_t size_in_bytes);                          // set committed size of the allocator, this will not change 'pos'
         void* alloc(arena_t* arena, int_t size);                                    // allocate 'size' from the reserved region
