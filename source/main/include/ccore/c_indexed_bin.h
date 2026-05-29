@@ -28,13 +28,6 @@ namespace ncore
         arena_t* m_binmap;            // binmap, will contain data for used and free binmap
     };
 
-    // content of m_binmap
-    // u64      m_free_bin0;          //
-    // u64      m_used_bin0;          //
-    // u64      m_free_bin1[16];      // track the 0 bits in m_entity_bin2 (16 * sizeof(u64) = 128 bytes)
-    // u64      m_used_bin1[16];      // track the 1 bits in m_entity_bin2 (16 * sizeof(u64) = 128 bytes)
-    // u64      m_bin2[1024];         // '1' bit = used item, '0' bit = free item (65536 bits = 8 KB)
-
     void  bin_setup(indexed_bin16_t* bin, u16 element_size);           // create an indexed bin that can hold max elements of size element_size
     void  bin_commit(indexed_bin16_t* bin, u32 num_elements);          // prepare the bin (commit pages) to allocate without page commits
     void  bin_destroy(indexed_bin16_t* bin);                           // destroy the index bin

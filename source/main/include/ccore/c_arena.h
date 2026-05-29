@@ -2,7 +2,7 @@
 #define __CCORE_VMEM_ALLOC_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
-    #pragma once
+#    pragma once
 #endif
 
 #include "ccore/c_allocator.h"
@@ -10,26 +10,26 @@
 
 namespace ncore
 {
-    struct arena_t                // 32 bytes
-    {                             //
-        byte* m_base;             // base address of the arena (after header)
-        int_t m_pos;              // current position in the arena to allocate from (relative to m_base)
-        u32   m_reserved_pages;   // (unit = pages) reserved number of pages for this arena (relative to arena)
-        u32   m_committed_pages;  // (unit = pages) number of committed pages (relative to arena)
-        u8    m_page_size_shift;  // page size in shift (from system)
-        u8    m_ownership;        // ownership
-        u8    m_active;           // whether this arena is in use
-        u8    m_padding1;         // padding
-        u32   m_padding2;         // padding
+    struct arena_t                 // 32 bytes
+    {                              //
+        byte*  m_base;             // base address of the arena (after header)
+        uint_t m_pos;              // current position in the arena to allocate from (relative to m_base)
+        u32    m_reserved_pages;   // (unit = pages) reserved number of pages for this arena (relative to arena)
+        u32    m_committed_pages;  // (unit = pages) number of committed pages (relative to arena)
+        u8     m_page_size_shift;  // page size in shift (from system)
+        u8     m_ownership;        // ownership
+        u8     m_active;           // whether this arena is in use
+        u8     m_padding1;         // padding
+        u32    m_padding2;         // padding
     };
 
     namespace narena
     {
         // usage: arena, owns the virtual that it reserves, and will do an initial commit for 'commit_size'
-        arena_t* new_arena(int_t reserve_size, int_t commit_size);
+        arena_t* new_arena(uint_t reserve_size, uint_t commit_size);
         // usage: create arena with virtual memory already reserved, and NOTHING yet committed, arena will
         //        not be responsible for releasing the reserved virtual memory.
-        arena_t* init_arena(void* base, int_t reserved_size, int_t commit_size);
+        arena_t* init_arena(void* base, uint_t reserved_size, uint_t commit_size);
         // usage: destroy arena, if the arena does not own the virtual memory, then we just nullify the
         //        pointer and return true, otherwise we release the virtual memory.
         bool destroy(arena_t*& arena);
@@ -38,6 +38,7 @@ namespace ncore
         inline uint_t committed_size(arena_t* arena) { return (uint_t)arena->m_committed_pages << arena->m_page_size_shift; }
         inline byte*  base_ptr(arena_t* arena) { return arena->m_base; }
         inline byte*  current_ptr(arena_t* arena) { return arena->m_base + arena->m_pos; }
+        inline uint_t current_pos(arena_t* arena) { return (uint_t)arena->m_pos; }
 
         // clang-format off
         template <typename T> inline T* base_ptr_as(arena_t* arena) { return (T*)arena->m_base; }
@@ -46,13 +47,13 @@ namespace ncore
 
         inline bool within_committed(arena_t* arena, void* ptr) { return ((ptr_t)ptr >= (ptr_t)base_ptr(arena)) && ((ptr_t)ptr < (ptr_t)(base_ptr(arena) + committed_size(arena))); }
 
-        bool  commit(arena_t* arena, int_t size_in_bytes);                          // set committed size of the allocator, this will not change 'pos'
-        void* alloc(arena_t* arena, int_t size);                                    // allocate 'size' from the reserved region
-        void* alloc(arena_t* arena, int_t size, u32 alignment);                     // allocate 'size' from the reserved region with the given alignment
-        void* alloc_and_zero(arena_t* arena, int_t size);                           // allocate 'size' from the reserved region
-        void* alloc_and_zero(arena_t* arena, int_t size, u32 alignment);            // allocate 'size' from the reserved region with the given alignment
-        void* alloc_and_fill(arena_t* arena, int_t size, u32 fill);                 // allocate 'size' from the reserved region and fill with 'fill' word
-        void* alloc_and_fill(arena_t* arena, int_t size, u32 alignment, u32 fill);  // allocate 'size' from the reserved region with the given alignment and fill with 'fill' wor
+        bool  commit(arena_t* arena, uint_t size_in_bytes);                          // set committed size of the allocator, this will not change 'pos'
+        void* alloc(arena_t* arena, uint_t size);                                    // allocate 'size' from the reserved region
+        void* alloc(arena_t* arena, uint_t size, u32 alignment);                     // allocate 'size' from the reserved region with the given alignment
+        void* alloc_and_zero(arena_t* arena, uint_t size);                           // allocate 'size' from the reserved region
+        void* alloc_and_zero(arena_t* arena, uint_t size, u32 alignment);            // allocate 'size' from the reserved region with the given alignment
+        void* alloc_and_fill(arena_t* arena, uint_t size, u32 fill);                 // allocate 'size' from the reserved region and fill with 'fill' word
+        void* alloc_and_fill(arena_t* arena, uint_t size, u32 alignment, u32 fill);  // allocate 'size' from the reserved region with the given alignment and fill with 'fill' wor
         void* current_address(arena_t* arena);                                      // return the address of the current allocation point
         void  restore_address(arena_t* arena, void* ptr);                           // restore the arena to the given address
         void  shrink(arena_t* arena);                                               // decommit any 'extra' pages
@@ -150,7 +151,7 @@ namespace ncore
     }
 
     template <typename T>
-    static inline T diff_point(arena_point_t const& start, arena_point_t const& end)
+    static inline T diff_point(arena_point_t const & start, arena_point_t const & end)
     {
         ASSERT(start.m_arena == end.m_arena);
         uint_t diff = g_ptr_diff_in_bytes<uint_t>(end.m_address, start.m_address);
@@ -165,12 +166,12 @@ namespace ncore
     }
 
     // Platform specific virtual memory functions
-    s32   v_alloc_get_page_size();
+    u32   v_alloc_get_page_size();
     u8    v_alloc_get_page_size_shift();
-    void* v_alloc_reserve(int_t size);
-    bool  v_alloc_commit(void* addr, int_t size);
-    bool  v_alloc_decommit(void* addr, int_t extra_size);
-    bool  v_alloc_release(void* addr, int_t size);
+    void* v_alloc_reserve(uint_t size);
+    bool  v_alloc_commit(void* addr, uint_t size);
+    bool  v_alloc_decommit(void* addr, uint_t extra_size);
+    bool  v_alloc_release(void* addr, uint_t size);
 
 }  // namespace ncore
 
