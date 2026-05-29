@@ -56,40 +56,40 @@ namespace ncore
         inline s8 findFirstBit(u8 value) { return (value == 0) ? (s8)-1 : (s8)__builtin_ctz(value); }
 
         // find the bit position/index of the first bit from high to low
-        // If 'value == 0x00' this function will return 8
+        // If 'value == 0x00' this function will return -1
         // If 'value == 0x01' this function will return 0
         // If 'value == 0x80' this function will return 7
-        inline s8 findLastBit(u8 value) { return (value == 0) ? (s8)-1 : ((s8)__builtin_clz(value) - 24); }
+        inline s8 findLastBit(u8 value) { return (value == 0) ? (s8)-1 : ((s8)31 - (s8)__builtin_clz((u32)value)); }
 
         // find the bit position/index of the first bit from low to high
-        // If 'value == 0' this function will return 16
+        // If 'value == 0' this function will return -1
         inline s8 findFirstBit(u16 value) { return (value == 0) ? (s8)-1 : (s8)__builtin_ctz(value); }
 
         // find the bit position/index of the first bit from high to low
-        // If 'value == 0x0000' this function will return 16
-        // If 'value == 0x0001' this function will return 15
-        // If 'value == 0x8000' this function will return 0
-        inline s8 findLastBit(u16 value) { return (value == 0) ? (s8)-1 : ((s8)__builtin_clz(value) - 16); }
+        // If 'value == 0x0000' this function will return -1
+        // If 'value == 0x0001' this function will return 0
+        // If 'value == 0x8000' this function will return 15
+        inline s8 findLastBit(u16 value) { return (value == 0) ? (s8)-1 : ((s8)31 - (s8)__builtin_clz((u32)value)); }
 
         // find the bit position/index of the first bit from low to high
         // If 'value == 0' this function will return 32
         inline s8 findFirstBit(u32 value) { return (value == 0) ? (s8)-1 : (s8)__builtin_ctz(value); }
 
         // find the bit position/index of the first bit from high to low
-        // If 'value == 0' this function will return 32
-        // If 'value == 0x00000001' this function will return 31
-        // If 'value == 0x80000000' this function will return 0
-        inline s8 findLastBit(u32 value) { return (value == 0) ? (s8)-1 : ((s8)__builtin_clz(value)); }
+        // If 'value == 0' this function will return -1
+        // If 'value == 0x00000001' this function will return 0
+        // If 'value == 0x80000000' this function will return 31
+        inline s8 findLastBit(u32 value) { return (value == 0) ? (s8)-1 : ((s8)31 - (s8)__builtin_clz(value)); }
 
         // find the bit position/index of the first bit from low to high
-        // If 'value == 0' this function will return 64
+        // If 'value == 0' this function will return -1
         inline s8 findFirstBit(u64 value) { return (value == 0) ? (s8)-1 : (s8)__builtin_ctzll(value); }
 
         // find the bit position/index of the first bit from high to low
-        // If 'value == 0' this function will return 64
+        // If 'value == 0' this function will return -1
         // If 'value == 0x0000000000000001' this function will return 63
         // If 'value == 0x8000000000000000' this function will return 0
-        inline s8 findLastBit(u64 value) { return (value == 0) ? (s8)-1 : ((s8)__builtin_clzll(value)); }
+        inline s8 findLastBit(u64 value) { return (value == 0) ? (s8)-1 : ((s8)63 - (s8)__builtin_clzll(value)); }
 
         inline s8 countBits(u8 value)
         {

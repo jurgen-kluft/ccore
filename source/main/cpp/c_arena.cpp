@@ -273,7 +273,6 @@ namespace ncore
                 return nullptr;
 
             const u8  page_size_shift = v_alloc_get_page_size_shift();
-            const u32 page_size       = (u32)1u << page_size_shift;
             if (!v_alloc_commit(base, commit_size))
             {
                 s_push_arena(arena);

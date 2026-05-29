@@ -17,75 +17,145 @@ namespace ncore
     // duomaps with two levels
 
     template <typename bintype, u32 binshift>
-    class duomap_bin00_bin10_bin1_t
+    class duomap_free0_used0_bin1_t
     {
     public:
         static constexpr u32     binbits     = sizeof(bintype) * 8;
-        static constexpr u32     binmask     = (sizeof(bintype) * 8) - 1;
+        static constexpr u32     binmask     = binbits - 1;
         static constexpr bintype binconstant = (bintype) ~(bintype)0;
         static constexpr u32     binlevels   = 2;
 
-        static void setup_lazy(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits)
+        static inline u32 word_count_for_bits(u32 maxbits)
         {
-            _bin00[0] = binconstant;
-            _bin10[0] = binconstant;
+            ASSERT(maxbits > 0);
+            return (maxbits + binbits - 1) >> binshift;
         }
 
-        static void tick_lazy(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits, u32 bit)
+        static bintype valid_words_mask(u32 maxbits)
+        {
+            u32 const word_count = word_count_for_bits(maxbits);
+            if (word_count >= binbits)
+                return binconstant;
+            return (bintype)(((bintype)1 << word_count) - 1);
+        }
+
+        static bintype valid_bits_mask(u32 word_index, u32 maxbits)
+        {
+            u32 const remaining = maxbits - (word_index << binshift);
+            if (remaining >= binbits)
+                return binconstant;
+            return (bintype)(((bintype)1 << remaining) - 1);
+        }
+
+        static inline void update_summary_bits(bintype* _free0, bintype* _used0, bintype const * _bin1, u32 maxbits, u32 word_index)
+        {
+            bintype const valid_mask = valid_bits_mask(word_index, maxbits);
+            bintype const word       = _bin1[word_index] & valid_mask;
+            bool const    has_free   = word != valid_mask;
+            bool const    has_used   = word != 0;
+
+            _free0[0] = has_free ? D_BIT_SET(_free0[0], word_index) : D_BIT_CLEAR(_free0[0], word_index);
+            _used0[0] = has_used ? D_BIT_SET(_used0[0], word_index) : D_BIT_CLEAR(_used0[0], word_index);
+        }
+
+        static inline void update_summary_bits_verify(bintype* _free0, bintype* _used0, bintype const * _bin1, u32 maxbits, u32 word_index)
+        {
+            if ((word_index << binshift) < maxbits)
+                update_summary_bits(_free0, _used0, _bin1, maxbits, word_index);
+        }
+
+        static void setup_used_lazy(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits)
+        {
+            _free0[0] = 0;
+            _used0[0] = 0;
+            _bin1[0]  = 0;
+        }
+
+        static void tick_used_lazy(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits, u32 bit)
         {
             if (bit >= maxbits)
                 return;
 
             if ((bit & binmask) == 0)
             {
-                const u32 wi      = bit >> binshift;
-                _bin1[wi]         = 0;
-                const u32     bi0 = wi & binmask;
-                const bintype wd0 = (bi0 == 0) ? binconstant : _bin00[0];
-                _bin00[0]         = D_BIT_CLEAR(wd0, bi0);
+                u32 const wi = bit >> binshift;
+                _bin1[wi]    = 0;
+                update_summary_bits(_free0, _used0, _bin1, maxbits, wi);
             }
         }
 
-        static void clear(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits)
+        static void clear_all_free(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits)
         {
-            u32 const size = (maxbits + binmask) >> binshift;
+            u32 const size = word_count_for_bits(maxbits);
             for (u32 i = 0; i < size; ++i)
                 _bin1[i] = 0;
-            _bin00[0] = 0;
-            _bin10[0] = binconstant;
+            _free0[0] = valid_words_mask(maxbits);
+            _used0[0] = 0;
         }
 
-        static void set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits, u32 bit)
+        static void clear_all_used(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits)
         {
-            ASSERT(bit < maxbits);
-            u32 const     i1 = bit >> binshift;
-            u32 const     b1 = bit & binmask;
-            bintype const vo = _bin1[i1];          // old
-            bintype const vn = D_BIT_SET(vo, b1);  // new
-            _bin1[i1]        = vn;
-            if (vn == binconstant)
-            {                                          // no more '0' bits at this index in _bin1
-                _bin00[0] = D_BIT_SET(_bin00[0], i1);  // set bit in _bin00, tracking '0' bits
+            const u32 size = word_count_for_bits(maxbits);
+            if (size > 0)
+            {
+                u32 const last = size - 1;
+                _bin1[last]    = valid_bits_mask(last, maxbits);
+                for (u32 i = 0; i < last; ++i)
+                    _bin1[i] = binconstant;
             }
-            _bin10[0] = D_BIT_CLEAR(_bin10[0], i1);  // clear bit in _bin10, tracking '1' bits
+            _free0[0] = 0;
+            _used0[0] = valid_words_mask(maxbits);
         }
 
-        static void clr(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits, u32 bit)
+        static inline void internal_set_used(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits, u32 bit)
         {
-            ASSERT(bit < maxbits);
-            u32 const     i1 = bit >> binshift;
-            u32 const     b1 = bit & binmask;
-            bintype const vo = _bin1[i1];            // old
-            bintype const vn = D_BIT_CLEAR(vo, b1);  // new
-            _bin1[i1]        = vn;
-            _bin00[0]        = D_BIT_CLEAR(_bin00[0], i1);  // clear bit in _bin00, tracking '0' bits
-            if (vn == 0)
-            {                                          // no more '1' bits at this index in _bin1
-                _bin10[0] = D_BIT_SET(_bin10[0], i1);  // set bit in _bin10, tracking '1' bits
+            u32 const i1 = bit >> binshift;
+            u32 const b1 = bit & binmask;
+            _bin1[i1]    = D_BIT_SET(_bin1[i1], b1);
+            update_summary_bits(_free0, _used0, _bin1, maxbits, i1);
+        }
+
+        static inline void internal_set_free(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits, u32 bit)
+        {
+            u32 const i1 = bit >> binshift;
+            u32 const b1 = bit & binmask;
+            _bin1[i1]    = D_BIT_CLEAR(_bin1[i1], b1);
+            update_summary_bits(_free0, _used0, _bin1, maxbits, i1);
+        }
+
+        static void set_used(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits, u32 bit)
+        {
+            if (bit < maxbits)
+            {
+                u32 const     i1 = bit >> binshift;
+                u32 const     b1 = bit & binmask;
+                bintype const vo = _bin1[i1];
+                bintype const vn = D_BIT_SET(vo, b1);
+                if (vo != vn)
+                {
+                    _bin1[i1] = vn;
+                    update_summary_bits(_free0, _used0, _bin1, maxbits, i1);
+                }
             }
         }
 
-        static bool get(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 bit)
+        static void set_free(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits, u32 bit)
+        {
+            if (bit < maxbits)
+            {
+                u32 const     i1 = bit >> binshift;
+                u32 const     b1 = bit & binmask;
+                bintype const vo = _bin1[i1];
+                bintype const vn = D_BIT_CLEAR(vo, b1);
+                if (vo != vn)
+                {
+                    _bin1[i1] = vn;
+                    update_summary_bits(_free0, _used0, _bin1, maxbits, i1);
+                }
+            }
+        }
+
+        static bool get(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 bit)
         {
             ASSERT(bit < maxbits);
             u32 const i1 = bit >> binshift;
@@ -93,91 +163,73 @@ namespace ncore
             return D_BIT_TEST(_bin1[i1], b1);
         }
 
-        static s32 find0(bintype const *_bin00, bintype const *_bin1, u32 maxbits)
+        static s32 find_free(bintype const * _free0, bintype const * _bin1, u32 maxbits)
         {
-            if (_bin00[0] == binconstant)
+            bintype const free_words = _free0[0];
+            if (free_words == 0)
                 return -1;
-            s32 const     b0  = math::findFirstBit(D_INVERT(_bin00[0]));
+
+            s32 const     b0  = math::findFirstBit(free_words);
             bintype const w1  = D_INVERT(_bin1[b0]);
             s32 const     bit = math::findFirstBit(w1) + (b0 << binshift);
             return bit < (s32)maxbits ? bit : -1;
         }
 
-        static s32 find1(bintype const *_bin10, bintype const *_bin1, u32 maxbits)
+        static s32 find_used(bintype const * _used0, bintype const * _bin1, u32 maxbits)
         {
-            if (_bin10[0] == binconstant)
+            bintype const used_words = _used0[0];
+            if (used_words == 0)
                 return -1;
-            s32 const     b0  = math::findFirstBit(D_INVERT(_bin10[0]));
+
+            s32 const     b0  = math::findFirstBit(used_words);
             bintype const w1  = _bin1[b0];
             s32 const     bit = math::findFirstBit(w1) + (b0 << binshift);
             return bit < (s32)maxbits ? bit : -1;
         }
 
-        static s32 find0_and_set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits)
+        static s32 alloc(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits)
         {
-            if (_bin00[0] == binconstant)
-                return -1;
-
-            s32 const i0 = math::findFirstBit(D_INVERT(_bin00[0]));
-            ASSERT(_bin1[i0] != binconstant);
-            const s32     b1 = math::findFirstBit(D_INVERT(_bin1[i0]));
-            bintype const v1 = D_BIT_SET(_bin1[i0], b1);
-            _bin1[i0]        = v1;
-            if (v1 == binconstant)
-            {                                          // no more '0' bits at this index in _bin1
-                _bin00[0] = D_BIT_SET(_bin00[0], i0);  // set bit in _bin00, tracking '0' bits
-            }
-            _bin10[0] = D_BIT_CLEAR(_bin10[0], i0);  // clear bit in _bin10, tracking '1' bits
-
-            const s32 bit = b1 + (i0 << binshift);
-            return bit < (s32)maxbits ? bit : -1;
+            s32 const bit = find_free(_free0, _bin1, maxbits);
+            if (bit >= 0)
+                internal_set_used(_free0, _used0, _bin1, maxbits, (u32)bit);
+            return bit;
         }
 
-        static s32 find1_and_set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits)
+        static s32 free(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits)
         {
-            if (_bin10[0] == binconstant)
-                return -1;
-
-            s32 const i0 = math::findFirstBit(D_INVERT(_bin10[0]));
-            ASSERT(_bin1[i0] != 0);
-            const s32     b1 = math::findFirstBit(_bin1[i0]);  // at _bin1, find a '1' bit
-            bintype const v1 = D_BIT_CLEAR(_bin1[i0], b1);     // clear that '1' bit
-            _bin1[i0]        = v1;
-            _bin00[0]        = D_BIT_CLEAR(_bin00[0], i0);  // clear bit in _bin00, tracking '0' bits
-            if (v1 == 0)
-            {                                          // no more '1' bits at this index in _bin1
-                _bin10[0] = D_BIT_SET(_bin10[0], i0);  // set bit in _bin10, tracking '1' bits
-            }
-
-            const s32 bit = b1 + (i0 << binshift);
-            return bit < (s32)maxbits ? bit : -1;
+            s32 const bit = find_used(_used0, _bin1, maxbits);
+            if (bit >= 0)
+                internal_set_free(_free0, _used0, _bin1, maxbits, (u32)bit);
+            return bit;
         }
 
-        static s32 find0_last(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits)
+        static s32 find_free_last(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits)
         {
-            if (_bin00[0] == binconstant)
+            bintype const free_words = _free0[0];
+            if (free_words == 0)
                 return -1;
 
-            u8 bi = (u8)math::findLastBit(D_INVERT(_bin00[0]));
+            u8 bi = (u8)math::findLastBit(free_words);
             ASSERT(bi >= 0 && bi < binbits);
-            u32 wi = bi;
-            ASSERT(D_INVERT(_bin1[wi]) != 0);
-            bi = math::findLastBit(D_INVERT(_bin1[wi]));
+            u32           wi = bi;
+            bintype const w1 = D_INVERT(_bin1[wi]);
+            ASSERT(w1 != 0);
+            bi = (u8)math::findLastBit(w1);
             ASSERT(bi >= 0 && bi < binbits);
 
             u32 const found_bit = (wi << binshift) + bi;
             return (found_bit < maxbits) ? found_bit : -1;
         }
 
-        static s32 find0_last_and_set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits)
+        static s32 alloc_last(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits)
         {
-            s32 const bit = find0_last(_bin00, _bin10, _bin1, maxbits);
+            s32 const bit = find_free_last(_free0, _used0, _bin1, maxbits);
             if (bit >= 0)
-                set(_bin00, _bin10, _bin1, maxbits, (u32)bit);
+                internal_set_used(_free0, _used0, _bin1, maxbits, (u32)bit);
             return bit;
         }
 
-        static s32 find0_after(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 pivot)
+        static s32 find_free_after(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 pivot)
         {
             // First check at location pivot in _bin1, then if no bit found move up one
             // level and check there, then go down to find the actual free bit.
@@ -185,14 +237,17 @@ namespace ncore
             if (pivot >= maxbits)
                 return -1;
 
-            u32 iw = pivot >> binshift;
-            s8  ib = (s8)(pivot & binmask);
+            if ((pivot + 1) >= maxbits)
+                return -1;
+
+            u32 iw = (pivot + 1) >> binshift;
+            s8  ib = (s8)((pivot + 1) & binmask);
 
             s8 const ml = binlevels - 1;
             s8       il = ml;
             while (il >= 0 && il <= ml)
             {
-                bintype const w = (il == 0 ? D_INVERT(_bin00[0]) : D_INVERT(_bin1[iw])) & (binconstant << ib);
+                bintype const w = (il == 0 ? _free0[0] : D_INVERT(_bin1[iw])) & (binconstant << ib);
                 if (w != 0)
                 {
                     iw = (iw << binshift) + math::findFirstBit(w);
@@ -219,22 +274,22 @@ namespace ncore
             return -1;
         }
 
-        static s32 find0_before(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 pivot)
+        static s32 find_free_before(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 pivot)
         {
-            if (pivot >= maxbits)
+            if (pivot == 0 || pivot > maxbits)
                 return -1;
 
-            u32 iw = (pivot >> binshift);  // The index of a word in level 0
-            u32 ib = (pivot & binmask);    // The bit number in that word
+            u32 iw = (pivot - 1) >> binshift;  // The index of a word in level 0
+            u32 ib = (pivot - 1) & binmask;    // The bit number in that word
 
             s8 const ml = binlevels - 1;
             s8       il = ml;
             while (il >= 0 && il <= ml)
             {
-                bintype const w = (il == 0 ? _bin00[0] : D_INVERT(_bin1[iw])) & (binconstant >> (binbits - 1 - ib));
+                bintype const w = (il == 0 ? _free0[0] : D_INVERT(_bin1[iw])) & (binconstant >> (binbits - 1 - ib));
                 if (w != 0)
                 {
-                    iw = (iw << binshift) + (u32)math::findFirstBit(w);
+                    iw = (iw << binshift) + (u32)math::findLastBit(w);
                     if (il == ml)
                         return iw < maxbits ? (s32)iw : -1;
                     il += 1;  // Go down one level
@@ -256,31 +311,33 @@ namespace ncore
         }
 
         // ---------------------------------------------------------------------------------------------------------
-        static s32 find1_last(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits)
+        static s32 find_used_last(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits)
         {
-            if (_bin10[0] == binconstant)
+            bintype const used_words = _used0[0];
+            if (used_words == 0)
                 return -1;
 
-            u8 bi = (u8)math::findLastBit(D_INVERT(_bin10[0]));
+            u8 bi = (u8)math::findLastBit(used_words);
             ASSERT(bi >= 0 && bi < binbits);
-            u32 wi = bi;
-            ASSERT(_bin1[wi] != 0);
-            bi = math::findLastBit(_bin1[wi]);
+            u32           wi = bi;
+            bintype const w1 = _bin1[wi];
+            ASSERT(w1 != 0);
+            bi = (u8)math::findLastBit(w1);
             ASSERT(bi >= 0 && bi < binbits);
 
             u32 const found_bit = (wi << binshift) + bi;
             return (found_bit < maxbits) ? found_bit : -1;
         }
 
-        static s32 find1_last_and_set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits)
+        static s32 free_last(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits)
         {
-            s32 const bit = find1_last(_bin00, _bin10, _bin1, maxbits);
+            s32 const bit = find_used_last(_free0, _used0, _bin1, maxbits);
             if (bit >= 0)
-                set(_bin00, _bin10, _bin1, maxbits, (u32)bit);
+                internal_set_free(_free0, _used0, _bin1, maxbits, (u32)bit);
             return bit;
         }
 
-        static s32 find1_after(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 pivot)
+        static s32 find_used_after(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 pivot)
         {
             // First check at location pivot in _bin1, then if no bit found move up one
             // level and check there, then go down to find the actual free bit.
@@ -288,14 +345,17 @@ namespace ncore
             if (pivot >= maxbits)
                 return -1;
 
-            u32 iw = pivot >> binshift;
-            s8  ib = (s8)(pivot & binmask);
+            if ((pivot + 1) >= maxbits)
+                return -1;
+
+            u32 iw = (pivot + 1) >> binshift;
+            s8  ib = (s8)((pivot + 1) & binmask);
 
             s8 const ml = binlevels - 1;
             s8       il = ml;
             while (il >= 0 && il <= ml)
             {
-                bintype const w = (il == 0 ? D_INVERT(_bin10[0]) : _bin1[iw]) & (binconstant << ib);
+                bintype const w = (il == 0 ? _used0[0] : _bin1[iw]) & (binconstant << ib);
                 if (w != 0)
                 {
                     iw = (iw << binshift) + math::findFirstBit(w);
@@ -322,22 +382,22 @@ namespace ncore
             return -1;
         }
 
-        static s32 find1_before(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 pivot)
+        static s32 find_used_before(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 pivot)
         {
-            if (pivot >= maxbits)
+            if (pivot == 0 || pivot > maxbits)
                 return -1;
 
-            u32 iw = (pivot >> binshift);  // The index of a 32-bit word in level 0
-            u32 ib = (pivot & binmask);    // The bit number in that 32-bit word
+            u32 iw = (pivot - 1) >> binshift;  // The index of a 32-bit word in level 0
+            u32 ib = (pivot - 1) & binmask;    // The bit number in that 32-bit word
 
             s8 const ml = binlevels - 1;
             s8       il = ml;
             while (il >= 0 && il <= ml)
             {
-                bintype const w = (il == 0 ? _bin00[0] : D_INVERT(_bin1[iw])) & (binconstant >> (binbits - 1 - ib));
+                bintype const w = (il == 0 ? _used0[0] : _bin1[iw]) & (binconstant >> (binbits - 1 - ib));
                 if (w != 0)
                 {
-                    iw = (iw << binshift) + (u32)math::findFirstBit(w);
+                    iw = (iw << binshift) + (u32)math::findLastBit(w);
                     if (il == ml)
                         return iw < maxbits ? (s32)iw : -1;
                     il += 1;  // Go down one level
@@ -361,54 +421,56 @@ namespace ncore
 
     namespace nduomap10
     {
-        void setup_lazy(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits) { duomap_bin00_bin10_bin1_t<u32, 5>::setup_lazy(_bin00, _bin10, _bin1, maxbits); }
-        void tick_lazy(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits, u32 bit) { duomap_bin00_bin10_bin1_t<u32, 5>::tick_lazy(_bin00, _bin10, _bin1, maxbits, bit); }
+        void setup_used_lazy(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits) { duomap_free0_used0_bin1_t<u32, 5>::setup_used_lazy(_free0, _used0, _bin1, maxbits); }
+        void tick_used_lazy(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits, u32 bit) { duomap_free0_used0_bin1_t<u32, 5>::tick_used_lazy(_free0, _used0, _bin1, maxbits, bit); }
 
-        void clear(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits) { duomap_bin00_bin10_bin1_t<u32, 5>::clear(_bin00, _bin10, _bin1, maxbits); }
+        void clear_all_free(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits) { duomap_free0_used0_bin1_t<u32, 5>::clear_all_free(_free0, _used0, _bin1, maxbits); }
+        void clear_all_used(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits) { duomap_free0_used0_bin1_t<u32, 5>::clear_all_used(_free0, _used0, _bin1, maxbits); }
 
-        void set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits, u32 bit) { duomap_bin00_bin10_bin1_t<u32, 5>::set(_bin00, _bin10, _bin1, maxbits, bit); }
-        void clr(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits, u32 bit) { duomap_bin00_bin10_bin1_t<u32, 5>::clr(_bin00, _bin10, _bin1, maxbits, bit); }
-        bool get(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 bit) { return duomap_bin00_bin10_bin1_t<u32, 5>::get(_bin00, _bin10, _bin1, maxbits, bit); }
+        void set_used(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits, u32 bit) { duomap_free0_used0_bin1_t<u32, 5>::set_used(_free0, _used0, _bin1, maxbits, bit); }
+        void set_free(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits, u32 bit) { duomap_free0_used0_bin1_t<u32, 5>::set_free(_free0, _used0, _bin1, maxbits, bit); }
+        bool get(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 bit) { return duomap_free0_used0_bin1_t<u32, 5>::get(_free0, _used0, _bin1, maxbits, bit); }
 
-        s32 find0(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u32, 5>::find0(_bin00, _bin1, maxbits); }
-        s32 find1(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u32, 5>::find1(_bin10, _bin1, maxbits); }
-        s32 find0_last(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u32, 5>::find0_last(_bin00, _bin10, _bin1, maxbits); }
-        s32 find0_after(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 pivot) { return duomap_bin00_bin10_bin1_t<u32, 5>::find0_after(_bin00, _bin10, _bin1, maxbits, pivot); }
-        s32 find0_before(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 pivot) { return duomap_bin00_bin10_bin1_t<u32, 5>::find0_before(_bin00, _bin10, _bin1, maxbits, pivot); }
-        s32 find1_last(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u32, 5>::find1_last(_bin00, _bin10, _bin1, maxbits); }
-        s32 find1_after(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 pivot) { return duomap_bin00_bin10_bin1_t<u32, 5>::find1_after(_bin00, _bin10, _bin1, maxbits, pivot); }
-        s32 find1_before(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 pivot) { return duomap_bin00_bin10_bin1_t<u32, 5>::find1_before(_bin00, _bin10, _bin1, maxbits, pivot); }
+        s32 find_free(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u32, 5>::find_free(_free0, _bin1, maxbits); }
+        s32 find_used(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u32, 5>::find_used(_used0, _bin1, maxbits); }
+        s32 find_free_last(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u32, 5>::find_free_last(_free0, _used0, _bin1, maxbits); }
+        s32 find_free_after(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 pivot) { return duomap_free0_used0_bin1_t<u32, 5>::find_free_after(_free0, _used0, _bin1, maxbits, pivot); }
+        s32 find_free_before(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 pivot) { return duomap_free0_used0_bin1_t<u32, 5>::find_free_before(_free0, _used0, _bin1, maxbits, pivot); }
+        s32 find_used_last(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u32, 5>::find_used_last(_free0, _used0, _bin1, maxbits); }
+        s32 find_used_after(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 pivot) { return duomap_free0_used0_bin1_t<u32, 5>::find_used_after(_free0, _used0, _bin1, maxbits, pivot); }
+        s32 find_used_before(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 pivot) { return duomap_free0_used0_bin1_t<u32, 5>::find_used_before(_free0, _used0, _bin1, maxbits, pivot); }
 
-        s32 find0_and_set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u32, 5>::find0_and_set(_bin00, _bin10, _bin1, maxbits); }
-        s32 find1_and_set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u32, 5>::find1_and_set(_bin00, _bin10, _bin1, maxbits); }
-        s32 find0_last_and_set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u32, 5>::find0_last_and_set(_bin00, _bin10, _bin1, maxbits); }
-        s32 find1_last_and_set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u32, 5>::find1_last_and_set(_bin00, _bin10, _bin1, maxbits); }
+        s32 alloc(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u32, 5>::alloc(_free0, _used0, _bin1, maxbits); }
+        s32 free(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u32, 5>::free(_free0, _used0, _bin1, maxbits); }
+        s32 alloc_last(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u32, 5>::alloc_last(_free0, _used0, _bin1, maxbits); }
+        s32 free_last(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u32, 5>::free_last(_free0, _used0, _bin1, maxbits); }
     }  // namespace nduomap10
 
     namespace nduomap12
     {
-        void setup_lazy(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits) { duomap_bin00_bin10_bin1_t<u64, 6>::setup_lazy(_bin00, _bin10, _bin1, maxbits); }
-        void tick_lazy(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits, u32 bit) { duomap_bin00_bin10_bin1_t<u64, 6>::tick_lazy(_bin00, _bin10, _bin1, maxbits, bit); }
+        void setup_used_lazy(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits) { duomap_free0_used0_bin1_t<u64, 6>::setup_used_lazy(_free0, _used0, _bin1, maxbits); }
+        void tick_used_lazy(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits, u32 bit) { duomap_free0_used0_bin1_t<u64, 6>::tick_used_lazy(_free0, _used0, _bin1, maxbits, bit); }
 
-        void clear(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits) { duomap_bin00_bin10_bin1_t<u64, 6>::clear(_bin00, _bin10, _bin1, maxbits); }
+        void clear_all_free(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits) { duomap_free0_used0_bin1_t<u64, 6>::clear_all_free(_free0, _used0, _bin1, maxbits); }
+        void clear_all_used(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits) { duomap_free0_used0_bin1_t<u64, 6>::clear_all_used(_free0, _used0, _bin1, maxbits); }
 
-        void set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits, u32 bit) { duomap_bin00_bin10_bin1_t<u64, 6>::set(_bin00, _bin10, _bin1, maxbits, bit); }
-        void clr(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits, u32 bit) { duomap_bin00_bin10_bin1_t<u64, 6>::clr(_bin00, _bin10, _bin1, maxbits, bit); }
-        bool get(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 bit) { return duomap_bin00_bin10_bin1_t<u64, 6>::get(_bin00, _bin10, _bin1, maxbits, bit); }
+        void set_used(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits, u32 bit) { duomap_free0_used0_bin1_t<u64, 6>::set_used(_free0, _used0, _bin1, maxbits, bit); }
+        void set_free(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits, u32 bit) { duomap_free0_used0_bin1_t<u64, 6>::set_free(_free0, _used0, _bin1, maxbits, bit); }
+        bool get(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 bit) { return duomap_free0_used0_bin1_t<u64, 6>::get(_free0, _used0, _bin1, maxbits, bit); }
 
-        s32 find0(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u64, 6>::find0(_bin00, _bin1, maxbits); }
-        s32 find1(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u64, 6>::find1(_bin10, _bin1, maxbits); }
-        s32 find0_last(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u64, 6>::find0_last(_bin00, _bin10, _bin1, maxbits); }
-        s32 find0_after(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 pivot) { return duomap_bin00_bin10_bin1_t<u64, 6>::find0_after(_bin00, _bin10, _bin1, maxbits, pivot); }
-        s32 find0_before(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 pivot) { return duomap_bin00_bin10_bin1_t<u64, 6>::find0_before(_bin00, _bin10, _bin1, maxbits, pivot); }
-        s32 find1_last(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u64, 6>::find1_last(_bin00, _bin10, _bin1, maxbits); }
-        s32 find1_after(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 pivot) { return duomap_bin00_bin10_bin1_t<u64, 6>::find1_after(_bin00, _bin10, _bin1, maxbits, pivot); }
-        s32 find1_before(bintype const *_bin00, bintype const *_bin10, bintype const *_bin1, u32 maxbits, u32 pivot) { return duomap_bin00_bin10_bin1_t<u64, 6>::find1_before(_bin00, _bin10, _bin1, maxbits, pivot); }
+        s32 find_free(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u64, 6>::find_free(_free0, _bin1, maxbits); }
+        s32 find_used(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u64, 6>::find_used(_used0, _bin1, maxbits); }
+        s32 find_free_last(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u64, 6>::find_free_last(_free0, _used0, _bin1, maxbits); }
+        s32 find_free_after(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 pivot) { return duomap_free0_used0_bin1_t<u64, 6>::find_free_after(_free0, _used0, _bin1, maxbits, pivot); }
+        s32 find_free_before(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 pivot) { return duomap_free0_used0_bin1_t<u64, 6>::find_free_before(_free0, _used0, _bin1, maxbits, pivot); }
+        s32 find_used_last(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u64, 6>::find_used_last(_free0, _used0, _bin1, maxbits); }
+        s32 find_used_after(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 pivot) { return duomap_free0_used0_bin1_t<u64, 6>::find_used_after(_free0, _used0, _bin1, maxbits, pivot); }
+        s32 find_used_before(bintype const * _free0, bintype const * _used0, bintype const * _bin1, u32 maxbits, u32 pivot) { return duomap_free0_used0_bin1_t<u64, 6>::find_used_before(_free0, _used0, _bin1, maxbits, pivot); }
 
-        s32 find0_and_set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u64, 6>::find0_and_set(_bin00, _bin10, _bin1, maxbits); }
-        s32 find1_and_set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u64, 6>::find1_and_set(_bin00, _bin10, _bin1, maxbits); }
-        s32 find0_last_and_set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u64, 6>::find0_last_and_set(_bin00, _bin10, _bin1, maxbits); }
-        s32 find1_last_and_set(bintype *_bin00, bintype *_bin10, bintype *_bin1, u32 maxbits) { return duomap_bin00_bin10_bin1_t<u64, 6>::find1_last_and_set(_bin00, _bin10, _bin1, maxbits); }
+        s32 alloc(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u64, 6>::alloc(_free0, _used0, _bin1, maxbits); }
+        s32 free(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u64, 6>::free(_free0, _used0, _bin1, maxbits); }
+        s32 alloc_last(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u64, 6>::alloc_last(_free0, _used0, _bin1, maxbits); }
+        s32 free_last(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits) { return duomap_free0_used0_bin1_t<u64, 6>::free_last(_free0, _used0, _bin1, maxbits); }
     }  // namespace nduomap12
 
     // --------------------------------------------------------------------------------
@@ -416,7 +478,7 @@ namespace ncore
     // duomaps with three levels
 
     template <typename bintype, u32 binshift>
-    class duomap_bin00_bin01_bin10_bin11_bin2_t
+    class duomap_free0_free1_used0_used1_bin2_t
     {
     public:
         static constexpr u32     binbits     = sizeof(bintype) * 8;
@@ -424,139 +486,154 @@ namespace ncore
         static constexpr bintype binconstant = (bintype) ~(bintype)0;
         static constexpr u32     binlevels   = 3;
 
-        static void setup_lazy(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits)
+        static inline u32 word_count_for_bits(u32 maxbits)
         {
-            _bin00[0] = binconstant;
-            _bin10[0] = binconstant;
+            ASSERT(maxbits > 0);
+            return (maxbits + binbits - 1) >> binshift;
         }
 
-        static void tick_lazy(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit)
+        static inline u32 level1_word_count(u32 maxbits)
+        {
+            u32 const level2_words = word_count_for_bits(maxbits);
+            return (level2_words + binbits - 1) >> binshift;
+        }
+
+        static inline bintype mask_for_count(u32 count)
+        {
+            if (count >= binbits)
+                return binconstant;
+            return (bintype)(((bintype)1 << count) - 1);
+        }
+
+        static inline bintype valid_level0_mask(u32 maxbits) { return mask_for_count(level1_word_count(maxbits)); }
+
+        static inline bintype valid_level1_mask(u32 word_index, u32 maxbits)
+        {
+            u32 const level2_words = word_count_for_bits(maxbits);
+            u32 const base_index   = word_index << binshift;
+            if (base_index >= level2_words)
+                return 0;
+            return mask_for_count(level2_words - base_index);
+        }
+
+        static inline bintype valid_level2_mask(u32 word_index, u32 maxbits)
+        {
+            u32 const base_bit = word_index << binshift;
+            if (base_bit >= maxbits)
+                return 0;
+            return mask_for_count(maxbits - base_bit);
+        }
+
+        static inline void update_summary_bits(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype const * _bin2, u32 maxbits, u32 word_index)
+        {
+            u32 const     i1         = word_index >> binshift;
+            u32 const     b1         = word_index & binmask;
+            bintype const valid2     = valid_level2_mask(word_index, maxbits);
+            bintype const word2      = _bin2[word_index] & valid2;
+            bool const    has_free2  = word2 != valid2;
+            bool const    has_used2  = word2 != 0;
+            bintype const free1_prev = _free1[i1];
+            bintype const used1_prev = _used1[i1];
+
+            _free1[i1] = has_free2 ? D_BIT_SET(_free1[i1], b1) : D_BIT_CLEAR(_free1[i1], b1);
+            _used1[i1] = has_used2 ? D_BIT_SET(_used1[i1], b1) : D_BIT_CLEAR(_used1[i1], b1);
+
+            bintype const free1_word = _free1[i1];
+            bintype const used1_word = _used1[i1];
+            bool const    had_free1  = free1_prev != 0;
+            bool const    had_used1  = used1_prev != 0;
+            bool const    has_free1  = free1_word != 0;
+            bool const    has_used1  = used1_word != 0;
+
+            if (had_free1 != has_free1)
+                _free0[0] = has_free1 ? D_BIT_SET(_free0[0], i1) : D_BIT_CLEAR(_free0[0], i1);
+            if (had_used1 != has_used1)
+                _used0[0] = has_used1 ? D_BIT_SET(_used0[0], i1) : D_BIT_CLEAR(_used0[0], i1);
+        }
+
+        static inline void update_summary_bits_verify(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype const * _bin2, u32 maxbits, u32 word_index)
+        {
+            if ((word_index << binshift) < maxbits)
+                update_summary_bits(_free0, _free1, _used0, _used1, _bin2, maxbits, word_index);
+        }
+
+        static void setup_used_lazy(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits)
+        {
+            _free0[0] = 0;
+            _used0[0] = 0;
+        }
+
+        static void tick_used_lazy(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits, u32 bit)
         {
             if (bit >= maxbits)
                 return;
 
-            u32       wi      = bit;
-            const u32 bi2     = wi & (binbits - 1);
-            wi                = wi >> binshift;
+            u32 const bi2 = bit & binmask;
             if (bi2 == 0)
             {
-                _bin2[wi]         = binconstant;
+                u32 const wi = bit >> binshift;
+                _bin2[wi]    = binconstant;
 
-                const u32 bi1     = wi & (binbits - 1);
-                wi                = wi >> binshift;
-                const bintype wd1 = (bi1 == 0) ? binconstant : _bin11[wi];
-                _bin11[wi]        = D_BIT_CLEAR(wd1, bi1);
-                if (bi1 == 0)
+                u32 const i1 = wi >> binshift;
+                u32 const b1 = wi & binmask;
+                if (b1 == 0)
                 {
-                    _bin01[wi]        = binconstant;
-                    const u32     bi0 = wi & (binbits - 1);
-                    const bintype wd0 = (bi0 == 0) ? binconstant : *_bin10;
-                    *_bin10           = D_BIT_CLEAR(wd0, bi0);
+                    _free1[i1] = 0;
+                    _used1[i1] = 0;
+                    _used0[0]  = D_BIT_SET(_used0[0], i1);
                 }
+                _used1[i1] = D_BIT_SET(_used1[i1], b1);
             }
         }
 
-        static void clear(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits)
+        static void clear_all_free(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits)
         {
-            u32 wi = (maxbits + (binbits - 1)) >> binshift;
-            for (u32 i = 0; i < wi; ++i)
+            u32 const level2_words = word_count_for_bits(maxbits);
+            for (u32 i = 0; i < level2_words; ++i)
             {
                 _bin2[i] = 0;
             }
-            wi = (wi + (binbits - 1)) >> binshift;
-            for (u32 i = 0; i < wi; ++i)
+
+            u32 const level1_words = level1_word_count(maxbits);
+            for (u32 i = 0; i < level1_words; ++i)
             {
-                _bin01[i] = 0;
-                _bin11[i] = binconstant;
+                _free1[i] = valid_level1_mask(i, maxbits);
+                _used1[i] = 0;
             }
-            *_bin00 = 0;
-            *_bin10 = binconstant;
+
+            *_free0 = valid_level0_mask(maxbits);
+            *_used0 = 0;
         }
 
-        static void set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit)
+        static void set_used(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits, u32 bit)
         {
             ASSERT(bit < maxbits);
-            u32 const i2 = bit >> binshift;
-            u32 const b2 = bit & (binbits - 1);
-            bintype   vo = _bin2[i2];
-            bintype   vn = D_BIT_SET(vo, b2);
-            _bin2[i2]    = vn;
-            if (vn == binconstant)
+            u32 const     i2 = bit >> binshift;
+            u32 const     b2 = bit & (binbits - 1);
+            bintype const vo = _bin2[i2];
+            bintype const vn = D_BIT_SET(vo, b2);
+            if (vo != vn)
             {
-                // setting a '1' bit results in the word having no more '0' bits
-                // so we have to update the upper level _bin00/bin01 hierarchy
-                // to reflect that there are no more '0' bits at this location
-                u32 const     i1 = i2 >> binshift;
-                u32 const     b1 = i2 & (binbits - 1);
-                bintype const v1 = D_BIT_SET(_bin01[i1], b1);
-                _bin01[i1]       = v1;
-                if (v1 == binconstant)
-                {
-                    u32 const     b0 = i1 & (binbits - 1);
-                    bintype const v0 = *_bin00;
-                    *_bin00          = D_BIT_SET(v0, b0);
-                }
-            }
-            if (vo == 0)
-            {
-                // setting a '1' bit results in the word having at least one '1' bit
-                // so we have to update the upper level _bin10/bin11 hierarchy
-                // to reflect that there is a one '1' bit at this location
-                u32 const     i1 = i2 >> binshift;
-                u32 const     b1 = i2 & (binbits - 1);
-                bintype const v1 = D_BIT_CLEAR(_bin11[i1], b1);
-                _bin11[i1]       = v1;
-                if (v1 == 0)
-                {
-                    u32 const     b0 = i1 & (binbits - 1);
-                    bintype const v0 = *_bin10;
-                    *_bin10          = D_BIT_CLEAR(v0, b0);
-                }
+                _bin2[i2] = vn;
+                update_summary_bits(_free0, _free1, _used0, _used1, _bin2, maxbits, i2);
             }
         }
 
-        static void clr(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit)
+        static void set_free(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits, u32 bit)
         {
             ASSERT(bit < maxbits);
-            u32 const i2 = bit >> binshift;
-            u32 const b2 = bit & (binbits - 1);
-            bintype   vo = _bin2[i2];
-            _bin2[i2]    = D_BIT_CLEAR(vo, b2);
-            if (vo == binconstant)
+            u32 const     i2 = bit >> binshift;
+            u32 const     b2 = bit & (binbits - 1);
+            bintype const vo = _bin2[i2];
+            bintype const vn = D_BIT_CLEAR(vo, b2);
+            if (vo != vn)
             {
-                // clearing a '1' bit results in the word having at least one '0' bit
-                // so we have to update the upper level _bin00/bin01 hierarchy
-                // to reflect that there is a one '0' bit at this location
-                u32 const     i1 = i2 >> binshift;
-                u32 const     b1 = i2 & (binbits - 1);
-                bintype const v1 = _bin01[i1];
-                _bin01[i1]       = D_BIT_CLEAR(v1, b1);
-                if (v1 == binconstant)
-                {
-                    u32 const     b0 = i1 & (binbits - 1);
-                    bintype const v0 = *_bin00;
-                    *_bin00          = D_BIT_CLEAR(v0, b0);
-                }
-            }
-            if (vo == 0)
-            {
-                // clearing a '1' bit results in the word having no more '1' bits
-                // so we have to update the upper level _bin10/bin11 hierarchy
-                // to reflect that there are no more '1' bits at this location
-                u32 const     i1 = i2 >> binshift;
-                u32 const     b1 = i2 & (binbits - 1);
-                bintype const v1 = _bin11[i1];
-                _bin11[i1]       = D_BIT_SET(v1, b1);
-                if (v1 == binconstant)
-                {
-                    u32 const     b0 = i1 & (binbits - 1);
-                    bintype const v0 = *_bin10;
-                    *_bin10          = D_BIT_SET(v0, b0);
-                }
+                _bin2[i2] = vn;
+                update_summary_bits(_free0, _free1, _used0, _used1, _bin2, maxbits, i2);
             }
         }
 
-        static bool get(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 bit)
+        static bool get(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 bit)
         {
             ASSERT(bit < maxbits);
             u32 const     i2 = bit >> binshift;
@@ -565,79 +642,82 @@ namespace ncore
             return D_BIT_TEST(v2, b2);
         }
 
-        static s32 find0(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits)
+        static s32 find_free(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits)
         {
-            if (*_bin00 == binconstant)
+            bintype const free0_word = *_free0;
+            if (free0_word == 0)
                 return -1;
 
-            s32 const b0 = math::findFirstBit(D_INVERT(*_bin00));
+            s32 const b0 = math::findFirstBit(free0_word);
 
             s32 const w1 = b0;
-            s32 const b1 = math::findFirstBit(D_INVERT(_bin01[w1]));
+            s32 const b1 = math::findFirstBit(_free1[w1]);
 
             s32 const w2 = b1 + (w1 << binshift);
-            s32 const b2 = math::findFirstBit(D_INVERT(_bin2[w2]));
+            s32 const b2 = math::findFirstBit(D_INVERT(_bin2[w2]) & valid_level2_mask((u32)w2, maxbits));
 
             s32 const bit = b2 + (w2 << binshift);
             return bit < (s32)maxbits ? bit : -1;
         }
 
-        static s32 find1(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits)
+        static s32 find_used(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits)
         {
-            if (*_bin10 == binconstant)
+            bintype const used0_word = *_used0;
+            if (used0_word == 0)
                 return -1;
 
-            s32 const b0 = math::findFirstBit(D_INVERT(*_bin10));
+            s32 const b0 = math::findFirstBit(used0_word);
 
             s32 const w1 = b0;
-            s32 const b1 = math::findFirstBit(D_INVERT(_bin11[w1]));
+            s32 const b1 = math::findFirstBit(_used1[w1]);
 
             s32 const w2 = b1 + (w1 << binshift);
-            s32 const b2 = math::findFirstBit(_bin2[w2]);
+            s32 const b2 = math::findFirstBit(_bin2[w2] & valid_level2_mask((u32)w2, maxbits));
 
             s32 const bit = b2 + (w2 << binshift);
             return bit < (s32)maxbits ? bit : -1;
         }
 
-        static s32 find0_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits)
+        static s32 alloc(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits)
         {
-            s32 const bit = find0(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits);
+            s32 const bit = find_free(_free0, _free1, _used0, _used1, _bin2, maxbits);
             if (bit >= 0)
-                set(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, (u32)bit);
+                set_used(_free0, _free1, _used0, _used1, _bin2, maxbits, (u32)bit);
             return bit;
         }
 
-        static s32 find1_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits)
+        static s32 free(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits)
         {
-            s32 const bit = find1(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits);
+            s32 const bit = find_used(_free0, _free1, _used0, _used1, _bin2, maxbits);
             if (bit >= 0)
-                set(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, (u32)bit);
+                set_free(_free0, _free1, _used0, _used1, _bin2, maxbits, (u32)bit);
             return bit;
         }
 
-        static s32 find0_last(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits)
+        static s32 find_free_last(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits)
         {
-            if (_bin00[0] == binconstant)
+            bintype const free0_word = _free0[0];
+            if (free0_word == 0)
                 return -1;
 
-            s32 const b0  = math::findLastBit(D_INVERT(_bin00[0]));
+            s32 const b0  = math::findLastBit(free0_word);
             s32 const w1  = b0;
-            s32 const b1  = math::findLastBit(D_INVERT(_bin01[w1]));
+            s32 const b1  = math::findLastBit(_free1[w1]);
             s32 const w2  = b1 + (w1 << binshift);
-            s32 const b2  = math::findLastBit(D_INVERT(_bin2[w2]));
+            s32 const b2  = math::findLastBit(D_INVERT(_bin2[w2]) & valid_level2_mask((u32)w2, maxbits));
             s32 const bit = b2 + (w2 << binshift);
             return bit < (s32)maxbits ? bit : -1;
         }
 
-        static s32 find0_last_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits)
+        static s32 alloc_last(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits)
         {
-            s32 const bit = find0_last(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits);
+            s32 const bit = find_free_last(_free0, _free1, _used0, _used1, _bin2, maxbits);
             if (bit >= 0)
-                set(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, (u32)bit);
+                set_used(_free0, _free1, _used0, _used1, _bin2, maxbits, (u32)bit);
             return bit;
         }
 
-        static s32 find0_after(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 pivot)
+        static s32 find_free_after(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 pivot)
         {
             // First check at location pivot in _bin1, then if no bit found move up one
             // level and check there, then go down to find the actual free bit.
@@ -645,8 +725,11 @@ namespace ncore
             if (pivot >= maxbits)
                 return -1;
 
-            u32 iw = pivot >> binshift;
-            s8  ib = (s8)(pivot & binmask);
+            if ((pivot + 1) >= maxbits)
+                return -1;
+
+            u32 iw = (pivot + 1) >> binshift;
+            s8  ib = (s8)((pivot + 1) & binmask);
 
             s8 const ml = binlevels - 1;
             s8       il = ml;
@@ -655,9 +738,9 @@ namespace ncore
                 bintype w;
                 switch (il)
                 {
-                    case 0: w = D_INVERT(_bin00[0]) & (binconstant << ib); break;
-                    case 1: w = D_INVERT(_bin01[iw]) & (binconstant << ib); break;
-                    case 2: w = D_INVERT(_bin2[iw]) & (binconstant << ib); break;
+                    case 0: w = _free0[0] & (binconstant << ib); break;
+                    case 1: w = _free1[iw] & (binconstant << ib); break;
+                    case 2: w = (D_INVERT(_bin2[iw]) & valid_level2_mask(iw, maxbits)) & (binconstant << ib); break;
                     default: ASSERT(false); return -1;
                 }
 
@@ -687,7 +770,7 @@ namespace ncore
             return -1;
         }
 
-        static s32 find0_before(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 pivot)
+        static s32 find_free_before(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 pivot)
         {
             if (pivot == 0 || pivot > maxbits)
                 return -1;
@@ -702,9 +785,9 @@ namespace ncore
                 bintype w;
                 switch (il)
                 {
-                    case 0: w = D_INVERT(_bin00[0]) & ~(binconstant << (ib + 1)); break;
-                    case 1: w = D_INVERT(_bin01[iw]) & ~(binconstant << (ib + 1)); break;
-                    case 2: w = D_INVERT(_bin2[iw]) & ~(binconstant << (ib + 1)); break;
+                    case 0: w = _free0[0] & ~(binconstant << (ib + 1)); break;
+                    case 1: w = _free1[iw] & ~(binconstant << (ib + 1)); break;
+                    case 2: w = (D_INVERT(_bin2[iw]) & valid_level2_mask(iw, maxbits)) & ~(binconstant << (ib + 1)); break;
                     default: ASSERT(false); return -1;
                 }
 
@@ -731,29 +814,30 @@ namespace ncore
         }
 
         // ---------------------------------------------------------------------------------------------------------
-        static s32 find1_last(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits)
+        static s32 find_used_last(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits)
         {
-            if (_bin10[0] == binconstant)
+            bintype const used0_word = _used0[0];
+            if (used0_word == 0)
                 return -1;
 
-            s32 const b0  = math::findLastBit(D_INVERT(_bin10[0]));
+            s32 const b0  = math::findLastBit(used0_word);
             s32 const w1  = b0;
-            s32 const b1  = math::findLastBit(D_INVERT(_bin11[w1]));
+            s32 const b1  = math::findLastBit(_used1[w1]);
             s32 const w2  = b1 + (w1 << binshift);
-            s32 const b2  = math::findLastBit(_bin2[w2]);
+            s32 const b2  = math::findLastBit(_bin2[w2] & valid_level2_mask((u32)w2, maxbits));
             s32 const bit = b2 + (w2 << binshift);
             return bit < (s32)maxbits ? bit : -1;
         }
 
-        static s32 find1_last_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits)
+        static s32 free_last(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits)
         {
-            s32 const bit = find1_last(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits);
+            s32 const bit = find_used_last(_free0, _free1, _used0, _used1, _bin2, maxbits);
             if (bit >= 0)
-                set(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, (u32)bit);
+                set_free(_free0, _free1, _used0, _used1, _bin2, maxbits, (u32)bit);
             return bit;
         }
 
-        static s32 find1_after(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 pivot)
+        static s32 find_used_after(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 pivot)
         {
             // First check at location pivot in _bin1, then if no bit found move up one
             // level and check there, then go down to find the actual free bit.
@@ -761,8 +845,11 @@ namespace ncore
             if (pivot >= maxbits)
                 return -1;
 
-            u32 iw = pivot >> binshift;
-            s8  ib = (s8)(pivot & binmask);
+            if ((pivot + 1) >= maxbits)
+                return -1;
+
+            u32 iw = (pivot + 1) >> binshift;
+            s8  ib = (s8)((pivot + 1) & binmask);
 
             s8 const ml = binlevels - 1;
             s8       il = ml;
@@ -771,9 +858,9 @@ namespace ncore
                 bintype w;
                 switch (il)
                 {
-                    case 0: w = D_INVERT(_bin10[0]) & (binconstant << ib); break;
-                    case 1: w = D_INVERT(_bin11[iw]) & (binconstant << ib); break;
-                    case 2: w = _bin2[iw] & (binconstant << ib); break;
+                    case 0: w = _used0[0] & (binconstant << ib); break;
+                    case 1: w = _used1[iw] & (binconstant << ib); break;
+                    case 2: w = (_bin2[iw] & valid_level2_mask(iw, maxbits)) & (binconstant << ib); break;
                     default: ASSERT(false); return -1;
                 }
 
@@ -803,7 +890,7 @@ namespace ncore
             return -1;
         }
 
-        static s32 find1_before(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 pivot)
+        static s32 find_used_before(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 pivot)
         {
             if (pivot == 0 || pivot > maxbits)
                 return -1;
@@ -818,9 +905,9 @@ namespace ncore
                 bintype w;
                 switch (il)
                 {
-                    case 0: w = D_INVERT(_bin10[0]) & ~(binconstant << (ib + 1)); break;
-                    case 1: w = D_INVERT(_bin11[iw]) & ~(binconstant << (ib + 1)); break;
-                    case 2: w = _bin2[iw] & ~(binconstant << (ib + 1)); break;
+                    case 0: w = _used0[0] & ~(binconstant << (ib + 1)); break;
+                    case 1: w = _used1[iw] & ~(binconstant << (ib + 1)); break;
+                    case 2: w = (_bin2[iw] & valid_level2_mask(iw, maxbits)) & ~(binconstant << (ib + 1)); break;
                     default: ASSERT(false); return -1;
                 }
 
@@ -849,108 +936,72 @@ namespace ncore
 
     namespace nduomap15
     {
-        void setup_lazy(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits) { duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::setup_lazy(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits); }
-        void tick_lazy(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit) { duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::tick_lazy(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, bit); }
+        void setup_used_lazy(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits) { duomap_free0_free1_used0_used1_bin2_t<u32, 5>::setup_used_lazy(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        void tick_used_lazy(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits, u32 bit) { duomap_free0_free1_used0_used1_bin2_t<u32, 5>::tick_used_lazy(_free0, _free1, _used0, _used1, _bin2, maxbits, bit); }
 
-        void clear(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits) { duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::clear(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits); }
+        void clear_all_free(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits) { duomap_free0_free1_used0_used1_bin2_t<u32, 5>::clear_all_free(_free0, _free1, _used0, _used1, _bin2, maxbits); }
 
-        void set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit) { duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::set(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, bit); }
-        void clr(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit) { duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::clr(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, bit); }
-        bool get(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 bit)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::get(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, bit);
-        }
+        void set_used(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits, u32 bit) { duomap_free0_free1_used0_used1_bin2_t<u32, 5>::set_used(_free0, _free1, _used0, _used1, _bin2, maxbits, bit); }
+        void set_free(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits, u32 bit) { duomap_free0_free1_used0_used1_bin2_t<u32, 5>::set_free(_free0, _free1, _used0, _used1, _bin2, maxbits, bit); }
+        bool get(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 bit)
+        { return duomap_free0_free1_used0_used1_bin2_t<u32, 5>::get(_free0, _free1, _used0, _used1, _bin2, maxbits, bit); }
 
-        s32 find0(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::find0(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits);
-        }
-        s32 find1(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::find1(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits);
-        }
-        s32 find0_last(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::find0_last(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits);
-        }
-        s32 find0_after(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 pivot)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::find0_after(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, pivot);
-        }
-        s32 find0_before(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 pivot)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::find0_before(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, pivot);
-        }
-        s32 find1_last(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::find1_last(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits);
-        }
-        s32 find1_after(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 pivot)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::find1_after(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, pivot);
-        }
-        s32 find1_before(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 pivot)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::find1_before(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, pivot);
-        }
+        s32 find_free(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits)
+        { return duomap_free0_free1_used0_used1_bin2_t<u32, 5>::find_free(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        s32 find_used(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits)
+        { return duomap_free0_free1_used0_used1_bin2_t<u32, 5>::find_used(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        s32 find_free_last(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits)
+        { return duomap_free0_free1_used0_used1_bin2_t<u32, 5>::find_free_last(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        s32 find_free_after(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_used0_used1_bin2_t<u32, 5>::find_free_after(_free0, _free1, _used0, _used1, _bin2, maxbits, pivot); }
+        s32 find_free_before(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_used0_used1_bin2_t<u32, 5>::find_free_before(_free0, _free1, _used0, _used1, _bin2, maxbits, pivot); }
+        s32 find_used_last(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits)
+        { return duomap_free0_free1_used0_used1_bin2_t<u32, 5>::find_used_last(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        s32 find_used_after(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_used0_used1_bin2_t<u32, 5>::find_used_after(_free0, _free1, _used0, _used1, _bin2, maxbits, pivot); }
+        s32 find_used_before(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_used0_used1_bin2_t<u32, 5>::find_used_before(_free0, _free1, _used0, _used1, _bin2, maxbits, pivot); }
 
-        s32 find0_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits) { return duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::find0_and_set(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits); }
-        s32 find1_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits) { return duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::find1_and_set(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits); }
-        s32 find0_last_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits) { return duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::find0_last_and_set(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits); }
-        s32 find1_last_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits) { return duomap_bin00_bin01_bin10_bin11_bin2_t<u32, 5>::find1_last_and_set(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits); }
+        s32 alloc(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits) { return duomap_free0_free1_used0_used1_bin2_t<u32, 5>::alloc(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        s32 free(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits) { return duomap_free0_free1_used0_used1_bin2_t<u32, 5>::free(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        s32 alloc_last(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits) { return duomap_free0_free1_used0_used1_bin2_t<u32, 5>::alloc_last(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        s32 free_last(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits) { return duomap_free0_free1_used0_used1_bin2_t<u32, 5>::free_last(_free0, _free1, _used0, _used1, _bin2, maxbits); }
     }  // namespace nduomap15
 
     namespace nduomap18
     {
-        void setup_lazy(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits) { duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::setup_lazy(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits); }
-        void tick_lazy(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit) { duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::tick_lazy(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, bit); }
+        void setup_used_lazy(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits) { duomap_free0_free1_used0_used1_bin2_t<u64, 6>::setup_used_lazy(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        void tick_used_lazy(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits, u32 bit) { duomap_free0_free1_used0_used1_bin2_t<u64, 6>::tick_used_lazy(_free0, _free1, _used0, _used1, _bin2, maxbits, bit); }
 
-        void clear(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits) { duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::clear(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits); }
+        void clear_all_free(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits) { duomap_free0_free1_used0_used1_bin2_t<u64, 6>::clear_all_free(_free0, _free1, _used0, _used1, _bin2, maxbits); }
 
-        void set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit) { duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::set(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, bit); }
-        void clr(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits, u32 bit) { duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::clr(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, bit); }
-        bool get(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 bit)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::get(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, bit);
-        }
+        void set_used(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits, u32 bit) { duomap_free0_free1_used0_used1_bin2_t<u64, 6>::set_used(_free0, _free1, _used0, _used1, _bin2, maxbits, bit); }
+        void set_free(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits, u32 bit) { duomap_free0_free1_used0_used1_bin2_t<u64, 6>::set_free(_free0, _free1, _used0, _used1, _bin2, maxbits, bit); }
+        bool get(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 bit)
+        { return duomap_free0_free1_used0_used1_bin2_t<u64, 6>::get(_free0, _free1, _used0, _used1, _bin2, maxbits, bit); }
 
-        s32 find0(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::find0(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits);
-        }
-        s32 find1(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::find1(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits);
-        }
-        s32 find0_last(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::find0_last(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits);
-        }
-        s32 find0_after(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 pivot)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::find0_after(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, pivot);
-        }
-        s32 find0_before(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 pivot)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::find0_before(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, pivot);
-        }
-        s32 find1_last(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::find1_last(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits);
-        }
-        s32 find1_after(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 pivot)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::find1_after(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, pivot);
-        }
-        s32 find1_before(bintype const *_bin00, bintype const *_bin01, bintype const *_bin10, bintype const *_bin11, bintype const *_bin2, u32 maxbits, u32 pivot)
-        {
-            return duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::find1_before(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits, pivot);
-        }
+        s32 find_free(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits)
+        { return duomap_free0_free1_used0_used1_bin2_t<u64, 6>::find_free(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        s32 find_used(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits)
+        { return duomap_free0_free1_used0_used1_bin2_t<u64, 6>::find_used(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        s32 find_free_last(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits)
+        { return duomap_free0_free1_used0_used1_bin2_t<u64, 6>::find_free_last(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        s32 find_free_after(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_used0_used1_bin2_t<u64, 6>::find_free_after(_free0, _free1, _used0, _used1, _bin2, maxbits, pivot); }
+        s32 find_free_before(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_used0_used1_bin2_t<u64, 6>::find_free_before(_free0, _free1, _used0, _used1, _bin2, maxbits, pivot); }
+        s32 find_used_last(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits)
+        { return duomap_free0_free1_used0_used1_bin2_t<u64, 6>::find_used_last(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        s32 find_used_after(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_used0_used1_bin2_t<u64, 6>::find_used_after(_free0, _free1, _used0, _used1, _bin2, maxbits, pivot); }
+        s32 find_used_before(bintype const * _free0, bintype const * _free1, bintype const * _used0, bintype const * _used1, bintype const * _bin2, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_used0_used1_bin2_t<u64, 6>::find_used_before(_free0, _free1, _used0, _used1, _bin2, maxbits, pivot); }
 
-        s32 find0_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits) { return duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::find0_and_set(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits); }
-        s32 find1_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits) { return duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::find1_and_set(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits); }
-        s32 find0_last_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits) { return duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::find0_last_and_set(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits); }
-        s32 find1_last_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin10, bintype *_bin11, bintype *_bin2, u32 maxbits) { return duomap_bin00_bin01_bin10_bin11_bin2_t<u64, 6>::find1_last_and_set(_bin00, _bin01, _bin10, _bin11, _bin2, maxbits); }
+        s32 alloc(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits) { return duomap_free0_free1_used0_used1_bin2_t<u64, 6>::alloc(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        s32 free(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits) { return duomap_free0_free1_used0_used1_bin2_t<u64, 6>::free(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        s32 alloc_last(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits) { return duomap_free0_free1_used0_used1_bin2_t<u64, 6>::alloc_last(_free0, _free1, _used0, _used1, _bin2, maxbits); }
+        s32 free_last(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits) { return duomap_free0_free1_used0_used1_bin2_t<u64, 6>::free_last(_free0, _free1, _used0, _used1, _bin2, maxbits); }
     }  // namespace nduomap18
 
     // --------------------------------------------------------------------------------
@@ -958,7 +1009,7 @@ namespace ncore
     // duomaps with four levels
 
     template <typename bintype, u32 binshift>
-    class duomap_bin00_bin01_bin02_bin10_bin11_bin12_bin3_t
+    class duomap_free0_free1_free2_used0_used1_used2_bin3_t
     {
     public:
         static constexpr u32     binbits     = sizeof(bintype) * 8;
@@ -966,186 +1017,234 @@ namespace ncore
         static constexpr bintype binconstant = (bintype) ~(bintype)0;
         static constexpr u32     binlevels   = 4;
 
-        static void setup_lazy(bintype *_bin00, bintype *_bin01, bintype *_bin02, bintype *_bin10, bintype *_bin11, bintype *_bin12, bintype *_bin3, u32 maxbits)
+        static inline u32 word_count_for_bits(u32 maxbits)
         {
-            _bin00[0] = binconstant;
-            _bin10[0] = binconstant;
+            ASSERT(maxbits > 0);
+            return (maxbits + binbits - 1) >> binshift;
         }
 
-        static void tick_lazy(bintype *_bin00, bintype *_bin01, bintype *_bin02, bintype *_bin10, bintype *_bin11, bintype *_bin12, bintype *_bin3, u32 maxbits, u32 bit)
+        static inline u32 level2_word_count(u32 maxbits)
+        {
+            u32 const level3_words = word_count_for_bits(maxbits);
+            return (level3_words + binbits - 1) >> binshift;
+        }
+
+        static inline u32 level1_word_count(u32 maxbits)
+        {
+            u32 const level2_words = level2_word_count(maxbits);
+            return (level2_words + binbits - 1) >> binshift;
+        }
+
+        static inline bintype mask_for_count(u32 count)
+        {
+            if (count >= binbits)
+                return binconstant;
+            return (bintype)(((bintype)1 << count) - 1);
+        }
+
+        static inline bintype valid_level0_mask(u32 maxbits) { return mask_for_count(level1_word_count(maxbits)); }
+
+        static inline bintype valid_level1_mask(u32 word_index, u32 maxbits)
+        {
+            u32 const level2_words = level2_word_count(maxbits);
+            u32 const base_index   = word_index << binshift;
+            if (base_index >= level2_words)
+                return 0;
+            return mask_for_count(level2_words - base_index);
+        }
+
+        static inline bintype valid_level2_mask(u32 word_index, u32 maxbits)
+        {
+            u32 const level3_words = word_count_for_bits(maxbits);
+            u32 const base_index   = word_index << binshift;
+            if (base_index >= level3_words)
+                return 0;
+            return mask_for_count(level3_words - base_index);
+        }
+
+        static inline bintype valid_level3_mask(u32 word_index, u32 maxbits)
+        {
+            u32 const base_bit = word_index << binshift;
+            if (base_bit >= maxbits)
+                return 0;
+            return mask_for_count(maxbits - base_bit);
+        }
+
+        static inline void update_summary_bits(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2,
+                                               bintype const * _bin3, u32 maxbits, u32 word_index)
+        {
+            u32 const     i2         = word_index >> binshift;
+            u32 const     b2         = word_index & binmask;
+            bintype const valid3     = valid_level3_mask(word_index, maxbits);
+            bintype const word3      = _bin3[word_index] & valid3;
+            bool const    has_free3  = word3 != valid3;
+            bool const    has_used3  = word3 != 0;
+            bintype const free2_prev = _free2[i2];
+            bintype const used2_prev = _used2[i2];
+
+            _free2[i2] = has_free3 ? D_BIT_SET(_free2[i2], b2) : D_BIT_CLEAR(_free2[i2], b2);
+            _used2[i2] = has_used3 ? D_BIT_SET(_used2[i2], b2) : D_BIT_CLEAR(_used2[i2], b2);
+
+            bintype const free2_word = _free2[i2];
+            bintype const used2_word = _used2[i2];
+            bool const    had_free2  = free2_prev != 0;
+            bool const    had_used2  = used2_prev != 0;
+            bool const    has_free2  = free2_word != 0;
+            bool const    has_used2  = used2_word != 0;
+
+            if (had_free2 != has_free2 || had_used2 != has_used2)
+            {
+                u32 const     i1         = i2 >> binshift;
+                u32 const     b1         = i2 & binmask;
+                bintype const free1_prev = _free1[i1];
+                bintype const used1_prev = _used1[i1];
+
+                _free1[i1] = has_free2 ? D_BIT_SET(_free1[i1], b1) : D_BIT_CLEAR(_free1[i1], b1);
+                _used1[i1] = has_used2 ? D_BIT_SET(_used1[i1], b1) : D_BIT_CLEAR(_used1[i1], b1);
+
+                bintype const free1_word = _free1[i1];
+                bintype const used1_word = _used1[i1];
+                bool const    had_free1  = free1_prev != 0;
+                bool const    had_used1  = used1_prev != 0;
+                bool const    has_free1  = free1_word != 0;
+                bool const    has_used1  = used1_word != 0;
+
+                if (had_free1 != has_free1)
+                    _free0[0] = has_free1 ? D_BIT_SET(_free0[0], i1) : D_BIT_CLEAR(_free0[0], i1);
+                if (had_used1 != has_used1)
+                    _used0[0] = has_used1 ? D_BIT_SET(_used0[0], i1) : D_BIT_CLEAR(_used0[0], i1);
+            }
+        }
+
+        static inline void update_summary_bits_verify(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2,
+                                                      bintype const * _bin3, u32 maxbits, u32 word_index)
+        {
+            if ((word_index << binshift) < maxbits)
+                update_summary_bits(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, word_index);
+        }
+
+        static void setup_used_lazy(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        {
+            _free0[0] = 0;
+            _used0[0] = 0;
+        }
+
+        static void tick_used_lazy(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits, u32 bit)
         {
             if (bit >= maxbits)
                 return;
 
-            u32 wi = bit;
-
-            const u32 bi3     = wi & (binbits - 1);
-            wi                = wi >> binshift;
-            const bintype wd3 = (bi3 == 0) ? binconstant : _bin3[wi];
-            _bin3[wi]         = D_BIT_CLEAR(wd3, bi3);
-            if (bi3 == 0)
+            u32 const b3 = bit & binmask;
+            if (b3 == 0)
             {
-                const u32 bi2     = wi & (binbits - 1);
-                wi                = wi >> binshift;
-                const bintype wd2 = (bi2 == 0) ? binconstant : _bin02[wi];
-                _bin02[wi]        = D_BIT_CLEAR(wd2, bi2);
-                if (bi2 == 0)
+                u32 const w3 = bit >> binshift;
+                _bin3[w3]    = binconstant;
+
+                u32 const i2 = w3 >> binshift;
+                u32 const b2 = w3 & binmask;
+                if (b2 == 0)
                 {
-                    _bin12[wi] = binconstant;
+                    _free2[i2] = 0;
+                    _used2[i2] = 0;
 
-                    const u32 bi1     = wi & (binbits - 1);
-                    wi                = wi >> binshift;
-                    const bintype wd1 = (bi1 == 0) ? binconstant : *_bin01;
-                    *_bin01           = D_BIT_CLEAR(wd1, bi1);
-
-                    if (bi1 == 0)
+                    u32 const i1 = i2 >> binshift;
+                    u32 const b1 = i2 & binmask;
+                    if (b1 == 0)
                     {
-                        _bin11[0] = binconstant;
-
-                        const u32     bi0 = wi & (binbits - 1);
-                        const bintype wd0 = (bi0 == 0) ? binconstant : *_bin00;
-                        *_bin00           = D_BIT_CLEAR(wd0, bi0);
-
-                        if (bi0 == 0)
-                        {
-                            _bin10[0] = binconstant;
-                        }
+                        _free1[i1] = 0;
+                        _used1[i1] = 0;
+                        _used0[0]  = D_BIT_SET(_used0[0], i1);
                     }
+                    _used1[i1] = D_BIT_SET(_used1[i1], b1);
                 }
+                _used2[i2] = D_BIT_SET(_used2[i2], b2);
             }
         }
 
-        static void clear(bintype *_bin00, bintype *_bin01, bintype *_bin02, bintype *_bin10, bintype *_bin11, bintype *_bin12, bintype *_bin3, u32 maxbits)
+        static void clear_all_free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
         {
-            u32 wi = (maxbits + (binbits - 1)) >> binshift;
-            for (u32 i = 0; i < wi; ++i)
+            u32 const level3_words = word_count_for_bits(maxbits);
+            for (u32 i = 0; i < level3_words; ++i)
             {
                 _bin3[i] = 0;
             }
-            wi = (wi + (binbits - 1)) >> binshift;
-            for (u32 i = 0; i < wi; ++i)
+
+            u32 const level2_words = level2_word_count(maxbits);
+            for (u32 i = 0; i < level2_words; ++i)
             {
-                _bin02[i] = 0;
-                _bin12[i] = binconstant;
+                _free2[i] = valid_level2_mask(i, maxbits);
+                _used2[i] = 0;
             }
-            wi = (wi + (binbits - 1)) >> binshift;
-            for (u32 i = 0; i < wi; ++i)
+
+            u32 const level1_words = level1_word_count(maxbits);
+            for (u32 i = 0; i < level1_words; ++i)
             {
-                _bin01[i] = 0;
-                _bin11[i] = binconstant;
+                _free1[i] = valid_level1_mask(i, maxbits);
+                _used1[i] = 0;
             }
-            *_bin00 = 0;
-            *_bin10 = binconstant;
+
+            *_free0 = valid_level0_mask(maxbits);
+            *_used0 = 0;
         }
 
-        static void set(bintype *_bin00, bintype *_bin01, bintype *_bin02, bintype *_bin10, bintype *_bin11, bintype *_bin12, bintype *_bin3, u32 maxbits, u32 bit)
+        static void clear_all_used(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        {
+            u32 const level3_words = word_count_for_bits(maxbits);
+            if (level3_words > 0)
+            {
+                u32 const last = level3_words - 1;
+                _bin3[last]    = valid_level3_mask(last, maxbits);
+                for (u32 i = 0; i < last; ++i)
+                    _bin3[i] = binconstant;
+            }
+
+            u32 const level2_words = level2_word_count(maxbits);
+            for (u32 i = 0; i < level2_words; ++i)
+            {
+                _free2[i] = 0;
+                _used2[i] = valid_level2_mask(i, maxbits);
+            }
+
+            u32 const level1_words = level1_word_count(maxbits);
+            for (u32 i = 0; i < level1_words; ++i)
+            {
+                _free1[i] = 0;
+                _used1[i] = valid_level1_mask(i, maxbits);
+            }
+
+            *_free0 = 0;
+            *_used0 = valid_level0_mask(maxbits);
+        }
+
+        static void set_used(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits, u32 bit)
         {
             ASSERT(bit < maxbits);
             u32 const i3 = bit >> binshift;
             u32 const b3 = bit & (binbits - 1);
-            bintype   vo = _bin3[i3];
-            bintype   vn = D_BIT_SET(vo, b3);
-            _bin3[i3]    = vn;
-            if (vn == binconstant)
+            bintype const vo = _bin3[i3];
+            bintype const vn = D_BIT_SET(vo, b3);
+            if (vo != vn)
             {
-                // setting a '1' bit results in the word having no more '0' bits
-                // so we have to update the upper level _bin00/bin01 hierarchy
-                // to reflect that there are no more '0' bits at this location
-                u32 const     i2 = i3 >> binshift;
-                u32 const     b2 = i3 & (binbits - 1);
-                bintype const v2 = D_BIT_SET(_bin02[i2], b2);
-                _bin02[i2]       = v2;
-                if (v2 == binconstant)
-                {
-                    u32 const     i1 = i2 >> binshift;
-                    u32 const     b1 = i2 & (binbits - 1);
-                    bintype const v1 = D_BIT_SET(_bin01[i1], b1);
-                    _bin01[i1]       = v1;
-                    if (v1 == binconstant)
-                    {
-                        u32 const b0 = i1 & (binbits - 1);
-                        *_bin00      = D_BIT_SET(*_bin00, b0);
-                    }
-                }
-            }
-            if (vo == 0)
-            {
-                // setting a '1' bit results in the word having at least one '1' bit
-                // so we have to update the upper level _bin10/bin11 hierarchy
-                // to reflect that there is a one '1' bit at this location
-                u32 const     i2 = i3 >> binshift;
-                u32 const     b2 = i3 & (binbits - 1);
-                bintype const v2 = D_BIT_SET(_bin12[i2], b2);
-                _bin12[i2]       = v2;
-                if (v2 == binconstant)
-                {
-                    u32 const     i1 = i2 >> binshift;
-                    u32 const     b1 = i2 & (binbits - 1);
-                    bintype const v1 = D_BIT_SET(_bin11[i1], b1);
-                    _bin11[i1]       = v1;
-                    if (v1 == binconstant)
-                    {
-                        u32 const b0 = i1 & (binbits - 1);
-                        *_bin10      = D_BIT_SET(*_bin10, b0);
-                    }
-                }
+                _bin3[i3] = vn;
+                update_summary_bits_verify(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, i3);
             }
         }
 
-        static void clr(bintype *_bin00, bintype *_bin01, bintype *_bin02, bintype *_bin10, bintype *_bin11, bintype *_bin12, bintype *_bin3, u32 maxbits, u32 bit)
+        static void set_free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits, u32 bit)
         {
             ASSERT(bit < maxbits);
             u32 const i3 = bit >> binshift;
             u32 const b3 = bit & (binbits - 1);
-            bintype   vo = _bin3[i3];
-            _bin3[i3]    = D_BIT_CLEAR(vo, b3);
-            if (vo == binconstant)
+            bintype const vo = _bin3[i3];
+            bintype const vn = D_BIT_CLEAR(vo, b3);
+            if (vo != vn)
             {
-                // clearing a '1' bit results in the word having at least one '0' bit
-                // so we have to update the upper level _bin00/bin01 hierarchy
-                // to reflect that there is a one '0' bit at this location
-                u32 const     i2 = i3 >> binshift;
-                u32 const     b2 = i3 & (binbits - 1);
-                bintype const v2 = _bin02[i2];
-                _bin02[i2]       = D_BIT_SET(v2, b2);
-                if (v2 == binconstant)
-                {
-                    u32 const     i1 = i2 >> binshift;
-                    u32 const     b1 = i2 & (binbits - 1);
-                    bintype const v1 = D_BIT_SET(_bin01[i1], b1);
-                    _bin01[i1]       = v1;
-                    if (v1 == binconstant)
-                    {
-                        u32 const b0 = i1 & (binbits - 1);
-                        *_bin00      = D_BIT_SET(*_bin00, b0);
-                    }
-                }
-            }
-            if (vo == 0)
-            {
-                // clearing a '1' bit results in the word having no more '1' bits
-                // so we have to update the upper level _bin10/bin11 hierarchy
-                // to reflect that there are no more '1' bits at this location
-                u32 const     i2 = i3 >> binshift;
-                u32 const     b2 = i3 & (binbits - 1);
-                bintype const v2 = _bin12[i2];
-                _bin12[i2]       = D_BIT_SET(v2, b2);
-                if (v2 == binconstant)
-                {
-                    u32 const     i1 = i2 >> binshift;
-                    u32 const     b1 = i2 & (binbits - 1);
-                    bintype const v1 = D_BIT_SET(_bin11[i1], b1);
-                    _bin11[i1]       = v1;
-                    if (v1 == binconstant)
-                    {
-                        u32 const b0 = i1 & (binbits - 1);
-                        *_bin10      = D_BIT_SET(*_bin10, b0);
-                    }
-                }
+                _bin3[i3] = vn;
+                update_summary_bits_verify(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, i3);
             }
         }
 
-        static bool get(bintype const *_bin00, bintype const *_bin01, bintype const *_bin02, bintype const *_bin10, bintype const *_bin11, bintype const *_bin12, bintype const *_bin3, u32 maxbits, u32 bit)
+        static bool get(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 bit)
         {
             ASSERT(bit < maxbits);
             u32 const     i3 = bit >> binshift;
@@ -1154,89 +1253,92 @@ namespace ncore
             return D_BIT_TEST(v3, b3);
         }
 
-        static s32 find0(bintype const *_bin00, bintype const *_bin01, bintype const *_bin02, bintype const *_bin10, bintype const *_bin11, bintype const *_bin12, bintype const *_bin3, u32 maxbits)
+        static s32 find_free(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits)
         {
-            if (*_bin00 == binconstant)
+            bintype const free0_word = *_free0;
+            if (free0_word == 0)
                 return -1;
 
-            s32 const b0 = math::findFirstBit(D_INVERT(*_bin00));
+            s32 const b0 = math::findFirstBit(free0_word);
 
             s32 const w1 = b0;
-            s32 const b1 = math::findFirstBit(D_INVERT(_bin01[w1]));
+            s32 const b1 = math::findFirstBit(_free1[w1]);
 
             s32 const w2 = b1 + (w1 << binshift);
-            s32 const b2 = math::findFirstBit(D_INVERT(_bin02[w2]));
+            s32 const b2 = math::findFirstBit(_free2[w2]);
 
             s32 const w3 = b2 + (w2 << binshift);
-            s32 const b3 = math::findFirstBit(D_INVERT(_bin3[w3]));
+            s32 const b3 = math::findFirstBit(D_INVERT(_bin3[w3]) & valid_level3_mask((u32)w3, maxbits));
 
             s32 const bit = b3 + (w3 << binshift);
 
             return bit < (s32)maxbits ? bit : -1;
         }
 
-        static s32 find1(bintype const *_bin00, bintype const *_bin01, bintype const *_bin02, bintype const *_bin10, bintype const *_bin11, bintype const *_bin12, bintype const *_bin3, u32 maxbits)
+        static s32 find_used(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits)
         {
-            if (*_bin10 == binconstant)
+            bintype const used0_word = *_used0;
+            if (used0_word == 0)
                 return -1;
 
-            s32 const b0 = math::findFirstBit(D_INVERT(*_bin10));
+            s32 const b0 = math::findFirstBit(used0_word);
 
             s32 const w1 = b0;
-            s32 const b1 = math::findFirstBit(D_INVERT(_bin11[w1]));
+            s32 const b1 = math::findFirstBit(_used1[w1]);
 
             s32 const w2 = b1 + (w1 << binshift);
-            s32 const b2 = math::findFirstBit(_bin12[w2]);
+            s32 const b2 = math::findFirstBit(_used2[w2]);
 
             s32 const w3 = b2 + (w2 << binshift);
-            s32 const b3 = math::findFirstBit(_bin3[w3]);
+            s32 const b3 = math::findFirstBit(_bin3[w3] & valid_level3_mask((u32)w3, maxbits));
 
             s32 const bit = b3 + (w3 << binshift);
             return bit < (s32)maxbits ? bit : -1;
         }
 
-        static s32 find0_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin02, bintype *_bin10, bintype *_bin11, bintype *_bin12, bintype *_bin3, u32 maxbits)
+        static s32 alloc(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
         {
-            s32 const bit = find0(_bin00, _bin01, _bin02, _bin10, _bin11, _bin12, _bin3, maxbits);
+            s32 const bit = find_free(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits);
             if (bit >= 0)
-                set(_bin00, _bin01, _bin02, _bin10, _bin11, _bin12, _bin3, maxbits, (u32)bit);
+                set_used(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, (u32)bit);
             return bit;
         }
 
-        static s32 find1_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin02, bintype *_bin10, bintype *_bin11, bintype *_bin12, bintype *_bin3, u32 maxbits)
+        static s32 free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
         {
-            s32 const bit = find1(_bin00, _bin01, _bin02, _bin10, _bin11, _bin12, _bin3, maxbits);
+            s32 const bit = find_used(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits);
             if (bit >= 0)
-                set(_bin00, _bin01, _bin02, _bin10, _bin11, _bin12, _bin3, maxbits, (u32)bit);
+                set_free(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, (u32)bit);
             return bit;
         }
 
-        static s32 find0_last(bintype const *_bin00, bintype const *_bin01, bintype const *_bin02, bintype const *_bin10, bintype const *_bin11, bintype const *_bin12, bintype const *_bin3, u32 maxbits)
+        static s32 find_free_last(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits)
         {
-            if (_bin00[0] == binconstant)
+            bintype const free0_word = _free0[0];
+            if (free0_word == 0)
                 return -1;
 
-            s32 const b0 = math::findLastBit(D_INVERT(_bin00[0]));
+            s32 const b0 = math::findLastBit(free0_word);
             s32 const w1 = b0;
-            s32 const b1 = math::findLastBit(D_INVERT(_bin01[w1]));
+            s32 const b1 = math::findLastBit(_free1[w1]);
             s32 const w2 = b1 + (w1 << binshift);
-            s32 const b2 = math::findLastBit(D_INVERT(_bin02[w2]));
+            s32 const b2 = math::findLastBit(_free2[w2]);
             s32 const w3 = b2 + (w2 << binshift);
-            s32 const b3 = math::findLastBit(D_INVERT(_bin3[w3]));
+            s32 const b3 = math::findLastBit(D_INVERT(_bin3[w3]) & valid_level3_mask((u32)w3, maxbits));
 
             s32 const bit = b3 + (w3 << binshift);
             return bit < (s32)maxbits ? bit : -1;
         }
 
-        static s32 find0_last_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin02, bintype *_bin10, bintype *_bin11, bintype *_bin12, bintype *_bin3, u32 maxbits)
+        static s32 alloc_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
         {
-            s32 const bit = find0_last(_bin00, _bin01, _bin02, _bin10, _bin11, _bin12, _bin3, maxbits);
+            s32 const bit = find_free_last(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits);
             if (bit >= 0)
-                set(_bin00, _bin01, _bin02, _bin10, _bin11, _bin12, _bin3, maxbits, (u32)bit);
+                set_used(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, (u32)bit);
             return bit;
         }
 
-        static s32 find0_after(bintype const *_bin00, bintype const *_bin01, bintype const *_bin02, bintype const *_bin10, bintype const *_bin11, bintype const *_bin12, bintype const *_bin3, u32 maxbits, u32 pivot)
+        static s32 find_free_after(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot)
         {
             // First check at location pivot in _bin1, then if no bit found move up one
             // level and check there, then go down to find the actual free bit.
@@ -1244,8 +1346,11 @@ namespace ncore
             if (pivot >= maxbits)
                 return -1;
 
-            u32 iw = pivot >> binshift;
-            s8  ib = (s8)(pivot & binmask);
+            if ((pivot + 1) >= maxbits)
+                return -1;
+
+            u32 iw = (pivot + 1) >> binshift;
+            s8  ib = (s8)((pivot + 1) & binmask);
 
             s8 const ml = binlevels - 1;
             s8       il = ml;
@@ -1254,10 +1359,10 @@ namespace ncore
                 bintype w;
                 switch (il)
                 {
-                    case 0: w = D_INVERT(_bin00[0]) & (binconstant << ib); break;
-                    case 1: w = D_INVERT(_bin01[iw]) & (binconstant << ib); break;
-                    case 2: w = D_INVERT(_bin02[iw]) & (binconstant << ib); break;
-                    case 3: w = D_INVERT(_bin3[iw]) & (binconstant << ib); break;
+                    case 0: w = _free0[0] & (binconstant << ib); break;
+                    case 1: w = _free1[iw] & (binconstant << ib); break;
+                    case 2: w = _free2[iw] & (binconstant << ib); break;
+                    case 3: w = (D_INVERT(_bin3[iw]) & valid_level3_mask(iw, maxbits)) & (binconstant << ib); break;
                     default: ASSERT(false); return -1;
                 }
 
@@ -1287,7 +1392,7 @@ namespace ncore
             return -1;
         }
 
-        static s32 find0_before(bintype const *_bin00, bintype const *_bin01, bintype const *_bin02, bintype const *_bin10, bintype const *_bin11, bintype const *_bin12, bintype const *_bin3, u32 maxbits, u32 pivot)
+        static s32 find_free_before(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot)
         {
             if (pivot == 0 || pivot > maxbits)
                 return -1;
@@ -1302,10 +1407,10 @@ namespace ncore
                 bintype w;
                 switch (il)
                 {
-                    case 0: w = D_INVERT(_bin00[0]) & ~(binconstant << (ib + 1)); break;
-                    case 1: w = D_INVERT(_bin01[iw]) & ~(binconstant << (ib + 1)); break;
-                    case 2: w = D_INVERT(_bin02[iw]) & ~(binconstant << (ib + 1)); break;
-                    case 3: w = D_INVERT(_bin3[iw]) & ~(binconstant << (ib + 1)); break;
+                    case 0: w = _free0[0] & ~(binconstant << (ib + 1)); break;
+                    case 1: w = _free1[iw] & ~(binconstant << (ib + 1)); break;
+                    case 2: w = _free2[iw] & ~(binconstant << (ib + 1)); break;
+                    case 3: w = (D_INVERT(_bin3[iw]) & valid_level3_mask(iw, maxbits)) & ~(binconstant << (ib + 1)); break;
                     default: ASSERT(false); return -1;
                 }
 
@@ -1332,32 +1437,33 @@ namespace ncore
         }
 
         // ---------------------------------------------------------------------------------------------------------
-        static s32 find1_last(bintype const *_bin00, bintype const *_bin01, bintype const *_bin02, bintype const *_bin10, bintype const *_bin11, bintype const *_bin12, bintype const *_bin3, u32 maxbits)
+        static s32 find_used_last(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits)
         {
-            if (_bin10[0] == binconstant)
+            bintype const used0_word = _used0[0];
+            if (used0_word == 0)
                 return -1;
 
-            s32 const b0 = math::findLastBit(D_INVERT(_bin10[0]));
+            s32 const b0 = math::findLastBit(used0_word);
             s32 const w1 = b0;
-            s32 const b1 = math::findLastBit(D_INVERT(_bin11[w1]));
+            s32 const b1 = math::findLastBit(_used1[w1]);
             s32 const w2 = b1 + (w1 << binshift);
-            s32 const b2 = math::findLastBit(D_INVERT(_bin12[w2]));
+            s32 const b2 = math::findLastBit(_used2[w2]);
             s32 const w3 = b2 + (w2 << binshift);
-            s32 const b3 = math::findLastBit(_bin3[w3]);
+            s32 const b3 = math::findLastBit(_bin3[w3] & valid_level3_mask((u32)w3, maxbits));
 
             s32 const bit = b3 + (w3 << binshift);
             return bit < (s32)maxbits ? bit : -1;
         }
 
-        static s32 find1_last_and_set(bintype *_bin00, bintype *_bin01, bintype *_bin02, bintype *_bin10, bintype *_bin11, bintype *_bin12, bintype *_bin3, u32 maxbits)
+        static s32 free_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
         {
-            s32 const bit = find1_last(_bin00, _bin01, _bin02, _bin10, _bin11, _bin12, _bin3, maxbits);
+            s32 const bit = find_used_last(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits);
             if (bit >= 0)
-                set(_bin00, _bin01, _bin02, _bin10, _bin11, _bin12, _bin3, maxbits, (u32)bit);
+                set_free(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, (u32)bit);
             return bit;
         }
 
-        static s32 find1_after(bintype const *_bin00, bintype const *_bin01, bintype const *_bin02, bintype const *_bin10, bintype const *_bin11, bintype const *_bin12, bintype const *_bin3, u32 maxbits, u32 pivot)
+        static s32 find_used_after(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot)
         {
             // First check at location pivot in _bin1, then if no bit found move up one
             // level and check there, then go down to find the actual free bit.
@@ -1365,8 +1471,11 @@ namespace ncore
             if (pivot >= maxbits)
                 return -1;
 
-            u32 iw = pivot >> binshift;
-            s8  ib = (s8)(pivot & binmask);
+            if ((pivot + 1) >= maxbits)
+                return -1;
+
+            u32 iw = (pivot + 1) >> binshift;
+            s8  ib = (s8)((pivot + 1) & binmask);
 
             s8 const ml = binlevels - 1;
             s8       il = ml;
@@ -1375,10 +1484,10 @@ namespace ncore
                 bintype w;
                 switch (il)
                 {
-                    case 0: w = D_INVERT(_bin10[0]) & (binconstant << ib); break;
-                    case 1: w = D_INVERT(_bin11[iw]) & (binconstant << ib); break;
-                    case 2: w = D_INVERT(_bin12[iw]) & (binconstant << ib); break;
-                    case 3: w = _bin3[iw] & (binconstant << ib); break;
+                    case 0: w = _used0[0] & (binconstant << ib); break;
+                    case 1: w = _used1[iw] & (binconstant << ib); break;
+                    case 2: w = _used2[iw] & (binconstant << ib); break;
+                    case 3: w = (_bin3[iw] & valid_level3_mask(iw, maxbits)) & (binconstant << ib); break;
                     default: ASSERT(false); return -1;
                 }
 
@@ -1408,7 +1517,7 @@ namespace ncore
             return -1;
         }
 
-        static s32 find1_before(bintype const *_bin00, bintype const *_bin01, bintype const *_bin02, bintype const *_bin10, bintype const *_bin11, bintype const *_bin12, bintype const *_bin3, u32 maxbits, u32 pivot)
+        static s32 find_used_before(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot)
         {
             if (pivot == 0 || pivot > maxbits)
                 return -1;
@@ -1423,10 +1532,10 @@ namespace ncore
                 bintype w;
                 switch (il)
                 {
-                    case 0: w = D_INVERT(_bin10[0]) & ~(binconstant << (ib + 1)); break;
-                    case 1: w = D_INVERT(_bin11[iw]) & ~(binconstant << (ib + 1)); break;
-                    case 2: w = D_INVERT(_bin12[iw]) & ~(binconstant << (ib + 1)); break;
-                    case 3: w = _bin3[iw] & ~(binconstant << (ib + 1)); break;
+                    case 0: w = _used0[0] & ~(binconstant << (ib + 1)); break;
+                    case 1: w = _used1[iw] & ~(binconstant << (ib + 1)); break;
+                    case 2: w = _used2[iw] & ~(binconstant << (ib + 1)); break;
+                    case 3: w = (_bin3[iw] & valid_level3_mask(iw, maxbits)) & ~(binconstant << (ib + 1)); break;
                     default: ASSERT(false); return -1;
                 }
 
@@ -1453,4 +1562,57 @@ namespace ncore
         }
     };
 
-};  // namespace ncore
+    namespace nduomap20
+    {
+        // max 2^20 = 1048576 bits
+        // free0, used0 = u32 (5)
+        // free1, used1 = an array of u32, max u32[32] (5)
+        // free2, used2 = an array of u32, max u32[32*32*32] (5)
+        // bin3 = an array of u32, max u32[32*32*32*32] (5)
+        typedef u32 bintype;
+
+        void setup_used_lazy(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        { duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::setup_used_lazy(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        void tick_used_lazy(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits, u32 bit)
+        { duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::tick_used_lazy(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, bit); }
+
+        void clear_all_free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        { duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::clear_all_free(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        void clear_all_used(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        { duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::clear_all_used(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+
+        void set_used(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits, u32 bit)
+        { duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::set_used(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, bit); }
+        void set_free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits, u32 bit)
+        { duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::set_free(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, bit); }
+        bool get(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 bit)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::get(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, bit); }
+
+        s32 find_free(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::find_free(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        s32 find_used(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::find_used(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        s32 find_free_last(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::find_free_last(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        s32 find_free_after(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::find_free_after(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, pivot); }
+        s32 find_free_before(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::find_free_before(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, pivot); }
+        s32 find_used_last(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::find_used_last(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        s32 find_used_after(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::find_used_after(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, pivot); }
+        s32 find_used_before(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::find_used_before(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, pivot); }
+
+        s32 alloc(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::alloc(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        s32 free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::free(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        s32 alloc_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::alloc_last(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        s32 free_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::free_last(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+    }  // namespace nduomap20
+
+}  // namespace ncore

@@ -19,8 +19,9 @@ namespace ncore
         bin->m_items = narena::new_arena((uint_t)element_size * max_elements, 0);
         bin->m_owner = narena::new_arena((uint_t)sizeof(u16) * max_elements, 0);
 
-        bin->m_items_count = 0;             // number of items currently in use
-        bin->m_item_sizeof = element_size;  // sizeof(item)
+        bin->m_items_count      = 0;             // number of items currently in use
+        bin->m_item_sizeof      = element_size;  // sizeof(item)
+        bin->m_items_free_index = 0;             // index of the first free slot in the items array
 
         bin->m_binmap = narena::new_arena((1 + 1 + 16 + 16 + 1024) * sizeof(u64), (1 + 1 + 16 + 16) * sizeof(u64));
 
@@ -30,8 +31,7 @@ namespace ncore
         u64* free1 = used1 + 16;
         u64* bin2  = free1 + 16;
 
-        *used0 = D_U64_MAX;  // track '1' bits
-        *free0 = D_U64_MAX;  // track '0' bits
+        nduomap18::setup_used_lazy(free0, free1, used0, used1, bin2, max_elements);
     }
 
     void bin_destroy(indexed_bin16_t* bin)
@@ -59,10 +59,6 @@ namespace ncore
         if (bin->m_items_count >= 65535)
             return -1;  // bin is full
 
-        // We can figure out if we are 'compact' by looking at the arena position of the
-        // index array and see if 'm_items_count' is identical to the number of indices.
-        const bool is_compact = (narena::base_ptr(bin->m_owner) + (bin->m_items_count * sizeof(u16))) == narena::current_ptr(bin->m_items);
-
         // 1. if we are compacted, just do an allocation at the end of the array's
         //    - clear the free bit
         //    - set the used bit
@@ -75,26 +71,32 @@ namespace ncore
         u64* free1 = used1 + 16;
         u64* bin2  = free1 + 16;
 
-        if (!is_compact)
+        if (bin->m_items_count < bin->m_items_free_index)
         {
-            // The hierarchical duomap can be used to find a free entity index
-            const s32 item_index = nduomap18::find0_and_set(free0, free1, used0, used1, bin2, bin->m_items_count);
-            ASSERT(item_index >= 0 && (u32)item_index < bin->m_items_count);
+            const s32 item_index = nduomap18::alloc(free0, free1, used0, used1, bin2, bin->m_items_free_index);
+            ASSERT(item_index >= 0 && (u32)item_index < bin->m_items_free_index);
             u16* owner_array        = narena::base_ptr_as<u16>(bin->m_owner);
             owner_array[item_index] = owner_index;
+            bin->m_items_count += 1;
             return item_index;
         }
+        else
+        {
+            const s32 item_index = (s32)bin->m_items_free_index++;
 
-        const s32 item_index = (s32)bin->m_items_count++;
+            // We need to make sure there is enough committed space in the binmap arena
+            narena::commit(bin->m_binmap, (1 + 1 + 16 + 16 + ((bin->m_items_free_index + 1 + 63) / 64)) * sizeof(u64));
+            nduomap18::tick_used_lazy(free0, free1, used0, used1, bin2, bin->m_items_free_index, item_index);
 
-        narena::alloc(bin->m_items, bin->m_item_sizeof);
-        narena::commit(bin->m_owner, bin->m_items_count * sizeof(u16));
-        narena::commit(bin->m_binmap, (1 + 1 + 16 + 16 + ((bin->m_items_count + 63) / 64)) * sizeof(u64));
+            narena::alloc(bin->m_items, bin->m_item_sizeof);
+            narena::commit(bin->m_owner, bin->m_items_free_index * sizeof(u16));
+            narena::commit(bin->m_binmap, (1 + 1 + 16 + 16 + ((bin->m_items_free_index + 63) / 64)) * sizeof(u64));
 
-        nduomap18::tick_lazy(free0, free1, used0, used1, bin2, bin->m_items_count, item_index);
-        u16* owner_array        = narena::base_ptr_as<u16>(bin->m_owner);
-        owner_array[item_index] = owner_index;
-        return item_index;
+            u16* owner_array        = narena::base_ptr_as<u16>(bin->m_owner);
+            owner_array[item_index] = owner_index;
+            bin->m_items_count += 1;
+            return item_index;
+        }
     }
 
     void bin_free_normal(indexed_bin16_t* bin, u32 item_index)
@@ -110,7 +112,7 @@ namespace ncore
         u64* free1 = used1 + 16;
         u64* bin2  = free1 + 16;
 
-        nduomap18::clr(free0, free1, used0, used1, bin2, bin->m_items_count, item_index);
+        nduomap18::set_free(free0, free1, used0, used1, bin2, bin->m_items_free_index, item_index);
 
         bin->m_items_count -= 1;
     }
@@ -131,15 +133,16 @@ namespace ncore
             u64* free1 = used1 + 16;
             u64* bin2  = free1 + 16;
 
-            const s32 last_index = nduomap18::find1_last(free0, free1, used0, used1, bin2, bin->m_items_count);
+            const s32 last_index = nduomap18::find_used_last(free0, free1, used0, used1, bin2, bin->m_items_free_index);
+            ASSERT(last_index >= 0 && (u32)last_index < bin->m_items_free_index);
 
             // mark this last item in the binmap as free
-            nduomap18::clr(free0, free1, used0, used1, bin2, bin->m_items_count, last_index);
+            nduomap18::set_free(free0, free1, used0, used1, bin2, bin->m_items_free_index, last_index);
 
             // decrease number of used items
             bin->m_items_count -= 1;
 
-            if (item_index != last_index)
+            if (item_index != (u32)last_index)
             {
                 // move the item data
                 byte* dst_item = items + ((uint_t)item_index * bin->m_item_sizeof);
@@ -168,7 +171,7 @@ namespace ncore
         return -1;  // no swap performed
     }
 
-    void* bin_idx2ptr(indexed_bin16_t const* bin, u32 index)
+    void* bin_idx2ptr(indexed_bin16_t const * bin, u32 index)
     {
         if (index < bin->m_items_count)
         {
@@ -177,7 +180,7 @@ namespace ncore
         return nullptr;
     }
 
-    i32 bin_ptr2idx(indexed_bin16_t const* bin, void const* p)
+    i32 bin_ptr2idx(indexed_bin16_t const * bin, void const * p)
     {
         const byte* ptr  = (const byte*)p;
         const byte* base = narena::base_ptr(bin->m_items);
@@ -185,6 +188,6 @@ namespace ncore
         return (ptr >= base && ptr < end) ? (i32)((ptr - base) / bin->m_item_sizeof) : -1;
     }
 
-    u32 bin_size(indexed_bin16_t const* bin) { return bin->m_items_count; }
+    u32 bin_size(indexed_bin16_t const * bin) { return bin->m_items_count; }
 
 }  // namespace ncore
