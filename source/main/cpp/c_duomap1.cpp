@@ -1070,8 +1070,7 @@ namespace ncore
             return mask_for_count(maxbits - base_bit);
         }
 
-        static inline void update_summary_bits(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2,
-                                               bintype const * _bin3, u32 maxbits, u32 word_index)
+        static inline void update_summary_bits(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype const * _bin3, u32 maxbits, u32 word_index)
         {
             u32 const     i2         = word_index >> binshift;
             u32 const     b2         = word_index & binmask;
@@ -1116,8 +1115,7 @@ namespace ncore
             }
         }
 
-        static inline void update_summary_bits_verify(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2,
-                                                      bintype const * _bin3, u32 maxbits, u32 word_index)
+        static inline void update_summary_bits_verify(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype const * _bin3, u32 maxbits, u32 word_index)
         {
             if ((word_index << binshift) < maxbits)
                 update_summary_bits(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, word_index);
@@ -1219,8 +1217,8 @@ namespace ncore
         static void set_used(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits, u32 bit)
         {
             ASSERT(bit < maxbits);
-            u32 const i3 = bit >> binshift;
-            u32 const b3 = bit & (binbits - 1);
+            u32 const     i3 = bit >> binshift;
+            u32 const     b3 = bit & (binbits - 1);
             bintype const vo = _bin3[i3];
             bintype const vn = D_BIT_SET(vo, b3);
             if (vo != vn)
@@ -1233,8 +1231,8 @@ namespace ncore
         static void set_free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits, u32 bit)
         {
             ASSERT(bit < maxbits);
-            u32 const i3 = bit >> binshift;
-            u32 const b3 = bit & (binbits - 1);
+            u32 const     i3 = bit >> binshift;
+            u32 const     b3 = bit & (binbits - 1);
             bintype const vo = _bin3[i3];
             bintype const vn = D_BIT_CLEAR(vo, b3);
             if (vo != vn)
@@ -1564,11 +1562,6 @@ namespace ncore
 
     namespace nduomap20
     {
-        // max 2^20 = 1048576 bits
-        // free0, used0 = u32 (5)
-        // free1, used1 = an array of u32, max u32[32] (5)
-        // free2, used2 = an array of u32, max u32[32*32*32] (5)
-        // bin3 = an array of u32, max u32[32*32*32*32] (5)
         typedef u32 bintype;
 
         void setup_used_lazy(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
@@ -1614,5 +1607,53 @@ namespace ncore
         s32 free_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
         { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u32, 5>::free_last(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
     }  // namespace nduomap20
+
+    namespace nduomap24
+    {
+        typedef u64 bintype;
+
+        void setup_used_lazy(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        { duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::setup_used_lazy(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        void tick_used_lazy(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits, u32 bit)
+        { duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::tick_used_lazy(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, bit); }
+
+        void clear_all_free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        { duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::clear_all_free(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        void clear_all_used(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        { duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::clear_all_used(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+
+        void set_used(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits, u32 bit)
+        { duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::set_used(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, bit); }
+        void set_free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits, u32 bit)
+        { duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::set_free(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, bit); }
+        bool get(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 bit)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::get(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, bit); }
+
+        s32 find_free(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::find_free(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        s32 find_used(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::find_used(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        s32 find_free_last(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::find_free_last(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        s32 find_free_after(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::find_free_after(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, pivot); }
+        s32 find_free_before(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::find_free_before(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, pivot); }
+        s32 find_used_last(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::find_used_last(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        s32 find_used_after(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::find_used_after(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, pivot); }
+        s32 find_used_before(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::find_used_before(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits, pivot); }
+
+        s32 alloc(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::alloc(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        s32 free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::free(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        s32 alloc_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::alloc_last(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+        s32 free_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits)
+        { return duomap_free0_free1_free2_used0_used1_used2_bin3_t<u64, 6>::free_last(_free0, _free1, _free2, _used0, _used1, _used2, _bin3, maxbits); }
+    }  // namespace nduomap24
 
 }  // namespace ncore

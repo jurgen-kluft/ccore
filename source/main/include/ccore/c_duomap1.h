@@ -10,6 +10,8 @@ namespace ncore
     // --------------------------------------------------------------------------------------------
     // duomap functionality for 1, 2, 3, and 4 level duomaps
     // --------------------------------------------------------------------------------------------
+    // free = tracking '0' bits
+    // used = tracking '1' bits
 
     // --------------------------------------------------------------------------------------------
     // 2 level binmaps
@@ -18,8 +20,6 @@ namespace ncore
     // 2^10 duomap, can handle a maximum of 1024 bits.
     namespace nduomap10
     {
-        // free0 = a single u32 (5), tracking '0' bits
-        // used0 = a single u32 (5), tracking '1' bits
         // bin1 = an array of u32, max u32[32] (5)
         typedef u32 bintype;
 
@@ -42,8 +42,8 @@ namespace ncore
         s32 find_used_after(bintype const * free0, bintype const * used0, bintype const * bin1, u32 maxbits, u32 pivot);   // Finds the first '1' bit after the pivot
         s32 find_used_before(bintype const * free0, bintype const * used0, bintype const * bin1, u32 maxbits, u32 pivot);  // Finds the first '1' bit before the pivot (high to low)
 
-        s32 alloc(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits);
-        s32 free(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits);
+        s32 alloc(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits);       // Finds the first '0' bit and sets it to used and returns the bit index
+        s32 free(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits);        // Finds the first '1' bit and sets it to free and returns the bit index
         s32 alloc_last(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits);  // Finds the last '0' bit and sets it to used and returns the bit index
         s32 free_last(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits);   // Finds the last '1' bit and sets it to used and returns the bit index
     }  // namespace nduomap10
@@ -186,6 +186,40 @@ namespace ncore
         s32 alloc_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
         s32 free_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
     }  // namespace nduomap20
+
+    namespace nduomap24
+    {
+        // max 2^24 = 16777216 bits
+        // free0, used0 = u64 (6)
+        // free1, used1 = an array of u64, max u64[64] (6)
+        // free2, used2 = an array of u64, max u64[64*64*64] (6)
+        // bin3 = an array of u64, max u64[64*64*64*64] (6)
+        typedef u64 bintype;
+
+        void setup_used_lazy(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
+        void tick_used_lazy(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits, u32 bit);
+
+        void clear_all_free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
+        void clear_all_used(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
+
+        void set_used(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits, u32 bit);
+        void set_free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits, u32 bit);
+        bool get(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 bit);
+
+        s32 find_free(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits);
+        s32 find_used(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits);
+        s32 find_free_last(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits);
+        s32 find_free_after(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot);
+        s32 find_free_before(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot);
+        s32 find_used_last(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits);
+        s32 find_used_after(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot);
+        s32 find_used_before(bintype const * _free0, bintype const * _free1, bintype const * _free2, bintype const * _used0, bintype const * _used1, bintype const * _used2, bintype const * _bin3, u32 maxbits, u32 pivot);
+
+        s32 alloc(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
+        s32 free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
+        s32 alloc_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
+        s32 free_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
+    }  // namespace nduomap24
 
 }  // namespace ncore
 
