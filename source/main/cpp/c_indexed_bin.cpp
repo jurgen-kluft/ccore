@@ -10,7 +10,7 @@ namespace ncore
     // indexed bin16
     // Note: uses nduomap18 to track free and used items
 
-    void bin_setup(indexed_bin16_t* bin, u16 element_size)
+    void bin_setup(ibin16_t* bin, u16 element_size)
     {
         ASSERT(element_size > 0 && element_size <= 1024);  // element size should be reasonable
 
@@ -34,7 +34,7 @@ namespace ncore
         nduomap18::setup_used_lazy(free0, free1, used0, used1, bin2, max_elements);
     }
 
-    void bin_destroy(indexed_bin16_t* bin)
+    void bin_destroy(ibin16_t* bin)
     {
         if (bin->m_owner != nullptr)
             narena::destroy(bin->m_owner);
@@ -45,7 +45,7 @@ namespace ncore
     }
 
     // resize the bin to be able to hold new_max_elements
-    void bin_commit(indexed_bin16_t* bin, u32 num_elements)
+    void bin_commit(ibin16_t* bin, u32 num_elements)
     {
         ASSERT(num_elements > 0 && num_elements < 65536);  // maximum number of elements is 65535 (u16 indices)
 
@@ -54,7 +54,7 @@ namespace ncore
         narena::commit(bin->m_binmap, (1 + 1 + 16 + 16 + ((num_elements + 63) / 64)) * sizeof(u64));
     }
 
-    i32 bin_alloc(indexed_bin16_t* bin, u16 owner_index)
+    i32 bin_alloc(ibin16_t* bin, u16 owner_index)
     {
         if (bin->m_items_count >= 65535)
             return -1;  // bin is full
@@ -99,7 +99,7 @@ namespace ncore
         }
     }
 
-    void bin_free_normal(indexed_bin16_t* bin, u32 item_index)
+    void bin_free_normal(ibin16_t* bin, u32 item_index)
     {
         ASSERT(item_index < bin->m_items_count);  // invalid index
 
@@ -120,7 +120,7 @@ namespace ncore
     // free item at 'index' and return index of item that was moved
     // to fill the hole (likely last item), or -1 if no swap performed
     // returns -2 if error (invalid index)
-    i32 bin_free_compact(indexed_bin16_t* bin, u32 item_index)
+    i32 bin_free_compact(ibin16_t* bin, u32 item_index)
     {
         if (item_index < bin->m_items_count)
         {
@@ -159,7 +159,7 @@ namespace ncore
         return -2;  // error
     }
 
-    i32 bin_compact(indexed_bin16_t* bin, u32& item_index)
+    i32 bin_compact(ibin16_t* bin, u32& item_index)
     {
         // find the first free slot using the free binmap
         // find the last used slot using the used binmap
@@ -171,7 +171,7 @@ namespace ncore
         return -1;  // no swap performed
     }
 
-    void* bin_idx2ptr(indexed_bin16_t const * bin, u32 index)
+    void* bin_idx2ptr(ibin16_t const * bin, u32 index)
     {
         if (index < bin->m_items_count)
         {
@@ -180,7 +180,7 @@ namespace ncore
         return nullptr;
     }
 
-    i32 bin_ptr2idx(indexed_bin16_t const * bin, void const * p)
+    i32 bin_ptr2idx(ibin16_t const * bin, void const * p)
     {
         const byte* ptr  = (const byte*)p;
         const byte* base = narena::base_ptr(bin->m_items);
@@ -188,6 +188,6 @@ namespace ncore
         return (ptr >= base && ptr < end) ? (i32)((ptr - base) / bin->m_item_sizeof) : -1;
     }
 
-    u32 bin_size(indexed_bin16_t const * bin) { return bin->m_items_count; }
+    u32 bin_size(ibin16_t const * bin) { return bin->m_items_count; }
 
 }  // namespace ncore

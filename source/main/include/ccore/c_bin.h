@@ -1,8 +1,8 @@
-#ifndef __CCORE_VIRTUAL_ALLOCATION_BIN_H__
-#define __CCORE_VIRTUAL_ALLOCATION_BIN_H__
+#ifndef __CCORE_BIN_H__
+#define __CCORE_BIN_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
-    #pragma once
+#    pragma once
 #endif
 
 namespace ncore
@@ -16,21 +16,18 @@ namespace ncore
 
     struct bin32_t
     {
-        arena_t* m_items;             // memory for items
-        u32      m_items_free_index;  // current 'bit' used to allocate next free item
-        u32      m_items_count;       // number of items currently in use
-        u32      m_items_capacity;    // maximum number of items the bin can hold (based on reserved size of m_items arena)
-        u16      m_item_sizeof;       // sizeof(item)
-        u8       m_bin_level_count;   // binmap, number of levels
-        u8       m_bin_level2_offset; // offset in u64 units to level 2
-        arena_t* m_bin;               // level 0, 1 and 2 of binmap
-        arena_t* m_bin3;              // level 3 of binmap (optional)
+        arena_t* m_items;              // memory for items
+        u32      m_items_count;        // number of items currently in use
+        u16      m_item_sizeof;        // sizeof(item)
+        u8       m_bin_level_count;    // binmap, number of levels
+        u8       m_bin_level2_offset;  // offset in u64 units to level 2
+        arena_t* m_bin;                // level 0, 1 and 2 of binmap
+        arena_t* m_bin3;               // level 3 of binmap (optional)
     };
 
     void  bin_setup(bin32_t* bin, u16 item_size, u32 max_items);  // e.g. item_size = 256, max_items = 65535, 16 MiB
     void  bin_destroy(bin32_t* bin);                              // destroy the bin
     u32   bin_size(bin32_t const* bin);                           // number of items currently in the bin
-    u32   bin_capacity(bin32_t const* bin);                       // maximum number of items the bin can hold
     void* bin_alloc(bin32_t* bin);                                // allocate an item from the bin
     void  bin_free(bin32_t* bin, void* ptr);                      // free an item back to the bin
     u32   bin_ptr2idx(bin32_t const* bin, void* ptr);             // convert a pointer to an index within the bin
@@ -46,12 +43,9 @@ namespace ncore
     struct bin16_t
     {
         arena_t* m_items;             // pointer to items
-        u32      m_items_free_index;  // current 'bit' used to allocate next free item
         u32      m_items_count;       // number of items currently in use
-        u32      m_items_capacity;    // maximum number of items the bin can hold (based on reserved size of m_items arena)
         u16      m_item_sizeof;       // sizeof(item)
-        u8       m_pagesize_shift;    // page-size = 1 << pagesize_shift
-        u8       m_bin_level_count;   // binmap, number of levels
+        u16      m_bin_level_count;   // binmap, number of levels
         arena_t* m_bin;               // level 0, 1 and 2 of binmap
     };
 
@@ -68,4 +62,4 @@ namespace ncore
 
 }  // namespace ncore
 
-#endif  // __CCORE_VIRTUAL_ALLOCATION_BIN_H__
+#endif  // __CCORE_BIN_H__
