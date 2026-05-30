@@ -1,7 +1,7 @@
 #include "ccore/c_arena.h"
 #include "ccore/c_math.h"
 #include "ccore/c_memory.h"
-#include "ccore/c_binmap1.h"
+#include "ccore/c_bitvec.h"
 
 #include "ccore/c_bin.h"
 
@@ -22,8 +22,8 @@ namespace ncore
         bin->m_item_sizeof            = item_size;
 
         // compute binmap size layout and allocate arenas accordingly
-        nbinmap::layout64_t layout;
-        nbinmap::compute(max_items, layout);
+        nbitvec::layout64_t layout;
+        nbitvec::compute(max_items, layout);
 
         bin->m_bin_level_count = layout.m_levels;
         if (layout.m_bin3 > 0)
@@ -81,10 +81,10 @@ namespace ncore
             // We should have a free item in the binmap, where is it?
             switch (bin->m_bin_level_count)
             {
-                case 3: item_index = nbinmap24::find_and_remove(bm0, bm1, bm2, bm3, item_free_index); break;
-                case 2: item_index = nbinmap18::find_and_remove(bm0, bm1, bm2, item_free_index); break;
-                case 1: item_index = nbinmap12::find_and_remove(bm0, bm1, item_free_index); break;
-                case 0: item_index = nbinmap6::find_and_remove(bm0, item_free_index); break;
+                case 3: item_index = nbitvec24::find_and_remove(bm0, bm1, bm2, bm3, item_free_index); break;
+                case 2: item_index = nbitvec18::find_and_remove(bm0, bm1, bm2, item_free_index); break;
+                case 1: item_index = nbitvec12::find_and_remove(bm0, bm1, item_free_index); break;
+                case 0: item_index = nbitvec6::find_and_remove(bm0, item_free_index); break;
             }
 
             bin->m_items_count += 1;
@@ -108,9 +108,9 @@ namespace ncore
 
             switch (bin->m_bin_level_count)
             {
-                case 3: nbinmap24::tick_lazy(bm0, bm1, bm2, bm3, items_capacity, item_free_index); break;
-                case 2: nbinmap18::tick_lazy(bm0, bm1, bm2, items_capacity, item_free_index); break;
-                case 1: nbinmap12::tick_lazy(bm0, bm1, items_capacity, item_free_index); break;
+                case 3: nbitvec24::tick_lazy(bm0, bm1, bm2, bm3, items_capacity, item_free_index); break;
+                case 2: nbitvec18::tick_lazy(bm0, bm1, bm2, items_capacity, item_free_index); break;
+                case 1: nbitvec12::tick_lazy(bm0, bm1, items_capacity, item_free_index); break;
                 case 0: break;
             }
 
@@ -138,10 +138,10 @@ namespace ncore
 
         switch (bin->m_bin_level_count)
         {
-            case 3: nbinmap24::clr(bm0, bm1, bm2, bm3, item_free_index, item_index); break;
-            case 2: nbinmap18::clr(bm0, bm1, bm2, item_free_index, item_index); break;
-            case 1: nbinmap12::clr(bm0, bm1, item_free_index, item_index); break;
-            case 0: nbinmap6::clr(bm0, item_free_index, item_index); break;
+            case 3: nbitvec24::clr(bm0, bm1, bm2, bm3, item_free_index, item_index); break;
+            case 2: nbitvec18::clr(bm0, bm1, bm2, item_free_index, item_index); break;
+            case 1: nbitvec12::clr(bm0, bm1, item_free_index, item_index); break;
+            case 0: nbitvec6::clr(bm0, item_free_index, item_index); break;
         }
 
         // Decrease number of used items
@@ -185,10 +185,10 @@ namespace ncore
 
         switch (bin->m_bin_level_count)
         {
-            case 3: hi = nbinmap24::find_last(bm0, bm1, bm2, bm3, item_free_index); break;
-            case 2: hi = nbinmap18::find_last(bm0, bm1, bm2, item_free_index); break;
-            case 1: hi = nbinmap12::find_last(bm0, bm1, item_free_index); break;
-            case 0: hi = nbinmap6::find_last(bm0, item_free_index); break;
+            case 3: hi = nbitvec24::find_last(bm0, bm1, bm2, bm3, item_free_index); break;
+            case 2: hi = nbitvec18::find_last(bm0, bm1, bm2, item_free_index); break;
+            case 1: hi = nbitvec12::find_last(bm0, bm1, item_free_index); break;
+            case 0: hi = nbitvec6::find_last(bm0, item_free_index); break;
         }
         return hi;
     }
@@ -214,11 +214,11 @@ namespace ncore
         bin->m_item_sizeof            = item_size;
 
         // compute bin16_t struct and most of the binmap
-        nbinmap::layout64_t layout;
-        nbinmap::compute(max_items, layout);
+        nbitvec::layout64_t layout;
+        nbitvec::compute(max_items, layout);
 
         bin->m_bin_level_count = layout.m_levels;
-        bin->m_bin             = narena::new_arena(nbinmap::sizeof_data(layout) * sizeof(u64), layout.m_bin2 * sizeof(u64));
+        bin->m_bin             = narena::new_arena(nbitvec::sizeof_data(layout) * sizeof(u64), layout.m_bin2 * sizeof(u64));
 
         u64* bin0 = (u64*)narena::base_ptr(bin->m_bin);
         *bin0     = D_U64_MAX;
@@ -233,10 +233,10 @@ namespace ncore
     }
 
     u32 bin_size(bin16_t const* bin) { return bin->m_items_count; }
-    u32 bin_capacity(bin16_t const* bin) 
-    { 
-        const u32 max_items = (u32)(narena::reserved_size(bin->m_items) / bin->m_item_sizeof); 
-        return max_items > 65536 ? 65536 : max_items;  
+    u32 bin_capacity(bin16_t const* bin)
+    {
+        const u32 max_items = (u32)(narena::reserved_size(bin->m_items) / bin->m_item_sizeof);
+        return max_items > 65536 ? 65536 : max_items;
     }
     u32 bin_highwater_mark(bin16_t const* bin) { return (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof); }
 
@@ -261,9 +261,9 @@ namespace ncore
             // We should have a free item in the binmap, where is it?
             switch (bin->m_bin_level_count)
             {
-                case 2: item_index = nbinmap18::find_and_remove(bm0, bm1, bm2, item_free_index); break;
-                case 1: item_index = nbinmap12::find_and_remove(bm0, bm1, item_free_index); break;
-                case 0: item_index = nbinmap6::find_and_remove(bm0, item_free_index); break;
+                case 2: item_index = nbitvec18::find_and_remove(bm0, bm1, bm2, item_free_index); break;
+                case 1: item_index = nbitvec12::find_and_remove(bm0, bm1, item_free_index); break;
+                case 0: item_index = nbitvec6::find_and_remove(bm0, item_free_index); break;
             }
             ASSERT(item_index >= 0);
 
@@ -280,8 +280,8 @@ namespace ncore
 
             switch (bin->m_bin_level_count)
             {
-                case 2: nbinmap18::tick_lazy(bm0, bm1, bm2, items_capacity, item_free_index); break;
-                case 1: nbinmap12::tick_lazy(bm0, bm1, items_capacity, item_free_index); break;
+                case 2: nbitvec18::tick_lazy(bm0, bm1, bm2, items_capacity, item_free_index); break;
+                case 1: nbitvec12::tick_lazy(bm0, bm1, items_capacity, item_free_index); break;
                 case 0: break;
             }
 
@@ -294,7 +294,7 @@ namespace ncore
     void bin_free(bin16_t* bin, void* ptr)
     {
         const u32 item_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
-        
+
         const byte* items      = narena::base_ptr(bin->m_items);
         const s32   item_index = (s32)(((const byte*)ptr - items) / bin->m_item_sizeof);
         if (item_index < 0 || (u32)item_index >= item_free_index)
@@ -307,9 +307,9 @@ namespace ncore
 
         switch (bin->m_bin_level_count)
         {
-            case 2: nbinmap18::clr(bm0, bm1, bm2, item_free_index, item_index); break;
-            case 1: nbinmap12::clr(bm0, bm1, item_free_index, item_index); break;
-            case 0: nbinmap6::clr(bm0, item_free_index, item_index); break;
+            case 2: nbitvec18::clr(bm0, bm1, bm2, item_free_index, item_index); break;
+            case 1: nbitvec12::clr(bm0, bm1, item_free_index, item_index); break;
+            case 0: nbitvec6::clr(bm0, item_free_index, item_index); break;
         }
 
         // Decrease number of used items
@@ -350,9 +350,9 @@ namespace ncore
 
         switch (bin->m_bin_level_count)
         {
-            case 2: hi = nbinmap18::find_last(bm0, bm1, bm2, item_free_index); break;
-            case 1: hi = nbinmap12::find_last(bm0, bm1, item_free_index); break;
-            case 0: hi = nbinmap6::find_last(bm0, item_free_index); break;
+            case 2: hi = nbitvec18::find_last(bm0, bm1, bm2, item_free_index); break;
+            case 1: hi = nbitvec12::find_last(bm0, bm1, item_free_index); break;
+            case 0: hi = nbitvec6::find_last(bm0, item_free_index); break;
         }
         return hi;
     }

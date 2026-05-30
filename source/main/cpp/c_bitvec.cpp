@@ -1,21 +1,21 @@
 #include "ccore/c_math.h"
 
-#include "ccore/c_binmap1.h"
+#include "ccore/c_bitvec.h"
 
 namespace ncore
 {
     // --------------------------------------------------------------------------------
     // --------------------------------------------------------------------------------
-    // binmap, these functions are tracking '0' bits.
+    // bit-vector, these functions are tracking '0' bits.
 
 #define D_INVERT(value)        ((bintype) ~(value))
 #define D_BIT_CLEAR(word, bit) ((word) & ~((bintype)1 << (bit)))
 #define D_BIT_SET(word, bit)   ((word) | ((bintype)1 << (bit)))
 #define D_BIT_TEST(word, bit)  (((word) & ((bintype)1 << (bit))) != 0)
 
-    // binmaps with a single level
+    // bit-vectors with a single level
 
-    namespace nbinmap5
+    namespace nbitvec5
     {
         void setup(bintype* CC_RESTRICT bin0, u32 maxbits)
         {
@@ -81,9 +81,9 @@ namespace ncore
             return bit;
         }
 
-    }  // namespace nbinmap5
+    }  // namespace nbitvec5
 
-    namespace nbinmap6
+    namespace nbitvec6
     {
         void setup(bintype* CC_RESTRICT bin0, u32 maxbits)
         {
@@ -149,14 +149,14 @@ namespace ncore
             return bit;
         }
 
-    }  // namespace nbinmap6
+    }  // namespace nbitvec6
 
     // --------------------------------------------------------------------------------
     // --------------------------------------------------------------------------------
-    // binmaps with two levels
+    // bit-vectors with two levels
 
     template <typename bintype, u32 binshift>
-    class binmap_bin0_bin1_t
+    class bitvec_bin0_bin1_t
     {
     public:
         static constexpr u32     binbits     = sizeof(bintype) * 8;
@@ -354,44 +354,44 @@ namespace ncore
     // --------------------------------------------------------------------------------
     // --------------------------------------------------------------------------------
 
-    namespace nbinmap10
+    namespace nbitvec10
     {
-        void setup_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { binmap_bin0_bin1_t<bintype, 5>::setup_lazy(_bin0, _bin1, maxbits); }
-        void tick_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, 5>::tick_lazy(_bin0, _bin1, maxbits, bit); }
-        void clear(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { binmap_bin0_bin1_t<bintype, 5>::clear(_bin0, _bin1, maxbits); }
-        void set(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, 5>::set(_bin0, _bin1, maxbits, bit); }
-        void clr(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, 5>::clr(_bin0, _bin1, maxbits, bit); }
-        bool get(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits, u32 bit) { return binmap_bin0_bin1_t<bintype, 5>::get(_bin0, _bin1, maxbits, bit); }
-        s32  find(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 5>::find(_bin0, _bin1, maxbits); }
-        s32  find_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 5>::find_and_remove(_bin0, _bin1, maxbits); }
-        s32  find_last(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 5>::find_last(_bin0, _bin1, maxbits); }
-        s32  find_last_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 5>::find_last_and_remove(_bin0, _bin1, maxbits); }
-        s32  find_after(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits, u32 pivot) { return binmap_bin0_bin1_t<bintype, 5>::find_after(_bin0, _bin1, maxbits, pivot); }
-        s32  find_before(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits, u32 pivot) { return binmap_bin0_bin1_t<bintype, 5>::find_before(_bin0, _bin1, maxbits, pivot); }
-    }  // namespace nbinmap10
+        void setup_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { bitvec_bin0_bin1_t<bintype, 5>::setup_lazy(_bin0, _bin1, maxbits); }
+        void tick_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits, u32 bit) { bitvec_bin0_bin1_t<bintype, 5>::tick_lazy(_bin0, _bin1, maxbits, bit); }
+        void clear(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { bitvec_bin0_bin1_t<bintype, 5>::clear(_bin0, _bin1, maxbits); }
+        void set(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits, u32 bit) { bitvec_bin0_bin1_t<bintype, 5>::set(_bin0, _bin1, maxbits, bit); }
+        void clr(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits, u32 bit) { bitvec_bin0_bin1_t<bintype, 5>::clr(_bin0, _bin1, maxbits, bit); }
+        bool get(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits, u32 bit) { return bitvec_bin0_bin1_t<bintype, 5>::get(_bin0, _bin1, maxbits, bit); }
+        s32  find(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits) { return bitvec_bin0_bin1_t<bintype, 5>::find(_bin0, _bin1, maxbits); }
+        s32  find_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { return bitvec_bin0_bin1_t<bintype, 5>::find_and_remove(_bin0, _bin1, maxbits); }
+        s32  find_last(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits) { return bitvec_bin0_bin1_t<bintype, 5>::find_last(_bin0, _bin1, maxbits); }
+        s32  find_last_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { return bitvec_bin0_bin1_t<bintype, 5>::find_last_and_remove(_bin0, _bin1, maxbits); }
+        s32  find_after(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits, u32 pivot) { return bitvec_bin0_bin1_t<bintype, 5>::find_after(_bin0, _bin1, maxbits, pivot); }
+        s32  find_before(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits, u32 pivot) { return bitvec_bin0_bin1_t<bintype, 5>::find_before(_bin0, _bin1, maxbits, pivot); }
+    }  // namespace nbitvec10
 
-    namespace nbinmap12
+    namespace nbitvec12
     {
-        void setup_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { binmap_bin0_bin1_t<bintype, 6>::setup_lazy(_bin0, _bin1, maxbits); }
-        void tick_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, 6>::tick_lazy(_bin0, _bin1, maxbits, bit); }
-        void clear(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { binmap_bin0_bin1_t<bintype, 6>::clear(_bin0, _bin1, maxbits); }
-        void set(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, 6>::set(_bin0, _bin1, maxbits, bit); }
-        void clr(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits, u32 bit) { binmap_bin0_bin1_t<bintype, 6>::clr(_bin0, _bin1, maxbits, bit); }
-        bool get(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits, u32 bit) { return binmap_bin0_bin1_t<bintype, 6>::get(_bin0, _bin1, maxbits, bit); }
-        s32  find(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 6>::find(_bin0, _bin1, maxbits); }
-        s32  find_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 6>::find_and_remove(_bin0, _bin1, maxbits); }
-        s32  find_last(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 6>::find_last(_bin0, _bin1, maxbits); }
-        s32  find_last_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { return binmap_bin0_bin1_t<bintype, 6>::find_last_and_remove(_bin0, _bin1, maxbits); }
-        s32  find_after(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits, u32 pivot) { return binmap_bin0_bin1_t<bintype, 6>::find_after(_bin0, _bin1, maxbits, pivot); }
-        s32  find_before(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits, u32 pivot) { return binmap_bin0_bin1_t<bintype, 6>::find_before(_bin0, _bin1, maxbits, pivot); }
-    }  // namespace nbinmap12
+        void setup_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { bitvec_bin0_bin1_t<bintype, 6>::setup_lazy(_bin0, _bin1, maxbits); }
+        void tick_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits, u32 bit) { bitvec_bin0_bin1_t<bintype, 6>::tick_lazy(_bin0, _bin1, maxbits, bit); }
+        void clear(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { bitvec_bin0_bin1_t<bintype, 6>::clear(_bin0, _bin1, maxbits); }
+        void set(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits, u32 bit) { bitvec_bin0_bin1_t<bintype, 6>::set(_bin0, _bin1, maxbits, bit); }
+        void clr(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits, u32 bit) { bitvec_bin0_bin1_t<bintype, 6>::clr(_bin0, _bin1, maxbits, bit); }
+        bool get(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits, u32 bit) { return bitvec_bin0_bin1_t<bintype, 6>::get(_bin0, _bin1, maxbits, bit); }
+        s32  find(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits) { return bitvec_bin0_bin1_t<bintype, 6>::find(_bin0, _bin1, maxbits); }
+        s32  find_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { return bitvec_bin0_bin1_t<bintype, 6>::find_and_remove(_bin0, _bin1, maxbits); }
+        s32  find_last(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits) { return bitvec_bin0_bin1_t<bintype, 6>::find_last(_bin0, _bin1, maxbits); }
+        s32  find_last_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, u32 maxbits) { return bitvec_bin0_bin1_t<bintype, 6>::find_last_and_remove(_bin0, _bin1, maxbits); }
+        s32  find_after(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits, u32 pivot) { return bitvec_bin0_bin1_t<bintype, 6>::find_after(_bin0, _bin1, maxbits, pivot); }
+        s32  find_before(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, u32 maxbits, u32 pivot) { return bitvec_bin0_bin1_t<bintype, 6>::find_before(_bin0, _bin1, maxbits, pivot); }
+    }  // namespace nbitvec12
 
     // --------------------------------------------------------------------------------
     // --------------------------------------------------------------------------------
 
-    // Below are the binmaps that have three levels.
+    // Below are the bit-vectors that have three levels.
     template <typename bintype, u32 binshift>
-    class binmap_bin0_bin1_bin2_t
+    class bitvec_bin0_bin1_bin2_t
     {
     public:
         static constexpr u32     binbits     = sizeof(bintype) * 8;
@@ -669,54 +669,54 @@ namespace ncore
 
     // --------------------------------------------------------------------------------
     // --------------------------------------------------------------------------------
-    namespace nbinmap15
+    namespace nbitvec15
     {
         // constexpr u32 binshift = 5;
         constexpr u32 binshift = 5;
 
-        void setup_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { binmap_bin0_bin1_bin2_t<bintype, binshift>::setup_lazy(_bin0, _bin1, _bin2, maxbits); }
-        void tick_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::tick_lazy(_bin0, _bin1, _bin2, maxbits, bit); }
-        void clear(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { binmap_bin0_bin1_bin2_t<bintype, binshift>::clear(_bin0, _bin1, _bin2, maxbits); }
-        void set(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::set(_bin0, _bin1, _bin2, maxbits, bit); }
-        void clr(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::clr(_bin0, _bin1, _bin2, maxbits, bit); }
-        bool get(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits, u32 bit) { return binmap_bin0_bin1_bin2_t<bintype, binshift>::get(_bin0, _bin1, _bin2, maxbits, bit); }
-        s32  find(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits) { return binmap_bin0_bin1_bin2_t<bintype, binshift>::find(_bin0, _bin1, _bin2, maxbits); }
-        s32  find_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { return binmap_bin0_bin1_bin2_t<bintype, binshift>::find_and_remove(_bin0, _bin1, _bin2, maxbits); }
+        void setup_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { bitvec_bin0_bin1_bin2_t<bintype, binshift>::setup_lazy(_bin0, _bin1, _bin2, maxbits); }
+        void tick_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits, u32 bit) { bitvec_bin0_bin1_bin2_t<bintype, binshift>::tick_lazy(_bin0, _bin1, _bin2, maxbits, bit); }
+        void clear(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { bitvec_bin0_bin1_bin2_t<bintype, binshift>::clear(_bin0, _bin1, _bin2, maxbits); }
+        void set(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits, u32 bit) { bitvec_bin0_bin1_bin2_t<bintype, binshift>::set(_bin0, _bin1, _bin2, maxbits, bit); }
+        void clr(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits, u32 bit) { bitvec_bin0_bin1_bin2_t<bintype, binshift>::clr(_bin0, _bin1, _bin2, maxbits, bit); }
+        bool get(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits, u32 bit) { return bitvec_bin0_bin1_bin2_t<bintype, binshift>::get(_bin0, _bin1, _bin2, maxbits, bit); }
+        s32  find(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits) { return bitvec_bin0_bin1_bin2_t<bintype, binshift>::find(_bin0, _bin1, _bin2, maxbits); }
+        s32  find_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { return bitvec_bin0_bin1_bin2_t<bintype, binshift>::find_and_remove(_bin0, _bin1, _bin2, maxbits); }
 
-        s32 find_last(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits) { return binmap_bin0_bin1_bin2_t<bintype, binshift>::find_last(_bin0, _bin1, _bin2, maxbits); }
-        s32 find_last_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { return binmap_bin0_bin1_bin2_t<bintype, binshift>::find_last_and_remove(_bin0, _bin1, _bin2, maxbits); }
-        s32 find_after(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits, u32 pivot) { return binmap_bin0_bin1_bin2_t<bintype, binshift>::find_after(_bin0, _bin1, _bin2, maxbits, pivot); }
+        s32 find_last(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits) { return bitvec_bin0_bin1_bin2_t<bintype, binshift>::find_last(_bin0, _bin1, _bin2, maxbits); }
+        s32 find_last_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { return bitvec_bin0_bin1_bin2_t<bintype, binshift>::find_last_and_remove(_bin0, _bin1, _bin2, maxbits); }
+        s32 find_after(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits, u32 pivot) { return bitvec_bin0_bin1_bin2_t<bintype, binshift>::find_after(_bin0, _bin1, _bin2, maxbits, pivot); }
         s32 find_before(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits, u32 pivot)
-        { return binmap_bin0_bin1_bin2_t<bintype, binshift>::find_before(_bin0, _bin1, _bin2, maxbits, pivot); }
-    }  // namespace nbinmap15
+        { return bitvec_bin0_bin1_bin2_t<bintype, binshift>::find_before(_bin0, _bin1, _bin2, maxbits, pivot); }
+    }  // namespace nbitvec15
 
-    namespace nbinmap18
+    namespace nbitvec18
     {
         // constexpr u32 binshift = 6;
         constexpr u32 binshift = 6;
 
-        void setup_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { binmap_bin0_bin1_bin2_t<bintype, binshift>::setup_lazy(_bin0, _bin1, _bin2, maxbits); }
-        void tick_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::tick_lazy(_bin0, _bin1, _bin2, maxbits, bit); }
-        void clear(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { binmap_bin0_bin1_bin2_t<bintype, binshift>::clear(_bin0, _bin1, _bin2, maxbits); }
-        void set(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::set(_bin0, _bin1, _bin2, maxbits, bit); }
-        void clr(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_t<bintype, binshift>::clr(_bin0, _bin1, _bin2, maxbits, bit); }
-        bool get(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits, u32 bit) { return binmap_bin0_bin1_bin2_t<bintype, binshift>::get(_bin0, _bin1, _bin2, maxbits, bit); }
-        s32  find(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits) { return binmap_bin0_bin1_bin2_t<bintype, binshift>::find(_bin0, _bin1, _bin2, maxbits); }
-        s32  find_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { return binmap_bin0_bin1_bin2_t<bintype, binshift>::find_and_remove(_bin0, _bin1, _bin2, maxbits); }
+        void setup_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { bitvec_bin0_bin1_bin2_t<bintype, binshift>::setup_lazy(_bin0, _bin1, _bin2, maxbits); }
+        void tick_lazy(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits, u32 bit) { bitvec_bin0_bin1_bin2_t<bintype, binshift>::tick_lazy(_bin0, _bin1, _bin2, maxbits, bit); }
+        void clear(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { bitvec_bin0_bin1_bin2_t<bintype, binshift>::clear(_bin0, _bin1, _bin2, maxbits); }
+        void set(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits, u32 bit) { bitvec_bin0_bin1_bin2_t<bintype, binshift>::set(_bin0, _bin1, _bin2, maxbits, bit); }
+        void clr(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits, u32 bit) { bitvec_bin0_bin1_bin2_t<bintype, binshift>::clr(_bin0, _bin1, _bin2, maxbits, bit); }
+        bool get(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits, u32 bit) { return bitvec_bin0_bin1_bin2_t<bintype, binshift>::get(_bin0, _bin1, _bin2, maxbits, bit); }
+        s32  find(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits) { return bitvec_bin0_bin1_bin2_t<bintype, binshift>::find(_bin0, _bin1, _bin2, maxbits); }
+        s32  find_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { return bitvec_bin0_bin1_bin2_t<bintype, binshift>::find_and_remove(_bin0, _bin1, _bin2, maxbits); }
 
-        s32 find_last(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits) { return binmap_bin0_bin1_bin2_t<bintype, binshift>::find_last(_bin0, _bin1, _bin2, maxbits); }
-        s32 find_last_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { return binmap_bin0_bin1_bin2_t<bintype, binshift>::find_last_and_remove(_bin0, _bin1, _bin2, maxbits); }
-        s32 find_after(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits, u32 pivot) { return binmap_bin0_bin1_bin2_t<bintype, binshift>::find_after(_bin0, _bin1, _bin2, maxbits, pivot); }
+        s32 find_last(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits) { return bitvec_bin0_bin1_bin2_t<bintype, binshift>::find_last(_bin0, _bin1, _bin2, maxbits); }
+        s32 find_last_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, u32 maxbits) { return bitvec_bin0_bin1_bin2_t<bintype, binshift>::find_last_and_remove(_bin0, _bin1, _bin2, maxbits); }
+        s32 find_after(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits, u32 pivot) { return bitvec_bin0_bin1_bin2_t<bintype, binshift>::find_after(_bin0, _bin1, _bin2, maxbits, pivot); }
         s32 find_before(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, u32 maxbits, u32 pivot)
-        { return binmap_bin0_bin1_bin2_t<bintype, binshift>::find_before(_bin0, _bin1, _bin2, maxbits, pivot); }
-    }  // namespace nbinmap18
+        { return bitvec_bin0_bin1_bin2_t<bintype, binshift>::find_before(_bin0, _bin1, _bin2, maxbits, pivot); }
+    }  // namespace nbitvec18
 
     // --------------------------------------------------------------------------------
     // --------------------------------------------------------------------------------
 
-    // Below are the binmaps that have three levels.
+    // Below are the bit-vectors that have four levels.
     template <typename bintype, u32 binshift>
-    class binmap_bin0_bin1_bin2_bin3_t
+    class bitvec_bin0_bin1_bin2_bin3_t
     {
     public:
         static constexpr u32     binbits     = sizeof(bintype) * 8;
@@ -1067,57 +1067,57 @@ namespace ncore
         }
     };
 
-    namespace nbinmap20
+    namespace nbitvec20
     {
-        void setup_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::setup_lazy(bin0, bin1, bin2, bin3, maxbits); }
-        void tick_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::tick_lazy(bin0, bin1, bin2, bin3, maxbits, bit); }
+        void setup_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::setup_lazy(bin0, bin1, bin2, bin3, maxbits); }
+        void tick_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::tick_lazy(bin0, bin1, bin2, bin3, maxbits, bit); }
 
-        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::clear(bin0, bin1, bin2, bin3, maxbits); }
+        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::clear(bin0, bin1, bin2, bin3, maxbits); }
 
-        void set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::set(bin0, bin1, bin2, bin3, maxbits, bit); }
-        void clr(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::clr(bin0, bin1, bin2, bin3, maxbits, bit); }
+        void set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::set(bin0, bin1, bin2, bin3, maxbits, bit); }
+        void clr(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::clr(bin0, bin1, bin2, bin3, maxbits, bit); }
         bool get(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits, u32 bit)
-        { return binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::get(bin0, bin1, bin2, bin3, maxbits, bit); }
+        { return bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::get(bin0, bin1, bin2, bin3, maxbits, bit); }
         s32 find(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits)
-        { return binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::find(bin0, bin1, bin2, bin3, maxbits); }
-        s32 find_and_remove(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { return binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::find_and_remove(bin0, bin1, bin2, bin3, maxbits); }
+        { return bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::find(bin0, bin1, bin2, bin3, maxbits); }
+        s32 find_and_remove(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { return bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::find_and_remove(bin0, bin1, bin2, bin3, maxbits); }
 
         s32 find_last(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, bintype const * CC_RESTRICT _bin3, u32 maxbits)
-        { return binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::find_last(_bin0, _bin1, _bin2, _bin3, maxbits); }
+        { return bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::find_last(_bin0, _bin1, _bin2, _bin3, maxbits); }
         s32 find_last_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, bintype* CC_RESTRICT _bin3, u32 maxbits)
-        { return binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::find_last_and_remove(_bin0, _bin1, _bin2, _bin3, maxbits); }
+        { return bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::find_last_and_remove(_bin0, _bin1, _bin2, _bin3, maxbits); }
         s32 find_after(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, bintype const * CC_RESTRICT _bin3, u32 maxbits, u32 pivot)
-        { return binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::find_after(_bin0, _bin1, _bin2, _bin3, maxbits, pivot); }
+        { return bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::find_after(_bin0, _bin1, _bin2, _bin3, maxbits, pivot); }
         s32 find_before(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, bintype const * CC_RESTRICT _bin3, u32 maxbits, u32 pivot)
-        { return binmap_bin0_bin1_bin2_bin3_t<bintype, 5>::find_before(_bin0, _bin1, _bin2, _bin3, maxbits, pivot); }
-    }  // namespace nbinmap20
+        { return bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::find_before(_bin0, _bin1, _bin2, _bin3, maxbits, pivot); }
+    }  // namespace nbitvec20
 
-    namespace nbinmap24
+    namespace nbitvec24
     {
-        void setup_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::setup_lazy(bin0, bin1, bin2, bin3, maxbits); }
-        void tick_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::tick_lazy(bin0, bin1, bin2, bin3, maxbits, bit); }
+        void setup_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::setup_lazy(bin0, bin1, bin2, bin3, maxbits); }
+        void tick_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::tick_lazy(bin0, bin1, bin2, bin3, maxbits, bit); }
 
-        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::clear(bin0, bin1, bin2, bin3, maxbits); }
+        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::clear(bin0, bin1, bin2, bin3, maxbits); }
 
-        void set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::set(bin0, bin1, bin2, bin3, maxbits, bit); }
-        void clr(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit) { binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::clr(bin0, bin1, bin2, bin3, maxbits, bit); }
+        void set(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::set(bin0, bin1, bin2, bin3, maxbits, bit); }
+        void clr(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::clr(bin0, bin1, bin2, bin3, maxbits, bit); }
         bool get(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits, u32 bit)
-        { return binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::get(bin0, bin1, bin2, bin3, maxbits, bit); }
+        { return bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::get(bin0, bin1, bin2, bin3, maxbits, bit); }
         s32 find(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits)
-        { return binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::find(bin0, bin1, bin2, bin3, maxbits); }
-        s32 find_and_remove(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { return binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::find_and_remove(bin0, bin1, bin2, bin3, maxbits); }
+        { return bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::find(bin0, bin1, bin2, bin3, maxbits); }
+        s32 find_and_remove(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { return bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::find_and_remove(bin0, bin1, bin2, bin3, maxbits); }
 
         s32 find_last(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, bintype const * CC_RESTRICT _bin3, u32 maxbits)
-        { return binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::find_last(_bin0, _bin1, _bin2, _bin3, maxbits); }
+        { return bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::find_last(_bin0, _bin1, _bin2, _bin3, maxbits); }
         s32 find_last_and_remove(bintype* CC_RESTRICT _bin0, bintype* CC_RESTRICT _bin1, bintype* CC_RESTRICT _bin2, bintype* CC_RESTRICT _bin3, u32 maxbits)
-        { return binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::find_last_and_remove(_bin0, _bin1, _bin2, _bin3, maxbits); }
+        { return bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::find_last_and_remove(_bin0, _bin1, _bin2, _bin3, maxbits); }
         s32 find_after(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, bintype const * CC_RESTRICT _bin3, u32 maxbits, u32 pivot)
-        { return binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::find_after(_bin0, _bin1, _bin2, _bin3, maxbits, pivot); }
+        { return bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::find_after(_bin0, _bin1, _bin2, _bin3, maxbits, pivot); }
         s32 find_before(bintype const * CC_RESTRICT _bin0, bintype const * CC_RESTRICT _bin1, bintype const * CC_RESTRICT _bin2, bintype const * CC_RESTRICT _bin3, u32 maxbits, u32 pivot)
-        { return binmap_bin0_bin1_bin2_bin3_t<bintype, 6>::find_before(_bin0, _bin1, _bin2, _bin3, maxbits, pivot); }
-    }  // namespace nbinmap24
+        { return bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::find_before(_bin0, _bin1, _bin2, _bin3, maxbits, pivot); }
+    }  // namespace nbitvec24
 
-    namespace nbinmap
+    namespace nbitvec
     {
         // Note: maximum count is 16 Million (6 bits + 6 bits + 6 bits + 6 bits = 24 bits = 16 M)
         void compute(u32 number_of_bits, layout64_t& layout)
@@ -1211,6 +1211,6 @@ namespace ncore
             return size;
         }
 
-    }  // namespace nbinmap
+    }  // namespace nbitvec
 
 };  // namespace ncore

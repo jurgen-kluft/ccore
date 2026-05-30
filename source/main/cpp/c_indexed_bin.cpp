@@ -1,5 +1,5 @@
 #include "ccore/c_arena.h"
-#include "ccore/c_duomap1.h"
+#include "ccore/c_statevec.h"
 #include "ccore/c_math.h"
 #include "ccore/c_memory.h"
 #include "ccore/c_indexed_bin.h"
@@ -36,7 +36,7 @@ namespace ncore
         u64* free1 = used1 + 16;
         u64* bin2  = free1 + 16;
 
-        nduomap18::setup_used_lazy(free0, free1, used0, used1, bin2, max_elements);
+        nstatevec18::setup_used_lazy(free0, free1, used0, used1, bin2, max_elements);
     }
 
     void bin_destroy(ibin16_t* bin)
@@ -74,7 +74,7 @@ namespace ncore
 
         if (bin->m_items_count < items_free_index)
         {
-            const s32 item_index = nduomap18::alloc(free0, free1, used0, used1, bin2, items_free_index);
+            const s32 item_index = nstatevec18::alloc(free0, free1, used0, used1, bin2, items_free_index);
             ASSERT(item_index >= 0 && (u32)item_index < items_free_index);
             u16* tags_array        = narena::base_ptr_as<u16>(bin->m_tags);
             tags_array[item_index] = tag;
@@ -87,7 +87,7 @@ namespace ncore
 
             // We need to make sure there is enough committed space in the binmap arena
             narena::commit(bin->m_binmap, (1 + 1 + 16 + 16 + ((items_free_index + 1 + 63) / 64)) * sizeof(u64));
-            nduomap18::tick_used_lazy(free0, free1, used0, used1, bin2, items_free_index, item_index);
+            nstatevec18::tick_used_lazy(free0, free1, used0, used1, bin2, items_free_index, item_index);
 
             narena::alloc(bin->m_items, bin->m_item_sizeof);
 
@@ -137,7 +137,7 @@ namespace ncore
         u64* free1 = used1 + 16;
         u64* bin2  = free1 + 16;
 
-        nduomap18::set_free(free0, free1, used0, used1, bin2, items_free_index, item_index);
+        nstatevec18::set_free(free0, free1, used0, used1, bin2, items_free_index, item_index);
         bin->m_items_count -= 1;
     }
 
@@ -153,18 +153,18 @@ namespace ncore
         u64* bin2  = free1 + 16;
 
         const u32 items_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
-        const s32 first_free_index = nduomap18::find_free(free0, free1, used0, used1, bin2, items_free_index);
+        const s32 first_free_index = nstatevec18::find_free(free0, free1, used0, used1, bin2, items_free_index);
         if (first_free_index < 0 || (u32)first_free_index >= items_free_index)
             return -1;  // no free item found, so no compaction possible
 
-        const s32 last_used_index = nduomap18::find_used_last(free0, free1, used0, used1, bin2, items_free_index);
+        const s32 last_used_index = nstatevec18::find_used_last(free0, free1, used0, used1, bin2, items_free_index);
         ASSERT(last_used_index >= 0 && (u32)last_used_index < items_free_index);
 
         if (first_free_index >= last_used_index)
             return -1;
 
         // mark this last item in the duomap as free
-        nduomap18::set_free(free0, free1, used0, used1, bin2, items_free_index, last_used_index);
+        nstatevec18::set_free(free0, free1, used0, used1, bin2, items_free_index, last_used_index);
 
         if (first_free_index < last_used_index)
         {
@@ -174,7 +174,7 @@ namespace ncore
             g_memcpy(dst_item, src_item, bin->m_item_sizeof);
 
             // the moved item now occupies the hole again, so restore that slot as used
-            nduomap18::set_used(free0, free1, used0, used1, bin2, items_free_index, first_free_index);
+            nstatevec18::set_used(free0, free1, used0, used1, bin2, items_free_index, first_free_index);
 
             // return the owner index of the item that was moved to fill the hole
             tags_array[first_free_index] = tags_array[last_used_index];
@@ -242,7 +242,7 @@ namespace ncore
         u64* used2 = narena::base_ptr_as<u64>(bin->m_binmap2u);
         u64* bin3  = narena::base_ptr_as<u64>(bin->m_binmap3);
 
-        nduomap24::setup_used_lazy(free0, free1, used0, used1, free2, used2, bin3, max_elements);
+        nstatevec24::setup_used_lazy(free0, free1, used0, used1, free2, used2, bin3, max_elements);
     }
 
     void bin_destroy(ibin32_t* bin)
@@ -288,7 +288,7 @@ namespace ncore
 
         if (bin->m_items_count < items_free_index)
         {
-            const s32 item_index = nduomap24::alloc(free0, free1, free2, used0, used1, used2, bin3, items_free_index);
+            const s32 item_index = nstatevec24::alloc(free0, free1, free2, used0, used1, used2, bin3, items_free_index);
             ASSERT(item_index >= 0 && (u32)item_index < items_free_index);
             u32* tags_array        = narena::base_ptr_as<u32>(bin->m_tags);
             tags_array[item_index] = tag;
@@ -302,7 +302,7 @@ namespace ncore
 
             // We need to make sure there is enough committed space in the binmap arena
             bin_commit(bin, items_free_index);  // this will also commit the necessary binmap space
-            nduomap24::tick_used_lazy(free0, free1, free2, used0, used1, used2, bin3, items_free_index, item_index);
+            nstatevec24::tick_used_lazy(free0, free1, free2, used0, used1, used2, bin3, items_free_index, item_index);
 
             narena::alloc(bin->m_items, bin->m_item_sizeof);
 
@@ -351,7 +351,7 @@ namespace ncore
         u64* used2 = narena::base_ptr_as<u64>(bin->m_binmap2u);
         u64* bin3  = narena::base_ptr_as<u64>(bin->m_binmap3);
 
-        nduomap24::set_free(free0, free1, free2, used0, used1, used2, bin3, items_free_index, item_index);
+        nstatevec24::set_free(free0, free1, free2, used0, used1, used2, bin3, items_free_index, item_index);
         bin->m_items_count -= 1;
     }
 
@@ -370,18 +370,18 @@ namespace ncore
 
         const u32 items_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
 
-        const s32 first_free_index = nduomap24::find_free(free0, free1, free2, used0, used1, used2, bin3, items_free_index);
+        const s32 first_free_index = nstatevec24::find_free(free0, free1, free2, used0, used1, used2, bin3, items_free_index);
         if (first_free_index < 0 || (u32)first_free_index >= items_free_index)
             return -1;  // no free item found, so no compaction possible
 
-        const s32 last_used_index = nduomap24::find_used_last(free0, free1, free2, used0, used1, used2, bin3, items_free_index);
+        const s32 last_used_index = nstatevec24::find_used_last(free0, free1, free2, used0, used1, used2, bin3, items_free_index);
         ASSERT(last_used_index >= 0 && (u32)last_used_index < items_free_index);
 
         if (first_free_index >= last_used_index)
             return -1;
 
         // mark this last item in the duomap as free
-        nduomap24::set_free(free0, free1, free2, used0, used1, used2, bin3, items_free_index, last_used_index);
+        nstatevec24::set_free(free0, free1, free2, used0, used1, used2, bin3, items_free_index, last_used_index);
 
         if (first_free_index < last_used_index)
         {
@@ -391,7 +391,7 @@ namespace ncore
             g_memcpy(dst_item, src_item, bin->m_item_sizeof);
 
             // the moved item now occupies the hole again, so restore that slot as used
-            nduomap24::set_used(free0, free1, free2, used0, used1, used2, bin3, items_free_index, first_free_index);
+            nstatevec24::set_used(free0, free1, free2, used0, used1, used2, bin3, items_free_index, first_free_index);
 
             // return the owner index of the item that was moved to fill the hole
             tags_array[first_free_index] = tags_array[last_used_index];

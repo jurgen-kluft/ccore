@@ -1,4 +1,4 @@
-#include "ccore/c_binmap1.h"
+#include "ccore/c_bitvec.h"
 
 // TODO
 // - Investigate the use of madvise(MADV_FREE) to decommit memory on Mac, madvise(MADV_DONTNEED) on Linux, and VirtualAlloc(MEM_RESET)

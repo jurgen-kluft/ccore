@@ -1,5 +1,5 @@
-#ifndef __CCORE_BINMAPS_V2_H__
-#define __CCORE_BINMAPS_V2_H__
+#ifndef __CCORE_BITVEC_V2_H__
+#define __CCORE_BITVEC_V2_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
 #    pragma once
@@ -8,9 +8,9 @@
 namespace ncore
 {
     // --------------------------------------------------------------------------------------------
-    // binmap functionality for 1, 2, 3, and 4 level binmaps
+    // bit-vector functionality for 1, 2, 3, and 4 level bit-vectors
     // --------------------------------------------------------------------------------------------
-    namespace nbinmap
+    namespace nbitvec
     {
         struct layout64_t
         {
@@ -43,14 +43,14 @@ namespace ncore
         // This will compute the data size in u32[N], where the full level is considered 'growable' up to 'bit'
         u32 sizeof_data(layout32_t const & l, u32 bit);
 
-    }  // namespace nbinmap
+    }  // namespace nbitvec
 
     // --------------------------------------------------------------------------------------------
     // 1 level binmaps
     // --------------------------------------------------------------------------------------------
 
-    // 2^5 binmap, can handle a maximum of 32 bits.
-    namespace nbinmap5
+    // 2^5 bit-vector, can handle a maximum of 32 bits.
+    namespace nbitvec5
     {
         // This binmap implementation is optimized for tracking '1' bits, so the find functions
         // are looking for '1' bits and the set/clear functions are setting/clearing '1' bits.
@@ -66,10 +66,10 @@ namespace ncore
         s32         find_last_and_remove(bintype* CC_RESTRICT bin0, u32 maxbits);           // Finds the last free bit and sets it to used and returns the bit index
         s32         find_after(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
         s32         find_before(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
-    }  // namespace nbinmap5
+    }  // namespace nbitvec5
 
     // 2^6 binmap, can handle a maximum of 64 bits.
-    namespace nbinmap6
+    namespace nbitvec6
     {
         // This binmap implementation is optimized for tracking '1' bits, so the find functions
         // are looking for '1' bits and the set/clear functions are setting/clearing '1' bits.
@@ -85,17 +85,17 @@ namespace ncore
         s32         find_last_and_remove(bintype* CC_RESTRICT bin0, u32 maxbits);           // Finds the last free bit and sets it to used and returns the bit index
         s32         find_after(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
         s32         find_before(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
-    }  // namespace nbinmap6
+    }  // namespace nbitvec6
 
     // --------------------------------------------------------------------------------------------
-    // 2 level binmaps
+    // 2 level bit-vectors
     // --------------------------------------------------------------------------------------------
 
-    // 2^10 binmap, can handle a maximum of 1024 bits.
-    namespace nbinmap10
+    // 2^10 bit-vector, can handle a maximum of 1024 bits.
+    namespace nbitvec10
     {
-        // bin0 = a single u32 (5)
-        // bin1 = an array of u32, max u32[32] (5)
+        // layer0 = a single u32 (5)
+        // layer1 = an array of u32, max u32[32] (5)
         typedef u32 bintype;
 
         void setup_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
@@ -113,14 +113,14 @@ namespace ncore
         s32 find_last_and_remove(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);                  // Finds the last free bit and sets it to used and returns the bit index
         s32 find_after(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
         s32 find_before(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
-    }  // namespace nbinmap10
+    }  // namespace nbitvec10
 
-    // 2^12 binmap, can handle a maximum of 4096 bits.
-    namespace nbinmap12
+    // 2^12 bit-vector, can handle a maximum of 4096 bits.
+    namespace nbitvec12
     {
         // max 2^12 = 4096 bits
-        // bin0 = a single u64
-        // bin1 = an array of u64, max u64[64]
+        // layer0 = a single u64
+        // layer1 = an array of u64, max u64[64]
         typedef u64 bintype;
 
         void setup_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
@@ -138,18 +138,18 @@ namespace ncore
         s32 find_last_and_remove(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);                  // Finds the last free bit and sets it to used and returns the bit index
         s32 find_after(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
         s32 find_before(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
-    }  // namespace nbinmap12
+    }  // namespace nbitvec12
 
     // --------------------------------------------------------------------------------------------
-    // 3 level binmaps
+    // 3 level bit-vectors
     // --------------------------------------------------------------------------------------------
 
-    namespace nbinmap15
+    namespace nbitvec15
     {
         // max 2^15 = 32768 bits
-        // bin0 = u32 (5)
-        // bin1 = an array of u32, max u32[32] (5)
-        // bin2 = an array of u32, max u32[32*32*32] (5)
+        // layer0 = u32 (5)
+        // layer1 = an array of u32, max u32[32] (5)
+        // layer2 = an array of u32, max u32[32*32*32] (5)
         typedef u32 bintype;
 
         void setup_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
@@ -167,14 +167,14 @@ namespace ncore
         s32 find_last_and_remove(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);                         // Finds the last free bit and sets it to used and returns the bit index
         s32 find_after(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
         s32 find_before(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
-    }  // namespace nbinmap15
+    }  // namespace nbitvec15
 
-    namespace nbinmap18
+    namespace nbitvec18
     {
         // max bits = 2^18 = 262144 bits
-        // bin0 = u64 (6)
-        // bin1 = an array of u64, max u64[64] (6)
-        // bin2 = an array of u64, max u64[64*64] (6)
+        // layer0 = u64 (6)
+        // layer1 = an array of u64, max u64[64] (6)
+        // layer2 = an array of u64, max u64[64*64] (6)
         typedef u64 bintype;
 
         void setup_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
@@ -192,19 +192,19 @@ namespace ncore
         s32 find_last_and_remove(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);                         // Finds the last free bit and sets it to used and returns the bit index
         s32 find_after(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
         s32 find_before(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
-    }  // namespace nbinmap18
+    }  // namespace nbitvec18
 
     // --------------------------------------------------------------------------------------------
-    // 4 level binmaps
+    // 4 level bit-vectors
     // --------------------------------------------------------------------------------------------
 
-    namespace nbinmap20
+    namespace nbitvec20
     {
         // max 2^20 = 1048576 (1M) bits
-        // bin0 = a single u32 (5,4,3)
-        // bin1 = an array of u32, max u32[32] (5)
-        // bin2 = an array of u32, max u32[32*32] (5)
-        // bin3 = an array of u32, max u32[32*32*32] (5)
+        // layer0 = a single u32 (5,4,3)
+        // layer1 = an array of u32, max u32[32] (5)
+        // layer2 = an array of u32, max u32[32*32] (5)
+        // layer3 = an array of u32, max u32[32*32*32] (5)
 
         typedef u32 bintype;
 
@@ -223,15 +223,15 @@ namespace ncore
         s32 find_last_and_remove(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);                   // Finds the last free bit and sets it to used and returns the bit index
         s32 find_after(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
         s32 find_before(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
-    }  // namespace nbinmap20
+    }  // namespace nbitvec20
 
-    namespace nbinmap24
+    namespace nbitvec24
     {
         // max 2^24 = 16777216 (16M) bits
-        // bin0 = a single u64 (6,5,4,3)
-        // bin1 = an array of u64, max u64[64] (6)
-        // bin2 = an array of u64, max u64[64*64] (6)
-        // bin3 = an array of u64, max u64[64*64*64] (6)
+        // layer0 = a single u64 (6,5,4,3)
+        // layer1 = an array of u64, max u64[64] (6)
+        // layer2 = an array of u64, max u64[64*64] (6)
+        // layer3 = an array of u64, max u64[64*64*64] (6)
 
         typedef u64 bintype;
 
@@ -250,8 +250,8 @@ namespace ncore
         s32 find_last_and_remove(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);                   // Finds the last free bit and sets it to used and returns the bit index
         s32 find_after(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
         s32 find_before(bintype const * CC_RESTRICT bin0, bintype const * CC_RESTRICT bin1, bintype const * CC_RESTRICT bin2, bintype const * CC_RESTRICT bin3, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
-    }  // namespace nbinmap24
+    }  // namespace nbitvec24
 
 }  // namespace ncore
 
-#endif  // __CCORE_BINMAPS_V2_H__
+#endif  // __CCORE_BITVEC_V2_H__

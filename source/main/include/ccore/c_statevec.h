@@ -1,5 +1,5 @@
-#ifndef __CCORE_DUOMAP_V2_H__
-#define __CCORE_DUOMAP_V2_H__
+#ifndef __CCORE_STATE_VECTOR_V2_H__
+#define __CCORE_STATE_VECTOR_V2_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
 #    pragma once
@@ -8,17 +8,17 @@
 namespace ncore
 {
     // --------------------------------------------------------------------------------------------
-    // duomap functionality for 1, 2, 3, and 4 level duomaps
+    // state-vector functionality for 1, 2, 3, and 4 level state-vectors
     // --------------------------------------------------------------------------------------------
     // free = tracking '0' bits
     // used = tracking '1' bits
 
     // --------------------------------------------------------------------------------------------
-    // 2 level binmaps
+    // 2 level state-vectors, can handle a maximum of 1024 bits.
     // --------------------------------------------------------------------------------------------
 
-    // 2^10 duomap, can handle a maximum of 1024 bits.
-    namespace nduomap10
+    // 2^10 state-vector, can handle a maximum of 1024 bits.
+    namespace nstatevec10
     {
         // bin1 = an array of u32, max u32[32] (5)
         typedef u32 bintype;
@@ -46,10 +46,10 @@ namespace ncore
         s32 free(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits);        // Finds the first '1' bit and sets it to free and returns the bit index
         s32 alloc_last(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits);  // Finds the last '0' bit and sets it to used and returns the bit index
         s32 free_last(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits);   // Finds the last '1' bit and sets it to used and returns the bit index
-    }  // namespace nduomap10
+    }  // namespace nstatevec10
 
-    // 2^12 duomap, can handle a maximum of 4096 bits.
-    namespace nduomap12
+    // 2^12 state-vector, can handle a maximum of 4096 bits.
+    namespace nstatevec12
     {
         // free0 = a single u64 (6), tracking '0' bits
         // used0 = a single u64 (6), tracking '1' bits
@@ -79,13 +79,13 @@ namespace ncore
         s32 free(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits);
         s32 alloc_last(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits);  // Finds the last '0' bit and sets it to used and returns the bit index
         s32 free_last(bintype* _free0, bintype* _used0, bintype* _bin1, u32 maxbits);   // Finds the last '1' bit and sets it to used and returns the bit index
-    }  // namespace nduomap12
+    }  // namespace nstatevec12
 
     // --------------------------------------------------------------------------------------------
     // 3 level duomaps
     // --------------------------------------------------------------------------------------------
 
-    namespace nduomap15
+    namespace nstatevec15
     {
         // max 2^15 = 32768 bits
         // bin0 = u32 (5)
@@ -115,9 +115,9 @@ namespace ncore
         s32 free(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits);
         s32 alloc_last(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits);  // Finds the last '0' bit and sets it to used and returns the bit index
         s32 free_last(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits);   // Finds the last '1' bit and sets it to used and returns the bit index
-    }  // namespace nduomap15
+    }  // namespace nstatevec15
 
-    namespace nduomap18
+    namespace nstatevec18
     {
         // max bits = 2^18 = 262144 bits
         // bin0 = u64 (6)
@@ -147,13 +147,13 @@ namespace ncore
         s32 free(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits);
         s32 alloc_last(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits);  // Finds the last '0' bit and sets it to used and returns the bit index
         s32 free_last(bintype* _free0, bintype* _free1, bintype* _used0, bintype* _used1, bintype* _bin2, u32 maxbits);   // Finds the last '1' bit and sets it to used and returns the bit index
-    }  // namespace nduomap18
+    }  // namespace nstatevec18
 
     // --------------------------------------------------------------------------------------------
     // 4 level duomaps
     // --------------------------------------------------------------------------------------------
 
-    namespace nduomap20
+    namespace nstatevec20
     {
         // max 2^20 = 1048576 bits
         // free0, used0 = u32 (5)
@@ -185,9 +185,9 @@ namespace ncore
         s32 free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
         s32 alloc_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
         s32 free_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
-    }  // namespace nduomap20
+    }  // namespace nstatevec20
 
-    namespace nduomap24
+    namespace nstatevec24
     {
         // max 2^24 = 16777216 bits
         // free0, used0 = u64 (6)
@@ -219,8 +219,8 @@ namespace ncore
         s32 free(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
         s32 alloc_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
         s32 free_last(bintype* _free0, bintype* _free1, bintype* _free2, bintype* _used0, bintype* _used1, bintype* _used2, bintype* _bin3, u32 maxbits);
-    }  // namespace nduomap24
+    }  // namespace nstatevec24
 
 }  // namespace ncore
 
-#endif  // __CCORE_BINMAPS_V2_H__
+#endif  // __CCORE_STATE_VECTOR_V2_H__
