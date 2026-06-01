@@ -81,10 +81,10 @@ namespace ncore
             // We should have a free item in the binmap, where is it?
             switch (bin->m_bin_level_count)
             {
-                case 3: item_index = nbitvec24::find_and_remove(bm0, bm1, bm2, bm3, item_free_index); break;
-                case 2: item_index = nbitvec18::find_and_remove(bm0, bm1, bm2, item_free_index); break;
-                case 1: item_index = nbitvec12::find_and_remove(bm0, bm1, item_free_index); break;
-                case 0: item_index = nbitvec6::find_and_remove(bm0, item_free_index); break;
+                case 3: item_index = nbitvec24::find_free_and_remove(bm0, bm1, bm2, bm3, item_free_index); break;
+                case 2: item_index = nbitvec18::find_free_and_remove(bm0, bm1, bm2, item_free_index); break;
+                case 1: item_index = nbitvec12::find_free_and_remove(bm0, bm1, item_free_index); break;
+                case 0: item_index = nbitvec6::find_free_and_remove(bm0, item_free_index); break;
             }
 
             bin->m_items_count += 1;
@@ -108,9 +108,9 @@ namespace ncore
 
             switch (bin->m_bin_level_count)
             {
-                case 3: nbitvec24::tick_lazy(bm0, bm1, bm2, bm3, items_capacity, item_free_index); break;
-                case 2: nbitvec18::tick_lazy(bm0, bm1, bm2, items_capacity, item_free_index); break;
-                case 1: nbitvec12::tick_lazy(bm0, bm1, items_capacity, item_free_index); break;
+                case 3: nbitvec24::tick_used_lazy(bm0, bm1, bm2, bm3, items_capacity, item_free_index); break;
+                case 2: nbitvec18::tick_used_lazy(bm0, bm1, bm2, items_capacity, item_free_index); break;
+                case 1: nbitvec12::tick_used_lazy(bm0, bm1, items_capacity, item_free_index); break;
                 case 0: break;
             }
 
@@ -138,10 +138,10 @@ namespace ncore
 
         switch (bin->m_bin_level_count)
         {
-            case 3: nbitvec24::clr(bm0, bm1, bm2, bm3, item_free_index, item_index); break;
-            case 2: nbitvec18::clr(bm0, bm1, bm2, item_free_index, item_index); break;
-            case 1: nbitvec12::clr(bm0, bm1, item_free_index, item_index); break;
-            case 0: nbitvec6::clr(bm0, item_free_index, item_index); break;
+            case 3: nbitvec24::set_free(bm0, bm1, bm2, bm3, item_free_index, item_index); break;
+            case 2: nbitvec18::set_free(bm0, bm1, bm2, item_free_index, item_index); break;
+            case 1: nbitvec12::set_free(bm0, bm1, item_free_index, item_index); break;
+            case 0: nbitvec6::set_free(bm0, item_free_index, item_index); break;
         }
 
         // Decrease number of used items
@@ -185,10 +185,10 @@ namespace ncore
 
         switch (bin->m_bin_level_count)
         {
-            case 3: hi = nbitvec24::find_last(bm0, bm1, bm2, bm3, item_free_index); break;
-            case 2: hi = nbitvec18::find_last(bm0, bm1, bm2, item_free_index); break;
-            case 1: hi = nbitvec12::find_last(bm0, bm1, item_free_index); break;
-            case 0: hi = nbitvec6::find_last(bm0, item_free_index); break;
+            case 3: hi = nbitvec24::find_free_last(bm0, bm1, bm2, bm3, item_free_index); break;
+            case 2: hi = nbitvec18::find_free_last(bm0, bm1, bm2, item_free_index); break;
+            case 1: hi = nbitvec12::find_free_last(bm0, bm1, item_free_index); break;
+            case 0: hi = nbitvec6::find_free_last(bm0, item_free_index); break;
         }
         return hi;
     }
@@ -261,9 +261,9 @@ namespace ncore
             // We should have a free item in the binmap, where is it?
             switch (bin->m_bin_level_count)
             {
-                case 2: item_index = nbitvec18::find_and_remove(bm0, bm1, bm2, item_free_index); break;
-                case 1: item_index = nbitvec12::find_and_remove(bm0, bm1, item_free_index); break;
-                case 0: item_index = nbitvec6::find_and_remove(bm0, item_free_index); break;
+                case 2: item_index = nbitvec18::find_free_and_remove(bm0, bm1, bm2, item_free_index); break;
+                case 1: item_index = nbitvec12::find_free_and_remove(bm0, bm1, item_free_index); break;
+                case 0: item_index = nbitvec6::find_free_and_remove(bm0, item_free_index); break;
             }
             ASSERT(item_index >= 0);
 
@@ -280,8 +280,8 @@ namespace ncore
 
             switch (bin->m_bin_level_count)
             {
-                case 2: nbitvec18::tick_lazy(bm0, bm1, bm2, items_capacity, item_free_index); break;
-                case 1: nbitvec12::tick_lazy(bm0, bm1, items_capacity, item_free_index); break;
+                case 2: nbitvec18::tick_used_lazy(bm0, bm1, bm2, items_capacity, item_free_index); break;
+                case 1: nbitvec12::tick_used_lazy(bm0, bm1, items_capacity, item_free_index); break;
                 case 0: break;
             }
 
@@ -307,9 +307,9 @@ namespace ncore
 
         switch (bin->m_bin_level_count)
         {
-            case 2: nbitvec18::clr(bm0, bm1, bm2, item_free_index, item_index); break;
-            case 1: nbitvec12::clr(bm0, bm1, item_free_index, item_index); break;
-            case 0: nbitvec6::clr(bm0, item_free_index, item_index); break;
+            case 2: nbitvec18::set_free(bm0, bm1, bm2, item_free_index, item_index); break;
+            case 1: nbitvec12::set_free(bm0, bm1, item_free_index, item_index); break;
+            case 0: nbitvec6::set_free(bm0, item_free_index, item_index); break;
         }
 
         // Decrease number of used items
@@ -350,9 +350,9 @@ namespace ncore
 
         switch (bin->m_bin_level_count)
         {
-            case 2: hi = nbitvec18::find_last(bm0, bm1, bm2, item_free_index); break;
-            case 1: hi = nbitvec12::find_last(bm0, bm1, item_free_index); break;
-            case 0: hi = nbitvec6::find_last(bm0, item_free_index); break;
+            case 2: hi = nbitvec18::find_free_last(bm0, bm1, bm2, item_free_index); break;
+            case 1: hi = nbitvec12::find_free_last(bm0, bm1, item_free_index); break;
+            case 0: hi = nbitvec6::find_free_last(bm0, item_free_index); break;
         }
         return hi;
     }

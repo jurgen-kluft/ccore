@@ -23,14 +23,7 @@ UNITTEST_SUITE_BEGIN(chunked_bin)
         UNITTEST_TEST(create_destroy_1)
         {
             cbin_t bin;
-            bin_setup(&bin, 256 * 4 * cKB, 4 * cKB, sizeof(item_t));  // 256K items, 4K chunk size
-            bin_destroy(&bin);
-        }
-
-        UNITTEST_TEST(create_destroy_2)
-        {
-            cbin_t bin;
-            bin_setup(&bin, 256 * 16 * cKB, 16 * cKB, sizeof(item_t));  // 256K items, 16K chunk size
+            bin_setup(&bin, 256 * 4 * cKB, sizeof(item_t));  // 256K items, 4K chunk size
             bin_destroy(&bin);
         }
     }
@@ -47,7 +40,7 @@ UNITTEST_SUITE_BEGIN(chunked_bin)
         UNITTEST_TEST(a_few_alloc_free)
         {
             cbin_t bin;
-            bin_setup(&bin, 256 * 4 * cKB, 4 * cKB, sizeof(item_t));  // 256K items, 4K chunk size
+            bin_setup(&bin, 256 * 4 * cKB, sizeof(item_t));  // 256K items, 4K chunk size
 
             const u32 num_allocs = 1000;
             item_t*   ptrs[num_allocs];
@@ -73,10 +66,14 @@ UNITTEST_SUITE_BEGIN(chunked_bin)
         UNITTEST_TEST(size_tracks_alloc_and_free)
         {
             cbin_t bin;
-            bin_setup(&bin, 2 * 4 * cKB, 4 * cKB, sizeof(item_t));
+            bin_setup(&bin, 16 * cKB, sizeof(item_t));
 
             const u32 num_allocs = 300;
             item_t*   ptrs[num_allocs];
+            for (u32 i = 0; i < num_allocs; ++i) 
+            {
+                ptrs[i] = nullptr;
+            }
 
             CHECK_EQUAL(bin_size(&bin), 0);
 
@@ -100,7 +97,7 @@ UNITTEST_SUITE_BEGIN(chunked_bin)
         UNITTEST_TEST(free_reuses_slot)
         {
             cbin_t bin;
-            bin_setup(&bin, 2 * 4 * cKB, 4 * cKB, sizeof(item_t));
+            bin_setup(&bin, 16 * cKB, sizeof(item_t));
 
             item_t* a = (item_t*)bin_alloc(&bin);
             item_t* b = (item_t*)bin_alloc(&bin);
@@ -135,9 +132,9 @@ UNITTEST_SUITE_BEGIN(chunked_bin)
         UNITTEST_TEST(exhausts_reserved_capacity)
         {
             cbin_t bin;
-            bin_setup(&bin, 2 * 4 * cKB, 4 * cKB, sizeof(item_t));
+            bin_setup(&bin, 16 * cKB, sizeof(item_t));
 
-            const u32 max_items = (2 * 4 * cKB) / sizeof(item_t);
+            const u32 max_items = (16 * cKB) / sizeof(item_t);
             item_t*   ptr       = nullptr;
 
             for (u32 i = 0; i < max_items; ++i)

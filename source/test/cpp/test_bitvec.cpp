@@ -26,12 +26,12 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             u64 expected_bin0 = 0;
 
-            nbitvec12::setup_lazy(&bin0, bin1, maxbits);
+            nbitvec12::setup_used_lazy(&bin0, bin1, maxbits);
 
             CHECK_EQUAL(expected_bin0, bin0);
             for (u32 i = 0; i < maxbits; i++)
             {
-                nbitvec12::tick_lazy(&bin0, bin1, maxbits, i);
+                nbitvec12::tick_used_lazy(&bin0, bin1, maxbits, i);
 
                 expected_bin1[i >> 6] |= ((u64)1 << (i & 63));
                 expected_bin0 |= ((u64)1 << (i >> 6));
@@ -41,8 +41,8 @@ UNITTEST_SUITE_BEGIN(bitvec)
                 CHECK_TRUE(nbitvec12::get(&bin0, bin1, maxbits, i));
             }
 
-            CHECK_EQUAL((s32)0, nbitvec12::find(&bin0, bin1, maxbits));
-            CHECK_EQUAL((s32)(maxbits - 1), nbitvec12::find_last(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)0, nbitvec12::find_free(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)(maxbits - 1), nbitvec12::find_free_last(&bin0, bin1, maxbits));
         }
 
         UNITTEST_TEST(set_and_is_set)
@@ -59,7 +59,7 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             for (u32 i = 0; i < 4; ++i)
             {
-                nbitvec12::set(&bin0, bin1, maxbits, bits[i]);
+                nbitvec12::set_free(&bin0, bin1, maxbits, bits[i]);
 
                 CHECK_EQUAL(expected_bin0[i], bin0);
                 CHECK_TRUE(nbitvec12::get(&bin0, bin1, maxbits, bits[i]));
@@ -83,18 +83,18 @@ UNITTEST_SUITE_BEGIN(bitvec)
             const u32 maxbits = 130;
 
             for (u32 i = 0; i < 4; ++i)
-                nbitvec12::set(&bin0, bin1, maxbits, bits[i]);
+                nbitvec12::set_free(&bin0, bin1, maxbits, bits[i]);
 
             for (u32 i = 0; i < 4; ++i)
             {
-                nbitvec12::clr(&bin0, bin1, maxbits, bits[i]);
+                nbitvec12::set_used(&bin0, bin1, maxbits, bits[i]);
 
                 CHECK_EQUAL(expected_bin0[i], bin0);
                 CHECK_FALSE(nbitvec12::get(&bin0, bin1, maxbits, bits[i]));
             }
         }
 
-        UNITTEST_TEST(find_and_remove)
+        UNITTEST_TEST(find_free_and_remove)
         {
             u64       bin0;
             u64       bin1[64];
@@ -105,26 +105,26 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             const s32 maxbits = 130;
 
-            CHECK_EQUAL((s32)-1, nbitvec12::find(&bin0, bin1, maxbits));
-            CHECK_EQUAL((s32)-1, nbitvec12::find_and_remove(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)-1, nbitvec12::find_free(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)-1, nbitvec12::find_free_and_remove(&bin0, bin1, maxbits));
 
             for (u32 i = 0; i < 3; ++i)
-                nbitvec12::set(&bin0, bin1, maxbits, bits[i]);
+                nbitvec12::set_free(&bin0, bin1, maxbits, bits[i]);
 
-            CHECK_EQUAL((s32)5, nbitvec12::find(&bin0, bin1, maxbits));
-            CHECK_EQUAL((s32)129, nbitvec12::find_last(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)5, nbitvec12::find_free(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)129, nbitvec12::find_free_last(&bin0, bin1, maxbits));
 
-            CHECK_EQUAL((s32)5, nbitvec12::find_and_remove(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)5, nbitvec12::find_free_and_remove(&bin0, bin1, maxbits));
             CHECK_FALSE(nbitvec12::get(&bin0, bin1, maxbits, 5));
-            CHECK_EQUAL((s32)64, nbitvec12::find_and_remove(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)64, nbitvec12::find_free_and_remove(&bin0, bin1, maxbits));
             CHECK_FALSE(nbitvec12::get(&bin0, bin1, maxbits, 64));
-            CHECK_EQUAL((s32)129, nbitvec12::find_and_remove(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)129, nbitvec12::find_free_and_remove(&bin0, bin1, maxbits));
             CHECK_FALSE(nbitvec12::get(&bin0, bin1, maxbits, 129));
-            CHECK_EQUAL((s32)-1, nbitvec12::find(&bin0, bin1, maxbits));
-            CHECK_EQUAL((s32)-1, nbitvec12::find_last(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)-1, nbitvec12::find_free(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)-1, nbitvec12::find_free_last(&bin0, bin1, maxbits));
         }
 
-        UNITTEST_TEST(find_last_and_remove)
+        UNITTEST_TEST(find_free_last_and_remove)
         {
             u64       bin0;
             u64       bin1[64];
@@ -136,12 +136,12 @@ UNITTEST_SUITE_BEGIN(bitvec)
             const s32 maxbits = 130;
 
             for (u32 i = 0; i < 3; ++i)
-                nbitvec12::set(&bin0, bin1, maxbits, bits[i]);
+                nbitvec12::set_free(&bin0, bin1, maxbits, bits[i]);
 
-            CHECK_EQUAL((s32)129, nbitvec12::find_last_and_remove(&bin0, bin1, maxbits));
-            CHECK_EQUAL((s32)64, nbitvec12::find_last_and_remove(&bin0, bin1, maxbits));
-            CHECK_EQUAL((s32)3, nbitvec12::find_last_and_remove(&bin0, bin1, maxbits));
-            CHECK_EQUAL((s32)-1, nbitvec12::find_last_and_remove(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)129, nbitvec12::find_free_last_and_remove(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)64, nbitvec12::find_free_last_and_remove(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)3, nbitvec12::find_free_last_and_remove(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)-1, nbitvec12::find_free_last_and_remove(&bin0, bin1, maxbits));
         }
 
         UNITTEST_TEST(find_after_and_before)
@@ -156,17 +156,17 @@ UNITTEST_SUITE_BEGIN(bitvec)
             const u32 maxbits = 130;
 
             for (u32 i = 0; i < 4; ++i)
-                nbitvec12::set(&bin0, bin1, maxbits, bits[i]);
+                nbitvec12::set_free(&bin0, bin1, maxbits, bits[i]);
 
-            CHECK_EQUAL((s32)65, nbitvec12::find_after(&bin0, bin1, maxbits, 2));
-            CHECK_EQUAL((s32)66, nbitvec12::find_after(&bin0, bin1, maxbits, 65));
-            CHECK_EQUAL((s32)129, nbitvec12::find_after(&bin0, bin1, maxbits, 66));
-            CHECK_EQUAL((s32)-1, nbitvec12::find_after(&bin0, bin1, maxbits, 129));
+            CHECK_EQUAL((s32)65, nbitvec12::find_free_after(&bin0, bin1, maxbits, 2));
+            CHECK_EQUAL((s32)66, nbitvec12::find_free_after(&bin0, bin1, maxbits, 65));
+            CHECK_EQUAL((s32)129, nbitvec12::find_free_after(&bin0, bin1, maxbits, 66));
+            CHECK_EQUAL((s32)-1, nbitvec12::find_free_after(&bin0, bin1, maxbits, 129));
 
-            CHECK_EQUAL((s32)66, nbitvec12::find_before(&bin0, bin1, maxbits, 129));
-            CHECK_EQUAL((s32)65, nbitvec12::find_before(&bin0, bin1, maxbits, 66));
-            CHECK_EQUAL((s32)2, nbitvec12::find_before(&bin0, bin1, maxbits, 65));
-            CHECK_EQUAL((s32)-1, nbitvec12::find_before(&bin0, bin1, maxbits, 2));
+            CHECK_EQUAL((s32)66, nbitvec12::find_free_before(&bin0, bin1, maxbits, 129));
+            CHECK_EQUAL((s32)65, nbitvec12::find_free_before(&bin0, bin1, maxbits, 66));
+            CHECK_EQUAL((s32)2, nbitvec12::find_free_before(&bin0, bin1, maxbits, 65));
+            CHECK_EQUAL((s32)-1, nbitvec12::find_free_before(&bin0, bin1, maxbits, 2));
         }
 
         UNITTEST_TEST(partial_range_boundary)
@@ -179,14 +179,14 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             const u32 maxbits = 65;
 
-            nbitvec12::set(&bin0, bin1, maxbits, 64);
+            nbitvec12::set_free(&bin0, bin1, maxbits, 64);
 
-            CHECK_EQUAL((s32)64, nbitvec12::find(&bin0, bin1, maxbits));
-            CHECK_EQUAL((s32)64, nbitvec12::find_last(&bin0, bin1, maxbits));
-            CHECK_EQUAL((s32)64, nbitvec12::find_after(&bin0, bin1, maxbits, 63));
-            CHECK_EQUAL((s32)-1, nbitvec12::find_after(&bin0, bin1, maxbits, 64));
-            CHECK_EQUAL((s32)64, nbitvec12::find_before(&bin0, bin1, maxbits, 65));
-            CHECK_EQUAL((s32)-1, nbitvec12::find_before(&bin0, bin1, maxbits, 64));
+            CHECK_EQUAL((s32)64, nbitvec12::find_free(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)64, nbitvec12::find_free_last(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)64, nbitvec12::find_free_after(&bin0, bin1, maxbits, 63));
+            CHECK_EQUAL((s32)-1, nbitvec12::find_free_after(&bin0, bin1, maxbits, 64));
+            CHECK_EQUAL((s32)64, nbitvec12::find_free_before(&bin0, bin1, maxbits, 65));
+            CHECK_EQUAL((s32)-1, nbitvec12::find_free_before(&bin0, bin1, maxbits, 64));
         }
     }
 
@@ -208,19 +208,19 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             const u32 maxbits = 4097;
 
-            nbitvec18::setup_lazy(&bin0, bin1, bin2, maxbits);
+            nbitvec18::setup_used_lazy(&bin0, bin1, bin2, maxbits);
 
             for (u32 i = 0; i < 5; ++i)
             {
-                nbitvec18::tick_lazy(&bin0, bin1, bin2, maxbits, bits[i]);
+                nbitvec18::tick_used_lazy(&bin0, bin1, bin2, maxbits, bits[i]);
                 CHECK_TRUE(nbitvec18::get(&bin0, bin1, bin2, maxbits, bits[i]));
             }
 
-            CHECK_EQUAL((s32)0, nbitvec18::find(&bin0, bin1, bin2, maxbits));
-            CHECK_EQUAL((s32)4096, nbitvec18::find_last(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)0, nbitvec18::find_free(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)4096, nbitvec18::find_free_last(&bin0, bin1, bin2, maxbits));
         }
 
-        UNITTEST_TEST(find_and_remove)
+        UNITTEST_TEST(find_free_and_remove)
         {
             u64       bin0;
             u64       bin1[64];
@@ -233,19 +233,19 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             const s32 maxbits = 5000;
 
-            CHECK_EQUAL((s32)-1, nbitvec18::find(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)-1, nbitvec18::find_free(&bin0, bin1, bin2, maxbits));
 
             for (u32 i = 0; i < 4; ++i)
-                nbitvec18::set(&bin0, bin1, bin2, maxbits, bits[i]);
+                nbitvec18::set_free(&bin0, bin1, bin2, maxbits, bits[i]);
 
-            CHECK_EQUAL((s32)3, nbitvec18::find(&bin0, bin1, bin2, maxbits));
-            CHECK_EQUAL((s32)4999, nbitvec18::find_last(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)3, nbitvec18::find_free(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)4999, nbitvec18::find_free_last(&bin0, bin1, bin2, maxbits));
 
-            CHECK_EQUAL((s32)3, nbitvec18::find_and_remove(&bin0, bin1, bin2, maxbits));
-            CHECK_EQUAL((s32)65, nbitvec18::find_and_remove(&bin0, bin1, bin2, maxbits));
-            CHECK_EQUAL((s32)4096, nbitvec18::find_and_remove(&bin0, bin1, bin2, maxbits));
-            CHECK_EQUAL((s32)4999, nbitvec18::find_and_remove(&bin0, bin1, bin2, maxbits));
-            CHECK_EQUAL((s32)-1, nbitvec18::find(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)3, nbitvec18::find_free_and_remove(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)65, nbitvec18::find_free_and_remove(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)4096, nbitvec18::find_free_and_remove(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)4999, nbitvec18::find_free_and_remove(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)-1, nbitvec18::find_free(&bin0, bin1, bin2, maxbits));
         }
 
         UNITTEST_TEST(find_last_and_directional)
@@ -262,20 +262,20 @@ UNITTEST_SUITE_BEGIN(bitvec)
             const u32 maxbits = 5000;
 
             for (u32 i = 0; i < 5; ++i)
-                nbitvec18::set(&bin0, bin1, bin2, maxbits, bits[i]);
+                nbitvec18::set_free(&bin0, bin1, bin2, maxbits, bits[i]);
 
-            CHECK_EQUAL((s32)4999, nbitvec18::find_last_and_remove(&bin0, bin1, bin2, maxbits));
-            CHECK_EQUAL((s32)4098, nbitvec18::find_last(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)4999, nbitvec18::find_free_last_and_remove(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)4098, nbitvec18::find_free_last(&bin0, bin1, bin2, maxbits));
 
-            CHECK_EQUAL((s32)65, nbitvec18::find_after(&bin0, bin1, bin2, maxbits, 2));
-            CHECK_EQUAL((s32)4096, nbitvec18::find_after(&bin0, bin1, bin2, maxbits, 65));
-            CHECK_EQUAL((s32)4098, nbitvec18::find_after(&bin0, bin1, bin2, maxbits, 4096));
-            CHECK_EQUAL((s32)-1, nbitvec18::find_after(&bin0, bin1, bin2, maxbits, 4098));
+            CHECK_EQUAL((s32)65, nbitvec18::find_free_after(&bin0, bin1, bin2, maxbits, 2));
+            CHECK_EQUAL((s32)4096, nbitvec18::find_free_after(&bin0, bin1, bin2, maxbits, 65));
+            CHECK_EQUAL((s32)4098, nbitvec18::find_free_after(&bin0, bin1, bin2, maxbits, 4096));
+            CHECK_EQUAL((s32)-1, nbitvec18::find_free_after(&bin0, bin1, bin2, maxbits, 4098));
 
-            CHECK_EQUAL((s32)4096, nbitvec18::find_before(&bin0, bin1, bin2, maxbits, 4098));
-            CHECK_EQUAL((s32)65, nbitvec18::find_before(&bin0, bin1, bin2, maxbits, 4096));
-            CHECK_EQUAL((s32)2, nbitvec18::find_before(&bin0, bin1, bin2, maxbits, 65));
-            CHECK_EQUAL((s32)-1, nbitvec18::find_before(&bin0, bin1, bin2, maxbits, 2));
+            CHECK_EQUAL((s32)4096, nbitvec18::find_free_before(&bin0, bin1, bin2, maxbits, 4098));
+            CHECK_EQUAL((s32)65, nbitvec18::find_free_before(&bin0, bin1, bin2, maxbits, 4096));
+            CHECK_EQUAL((s32)2, nbitvec18::find_free_before(&bin0, bin1, bin2, maxbits, 65));
+            CHECK_EQUAL((s32)-1, nbitvec18::find_free_before(&bin0, bin1, bin2, maxbits, 2));
         }
 
         UNITTEST_TEST(partial_range_boundary)
@@ -290,14 +290,14 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             const u32 maxbits = 4097;
 
-            nbitvec18::set(&bin0, bin1, bin2, maxbits, 4096);
+            nbitvec18::set_free(&bin0, bin1, bin2, maxbits, 4096);
 
-            CHECK_EQUAL((s32)4096, nbitvec18::find(&bin0, bin1, bin2, maxbits));
-            CHECK_EQUAL((s32)4096, nbitvec18::find_last(&bin0, bin1, bin2, maxbits));
-            CHECK_EQUAL((s32)4096, nbitvec18::find_after(&bin0, bin1, bin2, maxbits, 4095));
-            CHECK_EQUAL((s32)-1, nbitvec18::find_after(&bin0, bin1, bin2, maxbits, 4096));
-            CHECK_EQUAL((s32)4096, nbitvec18::find_before(&bin0, bin1, bin2, maxbits, 4097));
-            CHECK_EQUAL((s32)-1, nbitvec18::find_before(&bin0, bin1, bin2, maxbits, 4096));
+            CHECK_EQUAL((s32)4096, nbitvec18::find_free(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)4096, nbitvec18::find_free_last(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)4096, nbitvec18::find_free_after(&bin0, bin1, bin2, maxbits, 4095));
+            CHECK_EQUAL((s32)-1, nbitvec18::find_free_after(&bin0, bin1, bin2, maxbits, 4096));
+            CHECK_EQUAL((s32)4096, nbitvec18::find_free_before(&bin0, bin1, bin2, maxbits, 4097));
+            CHECK_EQUAL((s32)-1, nbitvec18::find_free_before(&bin0, bin1, bin2, maxbits, 4096));
         }
     }
 
@@ -321,19 +321,19 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             const u32 maxbits = 262145;
 
-            nbitvec24::setup_lazy(&bin0, bin1, bin2, bin3, maxbits);
+            nbitvec24::setup_used_lazy(&bin0, bin1, bin2, bin3, maxbits);
 
             for (u32 i = 0; i < 5; ++i)
             {
-                nbitvec24::tick_lazy(&bin0, bin1, bin2, bin3, maxbits, bits[i]);
+                nbitvec24::tick_used_lazy(&bin0, bin1, bin2, bin3, maxbits, bits[i]);
                 CHECK_TRUE(nbitvec24::get(&bin0, bin1, bin2, bin3, maxbits, bits[i]));
             }
 
-            CHECK_EQUAL((s32)0, nbitvec24::find(&bin0, bin1, bin2, bin3, maxbits));
-            CHECK_EQUAL((s32)262144, nbitvec24::find_last(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)0, nbitvec24::find_free(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)262144, nbitvec24::find_free_last(&bin0, bin1, bin2, bin3, maxbits));
         }
 
-        UNITTEST_TEST(find_and_remove)
+        UNITTEST_TEST(find_free_and_remove)
         {
             u64       bin0;
             u64       bin1[64];
@@ -348,19 +348,19 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             const s32 maxbits = 300000;
 
-            CHECK_EQUAL((s32)-1, nbitvec24::find(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)-1, nbitvec24::find_free(&bin0, bin1, bin2, bin3, maxbits));
 
             for (u32 i = 0; i < 4; ++i)
-                nbitvec24::set(&bin0, bin1, bin2, bin3, maxbits, bits[i]);
+                nbitvec24::set_free(&bin0, bin1, bin2, bin3, maxbits, bits[i]);
 
-            CHECK_EQUAL((s32)3, nbitvec24::find(&bin0, bin1, bin2, bin3, maxbits));
-            CHECK_EQUAL((s32)299999, nbitvec24::find_last(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)3, nbitvec24::find_free(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)299999, nbitvec24::find_free_last(&bin0, bin1, bin2, bin3, maxbits));
 
-            CHECK_EQUAL((s32)3, nbitvec24::find_and_remove(&bin0, bin1, bin2, bin3, maxbits));
-            CHECK_EQUAL((s32)65, nbitvec24::find_and_remove(&bin0, bin1, bin2, bin3, maxbits));
-            CHECK_EQUAL((s32)262144, nbitvec24::find_and_remove(&bin0, bin1, bin2, bin3, maxbits));
-            CHECK_EQUAL((s32)299999, nbitvec24::find_and_remove(&bin0, bin1, bin2, bin3, maxbits));
-            CHECK_EQUAL((s32)-1, nbitvec24::find(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)3, nbitvec24::find_free_and_remove(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)65, nbitvec24::find_free_and_remove(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)262144, nbitvec24::find_free_and_remove(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)299999, nbitvec24::find_free_and_remove(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)-1, nbitvec24::find_free(&bin0, bin1, bin2, bin3, maxbits));
         }
 
         UNITTEST_TEST(find_last_and_directional)
@@ -379,20 +379,20 @@ UNITTEST_SUITE_BEGIN(bitvec)
             const u32 maxbits = 300000;
 
             for (u32 i = 0; i < 5; ++i)
-                nbitvec24::set(&bin0, bin1, bin2, bin3, maxbits, bits[i]);
+                nbitvec24::set_free(&bin0, bin1, bin2, bin3, maxbits, bits[i]);
 
-            CHECK_EQUAL((s32)299999, nbitvec24::find_last_and_remove(&bin0, bin1, bin2, bin3, maxbits));
-            CHECK_EQUAL((s32)262146, nbitvec24::find_last(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)299999, nbitvec24::find_free_last_and_remove(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)262146, nbitvec24::find_free_last(&bin0, bin1, bin2, bin3, maxbits));
 
-            CHECK_EQUAL((s32)65, nbitvec24::find_after(&bin0, bin1, bin2, bin3, maxbits, 2));
-            CHECK_EQUAL((s32)262144, nbitvec24::find_after(&bin0, bin1, bin2, bin3, maxbits, 65));
-            CHECK_EQUAL((s32)262146, nbitvec24::find_after(&bin0, bin1, bin2, bin3, maxbits, 262144));
-            CHECK_EQUAL((s32)-1, nbitvec24::find_after(&bin0, bin1, bin2, bin3, maxbits, 262146));
+            CHECK_EQUAL((s32)65, nbitvec24::find_free_after(&bin0, bin1, bin2, bin3, maxbits, 2));
+            CHECK_EQUAL((s32)262144, nbitvec24::find_free_after(&bin0, bin1, bin2, bin3, maxbits, 65));
+            CHECK_EQUAL((s32)262146, nbitvec24::find_free_after(&bin0, bin1, bin2, bin3, maxbits, 262144));
+            CHECK_EQUAL((s32)-1, nbitvec24::find_free_after(&bin0, bin1, bin2, bin3, maxbits, 262146));
 
-            CHECK_EQUAL((s32)262144, nbitvec24::find_before(&bin0, bin1, bin2, bin3, maxbits, 262146));
-            CHECK_EQUAL((s32)65, nbitvec24::find_before(&bin0, bin1, bin2, bin3, maxbits, 262144));
-            CHECK_EQUAL((s32)2, nbitvec24::find_before(&bin0, bin1, bin2, bin3, maxbits, 65));
-            CHECK_EQUAL((s32)-1, nbitvec24::find_before(&bin0, bin1, bin2, bin3, maxbits, 2));
+            CHECK_EQUAL((s32)262144, nbitvec24::find_free_before(&bin0, bin1, bin2, bin3, maxbits, 262146));
+            CHECK_EQUAL((s32)65, nbitvec24::find_free_before(&bin0, bin1, bin2, bin3, maxbits, 262144));
+            CHECK_EQUAL((s32)2, nbitvec24::find_free_before(&bin0, bin1, bin2, bin3, maxbits, 65));
+            CHECK_EQUAL((s32)-1, nbitvec24::find_free_before(&bin0, bin1, bin2, bin3, maxbits, 2));
         }
 
         UNITTEST_TEST(partial_range_boundary)
@@ -409,14 +409,14 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             const u32 maxbits = 262145;
 
-            nbitvec24::set(&bin0, bin1, bin2, bin3, maxbits, 262144);
+            nbitvec24::set_free(&bin0, bin1, bin2, bin3, maxbits, 262144);
 
-            CHECK_EQUAL((s32)262144, nbitvec24::find(&bin0, bin1, bin2, bin3, maxbits));
-            CHECK_EQUAL((s32)262144, nbitvec24::find_last(&bin0, bin1, bin2, bin3, maxbits));
-            CHECK_EQUAL((s32)262144, nbitvec24::find_after(&bin0, bin1, bin2, bin3, maxbits, 262143));
-            CHECK_EQUAL((s32)-1, nbitvec24::find_after(&bin0, bin1, bin2, bin3, maxbits, 262144));
-            CHECK_EQUAL((s32)262144, nbitvec24::find_before(&bin0, bin1, bin2, bin3, maxbits, 262145));
-            CHECK_EQUAL((s32)-1, nbitvec24::find_before(&bin0, bin1, bin2, bin3, maxbits, 262144));
+            CHECK_EQUAL((s32)262144, nbitvec24::find_free(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)262144, nbitvec24::find_free_last(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)262144, nbitvec24::find_free_after(&bin0, bin1, bin2, bin3, maxbits, 262143));
+            CHECK_EQUAL((s32)-1, nbitvec24::find_free_after(&bin0, bin1, bin2, bin3, maxbits, 262144));
+            CHECK_EQUAL((s32)262144, nbitvec24::find_free_before(&bin0, bin1, bin2, bin3, maxbits, 262145));
+            CHECK_EQUAL((s32)-1, nbitvec24::find_free_before(&bin0, bin1, bin2, bin3, maxbits, 262144));
         }
     }
 }
