@@ -41,7 +41,7 @@ namespace ncore
         u8       m_chunk_size_shift;        // chunk size shift, e.g. 16 for 64 KiB chunks
     };
 
-    void  bin_setup(cbin_t* bin, uint_t reserved_size, u8 chunk_size_shift, u32 item_sizeof);
+    void  bin_setup(cbin_t* bin, uint_t reserved_size, u32 chunk_size, u32 item_sizeof);
     void  bin_destroy(cbin_t* bin);           // destroy the bin
     u32   bin_size(cbin_t const * bin);       // number of items currently allocated in the bin
     void* bin_alloc(cbin_t* bin);             // allocate a item from the bin

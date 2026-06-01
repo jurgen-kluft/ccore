@@ -94,6 +94,16 @@ namespace ncore
         u16 m_padding;     // padding for alignment
     };
 
+    static inline void s_chunk_init(cchunk_t* chunk)
+    {
+        chunk->m_next       = c_list_null_index;
+        chunk->m_prev       = c_list_null_index;
+        chunk->m_free_head  = 0xFFFF;  // all items are free
+        chunk->m_free_index = 0;       // start allocating from the first item
+        chunk->m_item_count = 0;       // no items allocated yet
+        chunk->m_padding    = 0;       // padding for alignment
+    }
+
     static void* s_chunk_alloc_item(cbin_t* bin, cchunk_t* chunk, u32 chunk_index)
     {
         // Calculate the address of this item
@@ -105,7 +115,7 @@ namespace ncore
             if (free_item_index != 0xFFFF)
             {
                 // Pop the free item from the free list
-                u16* item          = (u16*)(chunk_address + (free_item_index * bin->m_item_sizeof));
+                u16* item          = (u16*)(chunk_address + ((uint_t)free_item_index * bin->m_item_sizeof));
                 chunk->m_free_head = *item;  // update free head to the next free item
                 return item;
             }
@@ -114,7 +124,7 @@ namespace ncore
         {
             // Get the index of the free item in this chunk
             const u32 item_index = chunk->m_free_index++;
-            return chunk_address + (item_index * bin->m_item_sizeof);
+            return chunk_address + ((uint_t)item_index * bin->m_item_sizeof);
         }
         return nullptr;
     }
@@ -127,7 +137,7 @@ namespace ncore
         const u16 item_index    = (u16)(((byte*)item_ptr - chunk_address) / bin->m_item_sizeof);
 
         // Insert this item back to the free list of the chunk
-        u16* item = (u16*)chunk_address + (item_index * bin->m_item_sizeof);
+        u16* item = (u16*)(chunk_address + (item_index * bin->m_item_sizeof));
         ASSERT((byte*)item == (byte*)item_ptr);   // sanity check
         *item              = chunk->m_free_head;  // point to current free head
         chunk->m_free_head = item_index;          // update free head to this item
@@ -177,7 +187,7 @@ namespace ncore
         {
             active_chunk_index = s_dlist_pop(chunk_array, sizeof(cchunk_t), bin->m_chunk_free_list_head, bin->m_chunk_free_list_size);
             active_chunk       = chunk_array + active_chunk_index;
-
+            s_chunk_init(active_chunk);
             s_commit_chunk_memory(bin, active_chunk_index);
         }
         else
@@ -191,9 +201,9 @@ namespace ncore
                 return nullptr;
             }
 
-            active_chunk_index        = chunk_free_index;
-            active_chunk              = g_allocate_and_clear<cchunk_t>(bin->m_chunks);
-            active_chunk->m_free_head = 0xFFFF;
+            active_chunk_index = chunk_free_index;
+            active_chunk       = g_allocate<cchunk_t>(bin->m_chunks);
+            s_chunk_init(active_chunk);
             bin->m_chunk_count += 1;
 
             // This chunk is now active, add it to the active chunk list
@@ -211,7 +221,7 @@ namespace ncore
         }
 
         bin->m_total_items_count += 1;
-        return (void*)item;
+        return item;
     }
 
     // 8888888888 8888888b.  8888888888 8888888888
@@ -225,6 +235,8 @@ namespace ncore
 
     void bin_free(cbin_t* bin, void* ptr)
     {
+        ASSERT(ptr != nullptr && ptr >= bin->m_address_base && ptr < (byte*)bin->m_address_base + bin->m_address_size);
+
         cchunk_t* chunk_array = narena::base_ptr_as<cchunk_t>(bin->m_chunks);
 
         // Find the chunk this item belongs to
@@ -265,10 +277,15 @@ namespace ncore
     // Y88b  d88P 888            888     Y88b. .d88P 888
     //  "Y8888P"  8888888888     888      "Y88888P"  888
 
-    void bin_setup(cbin_t* bin, uint_t reserved_size, u8 chunk_size_shift, u32 item_sizeof)
+    void bin_setup(cbin_t* bin, uint_t reserved_size, u32 chunk_size, u32 item_sizeof)
     {
+        // item size must be at least 4 bytes to be able to use the free list in the chunk struct
+        ASSERT(item_sizeof >= 4);
+
+        // chunk size must be a power of 2
+        ASSERT((1) << math::ilog2(chunk_size) == chunk_size);
+
         // reserved size must be a multiple of chunk size
-        const u32 chunk_size = uint_t(1) << chunk_size_shift;
         ASSERT((reserved_size & (chunk_size - 1)) == 0);
 
         // At least 4 items per chunk to be able to use the free_head and free_index in the chunk struct
@@ -288,7 +305,7 @@ namespace ncore
         bin->m_total_items_count   = 0;
         bin->m_max_items_per_chunk = chunk_size / item_sizeof;
         bin->m_item_sizeof         = item_sizeof;
-        bin->m_chunk_size_shift    = chunk_size_shift;
+        bin->m_chunk_size_shift    = math::ilog2(chunk_size);
 
         const u32 chunk_count_max = reserved_size / chunk_size;
         bin->m_chunks             = narena::new_arena(chunk_count_max * sizeof(cchunk_t), 0);
