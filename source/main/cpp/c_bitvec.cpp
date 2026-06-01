@@ -201,13 +201,10 @@ namespace ncore
             {
                 u32 wi = bit;
 
-                const u32 bi1     = wi & binmask;
-                wi                = wi >> binshift;
-                const bintype wd1 = (bi1 == 0) ? 0 : _bin1[wi];
-                _bin1[wi]         = D_BIT_SET(wd1, bi1);
-
+                const u32 bi1 = wi & binmask;
+                wi            = wi >> binshift;
                 if (bi1 == 0)
-                    *_bin0 = D_BIT_SET(*_bin0, wi);
+                    _bin1[wi] = 0;
             }
         }
 
@@ -440,22 +437,18 @@ namespace ncore
             {
                 u32 wi = bit;
 
-                const u32 bi2     = wi & binmask;
-                wi                = wi >> binshift;
-                const bintype wd2 = (bi2 == 0) ? 0 : _bin2[wi];
-                _bin2[wi]         = D_BIT_SET(wd2, bi2);
+                const u32 bi2 = wi & binmask;
+                wi            = wi >> binshift;
 
                 if (bi2 == 0)
                 {
-                    const u32 bi1     = wi & binmask;
-                    wi                = wi >> binshift;
-                    const bintype wd1 = (bi1 == 0) ? 0 : _bin1[wi];
-                    _bin1[wi]         = D_BIT_SET(wd1, bi1);
+                    _bin2[wi] = 0;
 
+                    const u32 bi1 = wi & binmask;
+                    wi            = wi >> binshift;
                     if (bi1 == 0)
                     {
-                        *_bin0 = D_BIT_SET(*_bin0, wi);
-                        *_bin0 &= valid_level0_mask(maxbits);
+                        _bin1[wi] = 0;
                     }
                 }
             }
@@ -771,30 +764,23 @@ namespace ncore
             {
                 u32 wi = bit;
 
-                // bin3
-                const u32 bi3     = wi & binmask;
-                wi                = wi >> binshift;
-                const bintype wd3 = (bi3 == 0) ? 0 : _bin3[wi];
-                _bin3[wi]         = D_BIT_SET(wd3, bi3);
-
+                const u32 bi3 = wi & binmask;
+                wi            = wi >> binshift;
                 if (bi3 == 0)
                 {
-                    const u32 bi2     = wi & binmask;
-                    wi                = wi >> binshift;
-                    const bintype wd2 = (bi2 == 0) ? 0 : _bin2[wi];
-                    _bin2[wi]         = D_BIT_SET(wd2, bi2);
+                    _bin3[wi] = 0;
 
+                    const u32 bi2 = wi & binmask;
+                    wi            = wi >> binshift;
                     if (bi2 == 0)
                     {
-                        const u32 bi1     = wi & binmask;
-                        wi                = wi >> binshift;
-                        const bintype wd1 = (bi1 == 0) ? 0 : _bin1[wi];
-                        _bin1[wi]         = D_BIT_SET(wd1, bi1);
+                        _bin2[wi] = 0;
 
+                        const u32 bi1 = wi & binmask;
+                        wi            = wi >> binshift;
                         if (bi1 == 0)
                         {
-                            *_bin0 = D_BIT_SET(*_bin0, wi);
-                            *_bin0 &= valid_level0_mask(maxbits);
+                            _bin1[wi] = 0;
                         }
                     }
                 }
@@ -1070,7 +1056,8 @@ namespace ncore
     namespace nbitvec20
     {
         void setup_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::setup_used_lazy(bin0, bin1, bin2, bin3, maxbits); }
-        void tick_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::tick_used_lazy(bin0, bin1, bin2, bin3, maxbits, bit); }
+        void tick_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit)
+        { bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::tick_used_lazy(bin0, bin1, bin2, bin3, maxbits, bit); }
 
         void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 5>::clear(bin0, bin1, bin2, bin3, maxbits); }
 
@@ -1096,7 +1083,8 @@ namespace ncore
     namespace nbitvec24
     {
         void setup_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::setup_used_lazy(bin0, bin1, bin2, bin3, maxbits); }
-        void tick_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::tick_used_lazy(bin0, bin1, bin2, bin3, maxbits, bit); }
+        void tick_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit)
+        { bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::tick_used_lazy(bin0, bin1, bin2, bin3, maxbits, bit); }
 
         void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits) { bitvec_bin0_bin1_bin2_bin3_t<bintype, 6>::clear(bin0, bin1, bin2, bin3, maxbits); }
 
