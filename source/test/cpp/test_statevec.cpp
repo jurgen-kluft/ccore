@@ -98,7 +98,7 @@ namespace
     }
 }
 
-UNITTEST_SUITE_BEGIN(statevec1)
+UNITTEST_SUITE_BEGIN(statevec)
 {
     UNITTEST_FIXTURE(statevec10)
     {

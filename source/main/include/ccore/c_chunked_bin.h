@@ -44,8 +44,8 @@ namespace ncore
     void  bin_setup(cbin_t* bin, uint_t reserved_size, u32 chunk_size, u32 item_sizeof);
     void  bin_destroy(cbin_t* bin);           // destroy the bin
     u32   bin_size(cbin_t const * bin);       // number of items currently allocated in the bin
-    void* bin_alloc(cbin_t* bin);             // allocate a item from the bin
-    void  bin_free(cbin_t* bin, void* item);  // free a item back to the bin
+    void* bin_alloc(cbin_t* bin);             // allocate an item from the bin
+    void  bin_free(cbin_t* bin, void* item);  // free an item back to the bin
 
 }  // namespace ncore
 

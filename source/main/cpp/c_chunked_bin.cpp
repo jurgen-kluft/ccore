@@ -117,6 +117,7 @@ namespace ncore
                 // Pop the free item from the free list
                 u16* item          = (u16*)(chunk_address + ((uint_t)free_item_index * bin->m_item_sizeof));
                 chunk->m_free_head = *item;  // update free head to the next free item
+                chunk->m_item_count += 1;
                 return item;
             }
         }
@@ -124,6 +125,7 @@ namespace ncore
         {
             // Get the index of the free item in this chunk
             const u32 item_index = chunk->m_free_index++;
+            chunk->m_item_count += 1;
             return chunk_address + ((uint_t)item_index * bin->m_item_sizeof);
         }
         return nullptr;
@@ -141,6 +143,7 @@ namespace ncore
         ASSERT((byte*)item == (byte*)item_ptr);   // sanity check
         *item              = chunk->m_free_head;  // point to current free head
         chunk->m_free_head = item_index;          // update free head to this item
+        chunk->m_item_count -= 1;                 // decrease item count
     }
 
     static void s_commit_chunk_memory(cbin_t* bin, u32 chunk_index)
@@ -155,7 +158,7 @@ namespace ncore
         v_alloc_decommit(chunk_address, uint_t(1) << bin->m_chunk_size_shift);
     }
 
-    u32 bin_size(cbin_t const * bin)
+    u32 bin_size(cbin_t const* bin)
     {
         // The global item count
         return bin->m_total_items_count;
@@ -188,12 +191,13 @@ namespace ncore
             active_chunk_index = s_dlist_pop(chunk_array, sizeof(cchunk_t), bin->m_chunk_free_list_head, bin->m_chunk_free_list_size);
             active_chunk       = chunk_array + active_chunk_index;
             s_chunk_init(active_chunk);
+            s_dlist_insert(chunk_array, sizeof(cchunk_t), bin->m_chunk_active_list_head, bin->m_chunk_active_list_size, active_chunk_index);
             s_commit_chunk_memory(bin, active_chunk_index);
         }
         else
         {
             // No free chunk, need to allocate a new chunk
-            const u32 chunk_free_index = narena::current_pos(bin->m_chunks) / sizeof(cchunk_t);
+            const u32 chunk_free_index = (u32)(narena::current_pos(bin->m_chunks) / sizeof(cchunk_t));
 
             if ((uint_t(chunk_free_index + 1) << bin->m_chunk_size_shift) > bin->m_address_size)
             {
@@ -214,10 +218,14 @@ namespace ncore
 
         void* item = s_chunk_alloc_item(bin, active_chunk, active_chunk_index);
 
+        if (item == nullptr)
+            return nullptr;
+
         if (active_chunk->m_free_head == 0xFFFF && active_chunk->m_free_index >= bin->m_max_items_per_chunk)
         {
             // This chunk is now full, remove it from the active chunk list
             s_dlist_remove(chunk_array, sizeof(cchunk_t), bin->m_chunk_active_list_head, bin->m_chunk_active_list_size, active_chunk_index);
+            s_dlist_insert(chunk_array, sizeof(cchunk_t), bin->m_chunk_full_list_head, bin->m_chunk_full_list_size, active_chunk_index);
         }
 
         bin->m_total_items_count += 1;
@@ -262,9 +270,10 @@ namespace ncore
         }
         else if (chunk->m_item_count == 0)
         {
-            // This chunk is now empty, move it to the full list
+            // This chunk is now empty, move it to the free list and decommit its backing pages.
             s_dlist_remove(chunk_array, sizeof(cchunk_t), bin->m_chunk_active_list_head, bin->m_chunk_active_list_size, chunk_index);
-            s_dlist_insert(chunk_array, sizeof(cchunk_t), bin->m_chunk_full_list_head, bin->m_chunk_full_list_size, chunk_index);
+            s_dlist_insert(chunk_array, sizeof(cchunk_t), bin->m_chunk_free_list_head, bin->m_chunk_free_list_size, chunk_index);
+            s_decommit_chunk_memory(bin, chunk_index);
         }
     }
 
@@ -301,13 +310,14 @@ namespace ncore
         bin->m_chunk_free_list_size   = 0;
         bin->m_chunk_active_list_size = 0;
         bin->m_chunk_full_list_size   = 0;
+        bin->m_chunk_count            = 0;
 
         bin->m_total_items_count   = 0;
-        bin->m_max_items_per_chunk = chunk_size / item_sizeof;
+        bin->m_max_items_per_chunk = (u16)(chunk_size / item_sizeof);
         bin->m_item_sizeof         = item_sizeof;
         bin->m_chunk_size_shift    = math::ilog2(chunk_size);
 
-        const u32 chunk_count_max = reserved_size / chunk_size;
+        const u32 chunk_count_max = (u32)(reserved_size / chunk_size);
         bin->m_chunks             = narena::new_arena(chunk_count_max * sizeof(cchunk_t), 0);
     }
 
@@ -325,13 +335,13 @@ namespace ncore
         if (bin->m_chunks != nullptr)
         {
             narena::destroy(bin->m_chunks);
-            bin->m_chunks = nullptr;
         }
         if (bin->m_address_base != nullptr)
         {
-            v_alloc_decommit(bin->m_address_base, bin->m_address_size);
-            bin->m_address_base = nullptr;
+            v_alloc_release(bin->m_address_base, bin->m_address_size);
         }
+
+        // g_memclr(bin, sizeof(cbin_t));
     }
 
 }  // namespace ncore

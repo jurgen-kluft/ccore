@@ -5,9 +5,9 @@
 
 using namespace ncore;
 
-UNITTEST_SUITE_BEGIN(binmap1)
+UNITTEST_SUITE_BEGIN(bitvec)
 {
-    UNITTEST_FIXTURE(binmap12)
+    UNITTEST_FIXTURE(bitvec12)
     {
         UNITTEST_FIXTURE_SETUP() {}
         UNITTEST_FIXTURE_TEARDOWN() {}
@@ -190,7 +190,7 @@ UNITTEST_SUITE_BEGIN(binmap1)
         }
     }
 
-    UNITTEST_FIXTURE(binmap18)
+    UNITTEST_FIXTURE(bitvec18)
     {
         UNITTEST_FIXTURE_SETUP() {}
         UNITTEST_FIXTURE_TEARDOWN() {}
@@ -301,7 +301,7 @@ UNITTEST_SUITE_BEGIN(binmap1)
         }
     }
 
-    UNITTEST_FIXTURE(binmap24)
+    UNITTEST_FIXTURE(bitvec24)
     {
         UNITTEST_FIXTURE_SETUP() {}
         UNITTEST_FIXTURE_TEARDOWN() {}

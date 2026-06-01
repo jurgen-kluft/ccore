@@ -13,8 +13,8 @@
 
 namespace ncore
 {
-    static s32 s_page_size = 0;
-    s32        v_alloc_get_page_size()
+    static u32 s_page_size = 0;
+    u32        v_alloc_get_page_size()
     {
         if (s_page_size == 0)
         {
@@ -178,11 +178,14 @@ namespace ncore
             if (base_address == nullptr)
                 return false;
 
-            const bool result = v_alloc_commit(base_address, commit_size);
-            if (!result)
+            if (commit_size > 0)
             {
-                v_alloc_release(base_address, reserved_size);
-                return false;
+                const bool result = v_alloc_commit(base_address, commit_size);
+                if (!result)
+                {
+                    v_alloc_release(base_address, reserved_size);
+                    return false;
+                }
             }
 
             arena->m_base            = base_address;
@@ -231,7 +234,7 @@ namespace ncore
             if (s_arena_free_list_head != nullptr)
             {
                 arena_t* arena         = s_arena_free_list_head;
-                s_arena_free_list_head = (arena->m_base != 0) ? (arena_t*)arena->m_base : nullptr;
+                s_arena_free_list_head = (arena_t*)arena->m_base;
 
                 s_reset_arena(arena);
                 arena->m_active = 1;

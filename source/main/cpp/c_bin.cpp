@@ -56,8 +56,8 @@ namespace ncore
     }
 
     u32 bin_size(bin32_t const* bin) { return bin->m_items_count; }
-    u32 bin_capacity(bin32_t const* bin) { return narena::reserved_size(bin->m_items) / bin->m_item_sizeof; }
-    u32 bin_highwater_mark(bin32_t const* bin) { return narena::current_pos(bin->m_items) / bin->m_item_sizeof; }
+    u32 bin_capacity(bin32_t const* bin) { return (u32)(narena::reserved_size(bin->m_items) / bin->m_item_sizeof); }
+    u32 bin_highwater_mark(bin32_t const* bin) { return (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof); }
 
     void* bin_alloc(bin32_t* bin)
     {
@@ -67,7 +67,7 @@ namespace ncore
 
         byte* items = narena::base_ptr(bin->m_items);
 
-        u32 item_free_index = narena::current_pos(bin->m_items) / bin->m_item_sizeof;
+        u32 item_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
 
         u64* bm0 = (u64*)narena::base_ptr(bin->m_bin);
         u64* bm1 = bm0 + 1;
@@ -123,7 +123,7 @@ namespace ncore
 
     void bin_free(bin32_t* bin, void* ptr)
     {
-        const u32 item_free_index = narena::current_pos(bin->m_items) / bin->m_item_sizeof;
+        const u32 item_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
 
         const byte* items      = narena::base_ptr(bin->m_items);
         const s32   item_index = (s32)(((const byte*)ptr - items) / bin->m_item_sizeof);
@@ -154,7 +154,7 @@ namespace ncore
         const byte* items = narena::base_ptr(bin->m_items);
         if (ptr < (void*)items)
             return D_U32_MAX;  // invalid pointer
-        const u32 item_free_index = narena::current_pos(bin->m_items) / bin->m_item_sizeof;
+        const u32 item_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
         const u32 index = (u32)(((const byte*)ptr - items) / bin->m_item_sizeof);
         if (index >= item_free_index)
             return D_U32_MAX;  // invalid pointer
@@ -164,7 +164,7 @@ namespace ncore
     // convert an index to a pointer within the bin
     void* bin_idx2ptr(bin32_t* bin, u32 index)
     {
-        const u32 item_free_index = narena::current_pos(bin->m_items) / bin->m_item_sizeof;
+        const u32 item_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
         if (index >= item_free_index)
             return nullptr;  // invalid index
         byte* items = narena::base_ptr(bin->m_items);
@@ -175,7 +175,7 @@ namespace ncore
     // highest index of free item in the bin
     s32 bin_highest_free(bin32_t const* bin)
     {
-        const u32 item_free_index = narena::current_pos(bin->m_items) / bin->m_item_sizeof;
+        const u32 item_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
         s32       hi        = -1;
 
         u64* bm0 = (u64*)narena::base_ptr(bin->m_bin);
