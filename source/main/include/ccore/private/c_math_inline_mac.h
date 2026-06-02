@@ -48,7 +48,7 @@ namespace ncore
         inline s8 leastSignificantBit(u32 value) { return countTrailingZeros(value); }
 
         // Return the bit index of the Most Significant Bit "1"
-        // If 'value == 0' this function will return -1
+        // If 'value == 0' this function will return 32
         inline s8 mostSignificantBit(u32 value) { return (value == 0) ? (s8)32 : ((s8)31 - (s8)__builtin_clz(value)); }
 
         // find the bit position/index of the first bit from low to high

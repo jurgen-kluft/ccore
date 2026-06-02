@@ -53,26 +53,26 @@ namespace ncore
     namespace nbitvec5
     {
         // This binmap implementation is optimized for tracking '1' bits, so the find functions
-        // are looking for '1' bits and the set/clear functions are setting/clearing '1' bits.
+        // are looking for '1' bits and the set/set_all_free functions are setting/clearing '1' bits.
 
         typedef u32 bintype;
         void        setup(bintype* CC_RESTRICT bin0, u32 maxbits);
-        void        set(bintype* CC_RESTRICT bin0, u32 maxbits, u32 bit);
-        void        clr(bintype* CC_RESTRICT bin0, u32 maxbits, u32 bit);
+        void        set_free(bintype* CC_RESTRICT bin0, u32 maxbits, u32 bit);
+        void        set_used(bintype* CC_RESTRICT bin0, u32 maxbits, u32 bit);
         bool        get(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 bit);
-        s32         find(bintype const * CC_RESTRICT bin0, u32 maxbits);
-        s32         find_and_remove(bintype* CC_RESTRICT bin0, u32 maxbits);
-        s32         find_last(bintype const * CC_RESTRICT bin0, u32 maxbits);               // Finds the last free bit and returns the bit index
-        s32         find_last_and_remove(bintype* CC_RESTRICT bin0, u32 maxbits);           // Finds the last free bit and sets it to used and returns the bit index
-        s32         find_after(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
-        s32         find_before(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
+        s32         find_free(bintype const * CC_RESTRICT bin0, u32 maxbits);
+        s32         find_free_and_remove(bintype* CC_RESTRICT bin0, u32 maxbits);
+        s32         find_free_last(bintype const * CC_RESTRICT bin0, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32         find_free_last_and_remove(bintype* CC_RESTRICT bin0, u32 maxbits);           // Finds the last free bit and sets it to used and returns the bit index
+        s32         find_free_after(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32         find_free_before(bintype const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbitvec5
 
     // 2^6 binmap, can handle a maximum of 64 bits.
     namespace nbitvec6
     {
         // This binmap implementation is optimized for tracking '1' bits, so the find functions
-        // are looking for '1' bits and the set/clear functions are setting/clearing '1' bits.
+        // are looking for '1' bits and the set/set_all_free functions are setting/clearing '1' bits.
 
         typedef u64 bintype;
         void        setup(bintype* CC_RESTRICT bin0, u32 maxbits);
@@ -101,7 +101,8 @@ namespace ncore
         void setup_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
         void tick_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits, u32 bit);
 
-        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
+        void set_all_free(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
+        void set_all_used(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
 
         void set_free(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits, u32 bit);
         void set_used(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits, u32 bit);
@@ -126,7 +127,7 @@ namespace ncore
         void setup_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
         void tick_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits, u32 bit);
 
-        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
+        void set_all_free(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits);
 
         void set_free(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits, u32 bit);
         void set_used(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, u32 maxbits, u32 bit);
@@ -155,7 +156,8 @@ namespace ncore
         void setup_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
         void tick_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits, u32 bit);
 
-        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
+        void set_all_free(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
+        void set_all_used(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
 
         void set_free(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits, u32 bit);
         void set_used(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits, u32 bit);
@@ -180,7 +182,7 @@ namespace ncore
         void setup_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
         void tick_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits, u32 bit);
 
-        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
+        void set_all_free(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits);
 
         void set_free(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits, u32 bit);
         void set_used(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, u32 maxbits, u32 bit);
@@ -211,7 +213,8 @@ namespace ncore
         void setup_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);
         void tick_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit);
 
-        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);
+        void set_all_free(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);
+        void set_all_used(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);
 
         void set_free(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit);
         void set_used(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit);
@@ -238,7 +241,8 @@ namespace ncore
         void setup_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);
         void tick_used_lazy(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit);
 
-        void clear(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);
+        void set_all_free(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);
+        void set_all_used(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits);
 
         void set_free(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit);
         void set_used(bintype* CC_RESTRICT bin0, bintype* CC_RESTRICT bin1, bintype* CC_RESTRICT bin2, bintype* CC_RESTRICT bin3, u32 maxbits, u32 bit);

@@ -12,15 +12,15 @@ UNITTEST_SUITE_BEGIN(bitvec)
         UNITTEST_FIXTURE_SETUP() {}
         UNITTEST_FIXTURE_TEARDOWN() {}
 
-        UNITTEST_TEST(lazy_tracks_used_bits)
+        UNITTEST_TEST(lazy_used_bits)
         {
             u64       bin0;
             u64       bin1[64];
             u64       expected_bin1[64];
 
-            g_memclr(&bin0, sizeof(bin0));
-            g_memclr(bin1, sizeof(bin1));
-            g_memclr(expected_bin1, sizeof(expected_bin1));
+            g_memset(&bin0, -1, sizeof(bin0));
+            g_memset(bin1, -1, sizeof(bin1));
+            g_memset(expected_bin1, -1, sizeof(expected_bin1));
 
             const u32 maxbits = 130;
 
@@ -33,16 +33,16 @@ UNITTEST_SUITE_BEGIN(bitvec)
             {
                 nbitvec12::tick_used_lazy(&bin0, bin1, maxbits, i);
 
-                expected_bin1[i >> 6] |= ((u64)1 << (i & 63));
-                expected_bin0 |= ((u64)1 << (i >> 6));
+                expected_bin1[i >> 6] = 0;
 
                 CHECK_EQUAL(expected_bin0, bin0);
                 CHECK_EQUAL(expected_bin1[i >> 6], bin1[i >> 6]);
-                CHECK_TRUE(nbitvec12::get(&bin0, bin1, maxbits, i));
+                CHECK_FALSE(nbitvec12::get(&bin0, bin1, maxbits, i));
             }
 
-            CHECK_EQUAL((s32)0, nbitvec12::find_free(&bin0, bin1, maxbits));
-            CHECK_EQUAL((s32)(maxbits - 1), nbitvec12::find_free_last(&bin0, bin1, maxbits));
+            // There should be no free bits left since now they are all set to used!
+            CHECK_EQUAL((s32)-1, nbitvec12::find_free(&bin0, bin1, maxbits));
+            CHECK_EQUAL((s32)-1, nbitvec12::find_free_last(&bin0, bin1, maxbits));
         }
 
         UNITTEST_TEST(set_and_is_set)
@@ -57,7 +57,7 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             const u32 maxbits = 130;
 
-            for (u32 i = 0; i < 4; ++i)
+            for (u32 i = 0; i < DARRAYSIZE(bits); ++i)
             {
                 nbitvec12::set_free(&bin0, bin1, maxbits, bits[i]);
 
@@ -82,10 +82,10 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             const u32 maxbits = 130;
 
-            for (u32 i = 0; i < 4; ++i)
+            for (u32 i = 0; i < DARRAYSIZE(bits); ++i)
                 nbitvec12::set_free(&bin0, bin1, maxbits, bits[i]);
 
-            for (u32 i = 0; i < 4; ++i)
+            for (u32 i = 0; i < DARRAYSIZE(bits); ++i)
             {
                 nbitvec12::set_used(&bin0, bin1, maxbits, bits[i]);
 
@@ -108,7 +108,7 @@ UNITTEST_SUITE_BEGIN(bitvec)
             CHECK_EQUAL((s32)-1, nbitvec12::find_free(&bin0, bin1, maxbits));
             CHECK_EQUAL((s32)-1, nbitvec12::find_free_and_remove(&bin0, bin1, maxbits));
 
-            for (u32 i = 0; i < 3; ++i)
+            for (u32 i = 0; i < DARRAYSIZE(bits); ++i)
                 nbitvec12::set_free(&bin0, bin1, maxbits, bits[i]);
 
             CHECK_EQUAL((s32)5, nbitvec12::find_free(&bin0, bin1, maxbits));
@@ -135,7 +135,7 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             const s32 maxbits = 130;
 
-            for (u32 i = 0; i < 3; ++i)
+            for (u32 i = 0; i < DARRAYSIZE(bits); ++i)
                 nbitvec12::set_free(&bin0, bin1, maxbits, bits[i]);
 
             CHECK_EQUAL((s32)129, nbitvec12::find_free_last_and_remove(&bin0, bin1, maxbits));
@@ -155,7 +155,7 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             const u32 maxbits = 130;
 
-            for (u32 i = 0; i < 4; ++i)
+            for (u32 i = 0; i < DARRAYSIZE(bits); ++i)
                 nbitvec12::set_free(&bin0, bin1, maxbits, bits[i]);
 
             CHECK_EQUAL((s32)65, nbitvec12::find_free_after(&bin0, bin1, maxbits, 2));
@@ -195,29 +195,34 @@ UNITTEST_SUITE_BEGIN(bitvec)
         UNITTEST_FIXTURE_SETUP() {}
         UNITTEST_FIXTURE_TEARDOWN() {}
 
-        UNITTEST_TEST(lazy_tracks_used_bits)
+        UNITTEST_TEST(lazy_used_bits)
         {
             u64       bin0;
             u64       bin1[64];
             u64       bin2[128];
-            u32 const bits[] = {0, 63, 64, 4095, 4096};
 
-            g_memclr(&bin0, sizeof(bin0));
-            g_memclr(bin1, sizeof(bin1));
-            g_memclr(bin2, sizeof(bin2));
+            g_memset(&bin0, -1, sizeof(bin0));
+            g_memset(bin1, -1, sizeof(bin1));
+            g_memset(bin2, -1, sizeof(bin2));
 
-            const u32 maxbits = 4097;
+            const u32 maxbits = 512;
 
             nbitvec18::setup_used_lazy(&bin0, bin1, bin2, maxbits);
 
-            for (u32 i = 0; i < 5; ++i)
+            for (u32 i = 0; i < 260; ++i)
             {
-                nbitvec18::tick_used_lazy(&bin0, bin1, bin2, maxbits, bits[i]);
-                CHECK_TRUE(nbitvec18::get(&bin0, bin1, bin2, maxbits, bits[i]));
+                nbitvec18::tick_used_lazy(&bin0, bin1, bin2, maxbits, i);
+                CHECK_FALSE(nbitvec18::get(&bin0, bin1, bin2, maxbits, i));
             }
 
-            CHECK_EQUAL((s32)0, nbitvec18::find_free(&bin0, bin1, bin2, maxbits));
-            CHECK_EQUAL((s32)4096, nbitvec18::find_free_last(&bin0, bin1, bin2, maxbits));
+            for (u32 i = 260; i < maxbits; ++i)
+            {
+                nbitvec18::tick_used_lazy(&bin0, bin1, bin2, maxbits, i);
+                CHECK_FALSE(nbitvec18::get(&bin0, bin1, bin2, maxbits, i));
+            }
+
+            CHECK_EQUAL((s32)-1, nbitvec18::find_free(&bin0, bin1, bin2, maxbits));
+            CHECK_EQUAL((s32)-1, nbitvec18::find_free_last(&bin0, bin1, bin2, maxbits));
         }
 
         UNITTEST_TEST(find_free_and_remove)
@@ -235,7 +240,7 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             CHECK_EQUAL((s32)-1, nbitvec18::find_free(&bin0, bin1, bin2, maxbits));
 
-            for (u32 i = 0; i < 4; ++i)
+            for (u32 i = 0; i < DARRAYSIZE(bits); ++i)
                 nbitvec18::set_free(&bin0, bin1, bin2, maxbits, bits[i]);
 
             CHECK_EQUAL((s32)3, nbitvec18::find_free(&bin0, bin1, bin2, maxbits));
@@ -261,7 +266,7 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             const u32 maxbits = 5000;
 
-            for (u32 i = 0; i < 5; ++i)
+            for (u32 i = 0; i < DARRAYSIZE(bits); ++i)
                 nbitvec18::set_free(&bin0, bin1, bin2, maxbits, bits[i]);
 
             CHECK_EQUAL((s32)4999, nbitvec18::find_free_last_and_remove(&bin0, bin1, bin2, maxbits));
@@ -306,7 +311,7 @@ UNITTEST_SUITE_BEGIN(bitvec)
         UNITTEST_FIXTURE_SETUP() {}
         UNITTEST_FIXTURE_TEARDOWN() {}
 
-        UNITTEST_TEST(lazy_tracks_used_bits)
+        UNITTEST_TEST(lazy_used_bits)
         {
             u64       bin0;
             u64       bin1[64];
@@ -323,14 +328,14 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             nbitvec24::setup_used_lazy(&bin0, bin1, bin2, bin3, maxbits);
 
-            for (u32 i = 0; i < 5; ++i)
+            for (u32 i = 0; i < DARRAYSIZE(bits); ++i)
             {
                 nbitvec24::tick_used_lazy(&bin0, bin1, bin2, bin3, maxbits, bits[i]);
-                CHECK_TRUE(nbitvec24::get(&bin0, bin1, bin2, bin3, maxbits, bits[i]));
+                CHECK_FALSE(nbitvec24::get(&bin0, bin1, bin2, bin3, maxbits, bits[i]));
             }
 
-            CHECK_EQUAL((s32)0, nbitvec24::find_free(&bin0, bin1, bin2, bin3, maxbits));
-            CHECK_EQUAL((s32)262144, nbitvec24::find_free_last(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)-1, nbitvec24::find_free(&bin0, bin1, bin2, bin3, maxbits));
+            CHECK_EQUAL((s32)-1, nbitvec24::find_free_last(&bin0, bin1, bin2, bin3, maxbits));
         }
 
         UNITTEST_TEST(find_free_and_remove)
@@ -350,7 +355,7 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             CHECK_EQUAL((s32)-1, nbitvec24::find_free(&bin0, bin1, bin2, bin3, maxbits));
 
-            for (u32 i = 0; i < 4; ++i)
+            for (u32 i = 0; i < DARRAYSIZE(bits); ++i)
                 nbitvec24::set_free(&bin0, bin1, bin2, bin3, maxbits, bits[i]);
 
             CHECK_EQUAL((s32)3, nbitvec24::find_free(&bin0, bin1, bin2, bin3, maxbits));
@@ -378,7 +383,7 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             const u32 maxbits = 300000;
 
-            for (u32 i = 0; i < 5; ++i)
+            for (u32 i = 0; i < DARRAYSIZE(bits); ++i)
                 nbitvec24::set_free(&bin0, bin1, bin2, bin3, maxbits, bits[i]);
 
             CHECK_EQUAL((s32)299999, nbitvec24::find_free_last_and_remove(&bin0, bin1, bin2, bin3, maxbits));

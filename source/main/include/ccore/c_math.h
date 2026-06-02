@@ -83,10 +83,12 @@ namespace ncore
         inline s8  countBits(u32 integer);  // count one bits in 32 bit word
         inline s8  countBits(u64 integer);  // count one bits in 32 bit word
 
-        inline s8 ilog2(u32 integer);  // Log2 of a 32-bit integer
-        inline s8 ilog2(s32 integer) { return ilog2((u32)integer); }
         inline s8 ilog2(u64 integer);  // Log2 of a 64-bit integer
         inline s8 ilog2(s64 integer) { return ilog2((u64)integer); }
+        inline s8 ilog2(u32 integer);  // Log2 of a 32-bit integer
+        inline s8 ilog2(s32 integer) { return ilog2((u32)integer); }
+        inline s8 ilog2(u16 integer) { return ilog2((u32)integer); }
+        inline s8 ilog2(s16 integer) { return ilog2((u32)integer); }
 
         inline u64 getMaskForValue(u64 value);             // Return the mask of the value
         inline s8  countTrailingZeros(u8 integer);         // find the number of trailing zeros in 8-bit v

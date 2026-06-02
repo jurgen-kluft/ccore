@@ -102,28 +102,25 @@ namespace ncore
     //  "Y8888P"  888    888  "Y88888P"  888    Y888 888    Y88b
 
     // Chunk
-    // - max items < 32768, so that we can use a u16 for the free list and item count
+    // - max items <= 32768, so that we can use a u16 for the free list and item count
     struct cchunk_t
     {
-        u16 m_next;                 // next chunk in the free/active chunk list, or c_index16_null if this is the last chunk in the list
-        u16 m_prev;                 // previous chunk in the free/active chunk list, or c_index16_null if this is the first chunk in the list
-        u16 m_free_index;           // index of the first free item in this chunk (relative to the chunk)
-        u16 m_item_count : 12;      // number of items currently allocated in this chunk
-        u16 m_pages_committed : 4;  // number of pages currently committed in this chunk, used for lazy commit/decommit
-        u64 m_layer0;               // nbitvec12, layer 0
+        u16 m_next;             // next chunk in the free/active chunk list, or c_index16_null if this is the last chunk in the list
+        u16 m_prev;             // previous chunk in the free/active chunk list, or c_index16_null if this is the first chunk in the list
+        u16 m_item_count;       // number of items currently allocated in this chunk
+        u16 m_pages_committed;  // number of pages currently committed in this chunk, used for lazy commit/decommit
+        u64 m_layer0;           // nbitvec12, layer 0
     };
 
     static inline void s_chunk_init(cbin_t* bin, cchunk_t* chunk, u64* layer1)
     {
         chunk->m_next            = c_index16_null;
         chunk->m_prev            = c_index16_null;
-        chunk->m_free_index      = 0;  // start allocating from the first item
         chunk->m_item_count      = 0;  // no items allocated yet
         chunk->m_pages_committed = 0;  // no pages committed yet
         if (layer1 != nullptr)
         {
-            // when number of items > 64, then each chunk has a layer1 of N u64s for nbitvec12
-            nbitvec12::setup_used_lazy(&chunk->m_layer0, layer1, bin->m_max_items_per_chunk);
+            nbitvec12::set_all_free(&chunk->m_layer0, layer1, bin->m_max_items_per_chunk);
         }
         else
         {
@@ -133,52 +130,33 @@ namespace ncore
 
     static void* s_chunk_alloc_item(cbin_t* bin, cchunk_t* chunk, u32 chunk_index)
     {
-        const u32 chunk_size = (16 * cKB);
-
-        u64* layer1 = bin->m_layer1 != nullptr ? narena::base_ptr_as<u64>(bin->m_layer1) + (chunk_index * bin->m_layer1_num_u64) : nullptr;
-
-        // Calculate the address of this item
-        const u32 page_size     = v_alloc_get_page_size();
-        byte*     chunk_address = (byte*)bin->m_address_base + ((uint_t)chunk_index * chunk_size);
-        if (chunk->m_item_count < chunk->m_free_index)
+        s32 free_item_index = -1;
+        if (bin->m_layer1 != nullptr)
         {
-            // There is a free item in the bitvec
-            s32 free_item_index = -1;
-            if (layer1 != nullptr)
-            {
-                free_item_index = nbitvec12::find_free_and_remove(&chunk->m_layer0, layer1, chunk->m_free_index);
-            }
-            else
-            {
-                free_item_index = nbitvec6::find_free_and_remove(&chunk->m_layer0, chunk->m_free_index);
-            }
-
-            if (free_item_index >= 0)
-            {
-                chunk->m_item_count += 1;
-                return chunk_address + ((uint_t)free_item_index * bin->m_item_sizeof);
-            }
+            u64* layer1     = narena::base_ptr_as<u64>(bin->m_layer1) + (chunk_index * bin->m_layer1_num_u64);
+            free_item_index = nbitvec12::find_free_and_remove(&chunk->m_layer0, layer1, bin->m_max_items_per_chunk);
         }
-        else if (chunk->m_free_index < bin->m_max_items_per_chunk)
+        else
         {
-            // Get the index of the free item in this chunk
-            const u32 item_index = chunk->m_free_index++;
+            free_item_index = nbitvec6::find_free_and_remove(&chunk->m_layer0, bin->m_max_items_per_chunk);
+        }
 
-            if (layer1 != nullptr)
-            {
-                nbitvec12::tick_used_lazy(&chunk->m_layer0, layer1, bin->m_max_items_per_chunk, item_index);
-            }
-
+        if (free_item_index >= 0)
+        {
             chunk->m_item_count += 1;
-            return chunk_address + ((uint_t)item_index * bin->m_item_sizeof);
+
+            const u32 chunk_size    = (u32)1 << bin->m_chunk_size_shift;
+            byte*     chunk_address = (byte*)bin->m_address_base + ((uint_t)chunk_index * chunk_size);
+            return chunk_address + ((uint_t)free_item_index * bin->m_item_sizeof);
         }
+
         return nullptr;
     }
 
     // free an item back to the chunk, this is called when an item is freed
     static void s_chunk_free_item(cbin_t* bin, cchunk_t* chunk, u32 chunk_index, void* item_ptr)
     {
-        const u32 chunk_size = (16 * cKB);
+        const u32 chunk_size = (u32)1 << bin->m_chunk_size_shift;
 
         // Add the item back to the free list of the chunk
         byte*     chunk_address = (byte*)bin->m_address_base + ((uint_t)chunk_index * chunk_size);
@@ -199,27 +177,26 @@ namespace ncore
 
     static void s_commit_chunk_memory(cbin_t* bin, u32 chunk_index)
     {
-        const u32 chunk_size      = (16 * cKB);
+        const u32 chunk_size      = (u32)1 << bin->m_chunk_size_shift;
         const u32 chunk_num_pages = chunk_size >> v_alloc_get_page_size_shift();
 
         cchunk_t* chunk_array    = narena::base_ptr_as<cchunk_t>(bin->m_chunks);
         cchunk_t* chunk          = chunk_array + chunk_index;
         chunk->m_pages_committed = chunk_num_pages;
 
-        byte*     chunk_address = (byte*)bin->m_address_base + ((uint_t)chunk_index * chunk_size);
+        byte* chunk_address = (byte*)bin->m_address_base + ((uint_t)chunk_index * chunk_size);
         v_alloc_commit(chunk_address, chunk_size);
     }
 
     static void s_decommit_chunk_memory(cbin_t* bin, u32 chunk_index)
     {
-        const u32 chunk_size      = (16 * cKB);
-        const u32 chunk_num_pages = chunk_size >> v_alloc_get_page_size_shift();
+        const u32 chunk_size = (u32)1 << bin->m_chunk_size_shift;
 
         cchunk_t* chunk_array    = narena::base_ptr_as<cchunk_t>(bin->m_chunks);
         cchunk_t* chunk          = chunk_array + chunk_index;
         chunk->m_pages_committed = 0;
 
-        byte*     chunk_address = (byte*)bin->m_address_base + ((uint_t)chunk_index * chunk_size);
+        byte* chunk_address = (byte*)bin->m_address_base + ((uint_t)chunk_index * chunk_size);
         v_alloc_decommit(chunk_address, chunk_size);
     }
 
@@ -249,8 +226,8 @@ namespace ncore
         {
             active_chunk_index = s_dlist_pop(chunk_array, sizeof(cchunk_t), bin->m_chunk_free_list_head, bin->m_chunk_free_list_size);
             active_chunk       = chunk_array + active_chunk_index;
-            u64* chunk_layer1  = (bin->m_layer1_num_u64 > 0) ? narena::base_ptr_as<u64>(bin->m_layer1) + (active_chunk_index * bin->m_layer1_num_u64) : nullptr;
-            s_chunk_init(bin, active_chunk, chunk_layer1);
+            u64* layer1        = (bin->m_layer1_num_u64 > 0) ? narena::base_ptr_as<u64>(bin->m_layer1) + (active_chunk_index * bin->m_layer1_num_u64) : nullptr;
+            s_chunk_init(bin, active_chunk, layer1);
             s_dlist_insert(chunk_array, sizeof(cchunk_t), bin->m_chunk_active_list_head, bin->m_chunk_active_list_size, active_chunk_index);
             s_commit_chunk_memory(bin, active_chunk_index);
         }
@@ -265,14 +242,15 @@ namespace ncore
                 return nullptr;
             }
 
-            u64* new_chunk_layer1 = (bin->m_layer1_num_u64 > 0) ? g_allocate_array<u64>(bin->m_layer1, bin->m_layer1_num_u64) : nullptr;
+            u64* new_layer1 = (bin->m_layer1_num_u64 > 0) ? g_allocate_array<u64>(bin->m_layer1, bin->m_layer1_num_u64) : nullptr;
 
             active_chunk_index = chunk_free_index;
             active_chunk       = g_allocate<cchunk_t>(bin->m_chunks);
 
-            ASSERT(new_chunk_layer1 == ((bin->m_layer1_num_u64 > 0) ? narena::base_ptr_as<u64>(bin->m_layer1) + (active_chunk_index * bin->m_layer1_num_u64) : nullptr));  // layer1 for this chunk should be at the expected position
+            // layer1 for this chunk should be at the expected position
+            ASSERT(new_layer1 == ((bin->m_layer1_num_u64 > 0) ? narena::base_ptr_as<u64>(bin->m_layer1) + (active_chunk_index * bin->m_layer1_num_u64) : nullptr));
 
-            s_chunk_init(bin, active_chunk, new_chunk_layer1);
+            s_chunk_init(bin, active_chunk, new_layer1);
             bin->m_chunk_count += 1;
 
             // This chunk is now active, add it to the active chunk list
@@ -311,8 +289,7 @@ namespace ncore
         ASSERT(ptr != nullptr && ptr >= bin->m_address_base && ptr < (byte*)bin->m_address_base + bin->m_address_size);
 
         cchunk_t* chunk_array      = narena::base_ptr_as<cchunk_t>(bin->m_chunks);
-        const u32 chunk_size       = (16 * cKB);
-        const u8  chunk_size_shift = 14;
+        const u8  chunk_size_shift = bin->m_chunk_size_shift;
 
         // Find the chunk this item belongs to
         const u32 chunk_index = (u32)((uint_t)((byte*)ptr - (byte*)bin->m_address_base) >> chunk_size_shift);
@@ -353,23 +330,45 @@ namespace ncore
     // Y88b  d88P 888            888     Y88b. .d88P 888
     //  "Y8888P"  8888888888     888      "Y88888P"  888
 
+    // - sizeof(item) >=    8 B && sizeof(item) <=  128 B -> chunk-size =   4 KiB
+    // - sizeof(item)  >  128 B && sizeof(item) <=  256 B -> chunk-size =   8 KiB
+    // - sizeof(item)  >  256 B && sizeof(item) <=  512 B -> chunk-size =  16 KiB
+    // - sizeof(item)  >  512 B && sizeof(item) <=  1 KiB -> chunk-size =  32 KiB
+    // - sizeof(item)  >  1 KiB && sizeof(item) <=  2 KiB -> chunk-size =  64 KiB
+    // - sizeof(item)  >  2 KiB && sizeof(item) <=  4 KiB -> chunk-size = 128 KiB
+    // - sizeof(item)  >  4 KiB && sizeof(item) <=  8 KiB -> chunk-size = 256 KiB
+    // - sizeof(item)  >  8 KiB && sizeof(item) <= 16 KiB -> chunk-size = 512 KiB
+    // - sizeof(item)  > 16 KiB && sizeof(item) <= 32 KiB -> chunk-size =   1 MiB
+
+    // clang-format off
+    const static u8 s_cchunk_configs[] = {
+         12, 12, 12, // 1<<0, 1<<1, 1<<2
+         12, 12, 12, // 1<<3, 1<<4, 1<<5,
+         12, 12, 13, // 1<<6, 1<<7, 1<<8,
+         14, 15, 16, // 1<<9, 1<<10, 1<<11,
+         17, 18, 19, // 1<<12, 1<<13, 1<<14,
+         20, 21,     // 1<<15, 1<<16
+    };
+    // clang-format on
+
     void bin_setup(cbin_t* bin, uint_t reserved_size, u16 item_sizeof)
     {
-        // Note: Item size >= 4 and < 16 KiB
-        ASSERT(item_sizeof >= 4 && item_sizeof < (16 * cKB));
+        // Note: Item size >= 8 B and <= 32 KiB
+        ASSERT(item_sizeof <= (32 * cKB));
 
-        const u8  pagesize_shift = v_alloc_get_page_size_shift();
+        const u8 page_size_shift = v_alloc_get_page_size_shift();
 
-        // the chunk-size is calculated based on the following conditions:
-        // - A chunk can only track <= (32*32) items, since we use a bitvec10
-        // - The chunk-size needs to be page aligned
-        const u32 chunk_size      = 16 * cKB;
-        const u32 chunk_num_pages = chunk_size >> pagesize_shift;
-        ASSERT(chunk_size >= (1 << pagesize_shift) && (chunk_size & ((1 << pagesize_shift) - 1)) == 0);
-        ASSERT(reserved_size >= chunk_size);
+        // Find the appropriate chunk size based on the item size, this is done by
+        // looking up the 's_cchunk_configs' array, which has predefined chunk size shifts
+        // for different item size ranges.
+        const u8 item_size_shift  = math::max((u8)math::ilog2(math::ceilpo2(item_sizeof)), (u8)3);
+        const u8 chunk_size_shift = math::max(s_cchunk_configs[item_size_shift], page_size_shift);
+
+        ASSERT(chunk_size_shift > 0);
+        const u32 chunk_size = (u32)1 << chunk_size_shift;
 
         const u32 items_per_chunk = chunk_size / item_sizeof;
-        ASSERT(items_per_chunk <= 64 * 64);
+        ASSERT(items_per_chunk >= 4 && items_per_chunk <= (64 * 64));
 
         // Calculate the number of u64s we need for layer1
         const u32 layer1_num_u64 = items_per_chunk > 64 ? (items_per_chunk + 63) / 64 : 0;
@@ -396,13 +395,14 @@ namespace ncore
         bin->m_chunk_count            = 0;
         bin->m_chunk_max_count        = (u16)max_chunk_count;
         bin->m_chunks                 = narena::new_arena(max_chunk_count * sizeof(cchunk_t), 0);
+        bin->m_chunk_size_shift       = chunk_size_shift;
 
         bin->m_total_items_count   = 0;
         bin->m_max_items_per_chunk = (u16)(items_per_chunk);
-        bin->m_item_sizeof         = item_sizeof;
+        bin->m_item_sizeof         = (u16)1 << item_size_shift;
     }
 
-    u32 bin_size(cbin_t const* bin)
+    u32 bin_size(cbin_t const * bin)
     {
         // The global item count
         return bin->m_total_items_count;

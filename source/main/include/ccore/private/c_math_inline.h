@@ -132,6 +132,10 @@ namespace ncore
         inline bool ispo2(T value)
         { return (value != 0) && ((value & (value - 1)) == 0); }
 
+        // Return log2 of an integer
+        inline s8 ilog2(u32 value) { return 31 - countLeadingZeros(value); }
+        inline s8 ilog2(u64 value) { return 63 - countLeadingZeros(value); }
+
         // Return the power-of-two larger than or equal to value
         inline u16 ceilpo2(u16 value) { return (u16)1 << (16 - countLeadingZeros((u16)(value - 1))); }
         inline u32 ceilpo2(u32 value) { return (u32)1 << (32 - countLeadingZeros((u32)(value - 1))); }
@@ -142,16 +146,10 @@ namespace ncore
         inline u32 floorpo2(u32 value) { return (u32)1 << (31 - countLeadingZeros(value)); }
         inline u64 floorpo2(u64 value) { return (u64)1 << (63 - countLeadingZeros(value)); }
 
-        inline s8 ilog2(u32 value) { return 31 - countLeadingZeros(value); }
-        inline s8 ilog2(u64 value) { return 63 - countLeadingZeros(value); }
-
         // Return the mask of the value
-        inline u64 getMaskForValue(u64 value)
-        {
-            if (value == 0)
-                return 0;
-            return (value & (value - 1)) == 0 ? value : ceilpo2(value);
-        }
+        // e.g. value = 0b10100 -> return 0b11111
+        inline u32 mask(u32 value) { return (value == 0) ? 0 : D_CONSTANT_U32(0xFFFFFFFF) >> countLeadingZeros(value); }
+        inline u64 mask(u64 value) { return (value == 0) ? 0 : D_CONSTANT_U64(0xFFFFFFFFFFFFFFFF) >> countLeadingZeros(value); }
 
         // Roll all the bits in value to the left by shift number of bits
         inline u32 rol32(u32 value, u32 shift)
@@ -167,17 +165,4 @@ namespace ncore
             return shift == 0 ? value : (value >> shift) | (value << (32 - shift));
         }
     }  // namespace math
-
-    template <typename T>
-    inline T g_alignUp4(T value)
-    { return (value + 3) & (~(T)3); }
-
-    template <typename T>
-    inline T g_alignUp8(T value)
-    { return (value + 7) & (~(T)7); }
-
-    template <typename T>
-    inline T g_alignUp16(T value)
-    { return (value + 15) & (~(T)15); }
-
 }  // namespace ncore

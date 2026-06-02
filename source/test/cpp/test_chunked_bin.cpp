@@ -70,27 +70,27 @@ UNITTEST_SUITE_BEGIN(chunked_bin)
 
             const u32 num_allocs = 300;
             item_t*   ptrs[num_allocs];
-            for (u32 i = 0; i < num_allocs; ++i) 
+            for (u32 i = 0; i < num_allocs; ++i)
             {
                 ptrs[i] = nullptr;
             }
 
-            CHECK_EQUAL(bin_size(&bin), 0);
+            CHECK_EQUAL(bin_size(&bin), (u32)0);
 
             for (u32 i = 0; i < num_allocs; ++i)
             {
                 ptrs[i] = (item_t*)bin_alloc(&bin);
                 CHECK_NOT_NULL(ptrs[i]);
-                CHECK_EQUAL(bin_size(&bin), i + 1);
+                CHECK_EQUAL(bin_size(&bin), (u32)(i + 1));
             }
 
             for (u32 i = 0; i < num_allocs; ++i)
             {
                 bin_free(&bin, ptrs[i]);
-                CHECK_EQUAL(bin_size(&bin), num_allocs - i - 1);
+                CHECK_EQUAL(bin_size(&bin), (u32)(num_allocs - i - 1));
             }
 
-            CHECK_EQUAL(bin_size(&bin), 0);
+            CHECK_EQUAL(bin_size(&bin), (u32)0);
             bin_destroy(&bin);
         }
 
