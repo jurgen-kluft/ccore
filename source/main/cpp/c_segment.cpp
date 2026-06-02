@@ -31,6 +31,28 @@ namespace ncore
             u32 m_prev;  // index of the previous node in the chain, or 0 if this is the first node in the chain
         };
 
+        struct chain_t
+        {
+            u32 m_next;                  // index of the next node in the chain, or 0 if this is the last node in the chain
+            u32 m_prev;                  // index of the previous node in the chain, or 0 if this is the first node in the chain
+            u32 m_offset;                // offset in pages from the base address of the arena
+            u32 m_next;                  // index of the next node in the free list, or cINVALID_INDEX if this is the last node in the free list
+            u32 m_flags : 8;             // flags for this node (e.g. free/used, left/right buddy)
+            u32 m_committed_pages : 24;  // number of pages currently committed for this node (for used nodes) or for the buddy (for free nodes)
+        };
+
+        // constraints:
+        // - segment size must be a power of two
+        // - smallest segment 
+
+        // 20
+        // 20
+        // 32
+        // 20
+        // 4
+        // 20
+        // total = 
+
         const u32 cINVALID_INDEX = ~0u;
 
         typedef u32 offset_t;
@@ -320,12 +342,12 @@ namespace ncore
 
             // calculate the address of the node from its index and the base address of the arena
             // return the address and the number of pages in the node
-            offset_t const * offsets = (offset_t const *)narena::base_ptr(allocator->m_offsets);
-            const offset_t   offset  = offsets[node];
+            offset_t const* offsets = (offset_t const*)narena::base_ptr(allocator->m_offsets);
+            const offset_t  offset  = offsets[node];
 
             // num_pages can be calculated from the node's offset and the next node's offset in the chain
             // note: offset unit is pages
-            link_t const * chain = (link_t const *)narena::base_ptr(allocator->m_chain);
+            link_t const* chain = (link_t const*)narena::base_ptr(allocator->m_chain);
             if (chain[node].m_next != cINVALID_INDEX)
             {
                 num_pages = (offsets[chain[node].m_next] - offset);
