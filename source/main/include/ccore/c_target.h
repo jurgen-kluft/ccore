@@ -3,7 +3,7 @@
 #include "ccore/config/c_compiler.h"
 #include "ccore/config/c_compiler_traits.h"
 #ifdef USE_PRAGMA_ONCE
-#    pragma once
+    #pragma once
 #endif
 
 // Identify the platform and declare the CC_xxxx defines
@@ -24,19 +24,19 @@ namespace ncore
     //    - TARGET_PROFILE
 
 #ifdef _DEBUG
-#    if !defined(TARGET_DEBUG)
-#        define TARGET_DEBUG
-#    endif
-#    define D_DEBUG
-#    define D_ASSERT
+    #if !defined(TARGET_DEBUG)
+        #define TARGET_DEBUG
+    #endif
+    #define D_DEBUG
+    #define D_ASSERT
 #elif defined(NDEBUG)
-#    if !defined(TARGET_DEBUG) && !defined(TARGET_RELEASE) && !defined(TARGET_FINAL)
-#        define TARGET_RELEASE
-#    endif
+    #if !defined(TARGET_DEBUG) && !defined(TARGET_RELEASE) && !defined(TARGET_FINAL)
+        #define TARGET_RELEASE
+    #endif
 #else
-#    if !defined(TARGET_DEBUG) && !defined(TARGET_RELEASE) && !defined(TARGET_FINAL)
-#        define TARGET_RELEASE
-#    endif
+    #if !defined(TARGET_DEBUG) && !defined(TARGET_RELEASE) && !defined(TARGET_FINAL)
+        #define TARGET_RELEASE
+    #endif
 #endif
 
     // ------------------------------------------------------------------------
@@ -44,16 +44,16 @@ namespace ncore
 
 // Check if the configuration is debug, release or final
 #if !defined(TARGET_DEV) && !defined(TARGET_RETAIL) && !defined(TARGET_TEST) && !defined(TARGET_PROFILE)
-#    define TARGET_DEV 1
+    #define TARGET_DEV 1
 #endif
 #if defined(NDEBUG) && !defined(_DEBUG)
-#    if !defined(TARGET_RELEASE) && !defined(TARGET_FINAL)
-#        define TARGET_RELEASE 1
-#    endif
+    #if !defined(TARGET_RELEASE) && !defined(TARGET_FINAL)
+        #define TARGET_RELEASE 1
+    #endif
 #else
-#    if !defined(TARGET_DEBUG) && !defined(TARGET_FINAL)
-#        define TARGET_DEBUG 1
-#    endif
+    #if !defined(TARGET_DEBUG) && !defined(TARGET_FINAL)
+        #define TARGET_DEBUG 1
+    #endif
 #endif
 
     // ------------------------------------------------------------------------
@@ -62,7 +62,7 @@ namespace ncore
     // worked around by undefining NULL.
 
 #if defined(NULL)
-#    undef NULL
+    #undef NULL
 #endif
 
     // ------------------------------------------------------------------------
@@ -71,50 +71,51 @@ namespace ncore
     // is duplicated here.
 
 #if defined(__cplusplus)
-#    define NULL 0
+    #define NULL 0
 #else
-#    define NULL ((void*)0)
+    #define NULL ((void*)0)
 #endif
 
 // ------------------------------------------------------------------------
 // We need to test this after we potentially include stddef.h, otherwise we
 // would have put this into the compilertraits header.
 #if !defined(CC_COMPILER_HAS_INTTYPES) && (!defined(_MSC_VER) || (_MSC_VER > 1500)) && (defined(CC_COMPILER_IS_C99) || defined(D_S8_MIN) || defined(CC_COMPILER_HAS_C99_TYPES) || defined(_SN_STDINT_H))
-#    define CC_COMPILER_HAS_INTTYPES
+    #define CC_COMPILER_HAS_INTTYPES
 #endif
 
     // ------------------------------------------------------------------------
     typedef signed char    s8;     // 8 bit signed integer
     typedef signed short   s16;    // 16 bit signed integer
-    typedef signed int     s32;    // 32 bit signed integer. This works for both 32 bit and 64 bit platforms, as we assume the LP64 is followed.
+    typedef signed int     s32;    // 32 bit signed integer
     typedef signed char    i8;     // 8 bit signed integer
     typedef signed short   i16;    // 16 bit signed integer
-    typedef signed int     i32;    // 32 bit signed integer. This works for both 32 bit and 64 bit platforms, as we assume the LP64 is followed.
+    typedef signed int     i32;    // 32 bit signed integer
     typedef unsigned char  u8;     // 8 bit unsigned integer
     typedef unsigned short u16;    // 16 bit unsigned integer
-    typedef unsigned int   u32;    // 32 bit unsigned integer. This works for both 32 bit and 64 bit platforms, as we assume the LP64 is followed.
+    typedef unsigned int   u32;    // 32 bit unsigned integer
     typedef s8             sbyte;  // 8 bit signed integer
     typedef u8             byte;   // 8 bit unsigned integer
+    typedef s8             b8;     // 8 bit boolean
 
 // According to the C98/99 standard, FLT_EVAL_METHOD defines control the
 // width used for floating point _t types.
 #if defined(_MSC_VER) && _MSC_VER >= 1800
 
 #elif defined(FLT_EVAL_METHOD)
-#    if (FLT_EVAL_METHOD == 0)
+    #if (FLT_EVAL_METHOD == 0)
     typedef float  f32;
     typedef double f64;
-#    elif (FLT_EVAL_METHOD == 1)
+    #elif (FLT_EVAL_METHOD == 1)
     typedef double f32;
     typedef double f64;
-#    elif (FLT_EVAL_METHOD == 2)
+    #elif (FLT_EVAL_METHOD == 2)
     typedef long double f32;
     typedef long double f64;
-#    endif
+    #endif
 #endif
 
 #ifndef FLT_EVAL_METHOD
-#    define FLT_EVAL_METHOD 0
+    #define FLT_EVAL_METHOD 0
     typedef float  f32;
     typedef double f64;
 #endif
@@ -123,13 +124,13 @@ namespace ncore
     typedef signed __int64   s64;
     typedef unsigned __int64 u64;
 #else
-#    if defined(CC_PLATFORM_OSX)
+    #if defined(CC_PLATFORM_OSX)
     typedef signed long   s64;
     typedef unsigned long u64;
-#    else
+    #else
     typedef signed long long   s64;
     typedef unsigned long long u64;
-#    endif
+    #endif
 #endif
 
     typedef s64 i64;
@@ -220,117 +221,117 @@ namespace ncore
     // ------------------------------------------------------------------------
 
 #ifndef D_INTEGER_CONSTANT_DEFINED  // If the user hasn't already defined these...
-#    define D_INTEGER_CONSTANT_DEFINED
+    #define D_INTEGER_CONSTANT_DEFINED
 
-#    ifndef D_S8
-#        define D_CONSTANT_S8(x) s8(x)  // For the majority of compilers and platforms, long is 32 bits and long long is 64 bits.
-#    endif
-#    ifndef D_U8
-#        define D_CONSTANT_U8(x) u8(x)
-#        define D_NILL_U8        D_CONSTANT_U8(0xff)
-#    endif
-#    ifndef D_S16
-#        define D_CONSTANT_S16(x) s16(x)
-#    endif
-#    ifndef D_U16
-#        define D_CONSTANT_U16(x) u16(x)  // Possibly we should make this be u16(x##u). Let's see how compilers react before changing this.
-#        define D_NILL_U16        D_CONSTANT_U16(0xffff)
-#    endif
-#    ifndef D_S32
-#        define D_CONSTANT_S32(x) x##L
-#    endif
-#    ifndef D_U32
-#        define D_CONSTANT_U32(x) x##UL
-#        define D_NILL_U32        D_CONSTANT_U32(0xffffffff)
-#    endif
-#    ifndef D_S64
-#        define D_CONSTANT_S64(x) (s64) x##LL  // The way to deal with this is to compare ULONG_MAX to 0xffffffff and if not equal, then remove the L.
-#    endif
-#    ifndef D_U64
-#        define D_CONSTANT_U64(x) x##ULL  // We need to follow a similar approach for LL.
-#        define D_NILL_U64        D_CONSTANT_U64(0xffffffffffffffff)
-#    endif
-#    ifndef D_UINTMAX
-#        define D_UINTMAX(x) D_U64(x)
-#    endif
+    #ifndef D_S8
+        #define D_CONSTANT_S8(x) s8(x)  // For the majority of compilers and platforms, long is 32 bits and long long is 64 bits.
+    #endif
+    #ifndef D_U8
+        #define D_CONSTANT_U8(x) u8(x)
+        #define D_NILL_U8        D_CONSTANT_U8(0xff)
+    #endif
+    #ifndef D_S16
+        #define D_CONSTANT_S16(x) s16(x)
+    #endif
+    #ifndef D_U16
+        #define D_CONSTANT_U16(x) u16(x)  // Possibly we should make this be u16(x##u). Let's see how compilers react before changing this.
+        #define D_NILL_U16        D_CONSTANT_U16(0xffff)
+    #endif
+    #ifndef D_S32
+        #define D_CONSTANT_S32(x) x##L
+    #endif
+    #ifndef D_U32
+        #define D_CONSTANT_U32(x) x##UL
+        #define D_NILL_U32        D_CONSTANT_U32(0xffffffff)
+    #endif
+    #ifndef D_S64
+        #define D_CONSTANT_S64(x) (s64) x##LL  // The way to deal with this is to compare ULONG_MAX to 0xffffffff and if not equal, then remove the L.
+    #endif
+    #ifndef D_U64
+        #define D_CONSTANT_U64(x) x##ULL  // We need to follow a similar approach for LL.
+        #define D_NILL_U64        D_CONSTANT_U64(0xffffffffffffffff)
+    #endif
+    #ifndef D_UINTMAX
+        #define D_UINTMAX(x) D_U64(x)
+    #endif
 #endif
 
 // ------------------------------------------------------------------------
 // type sizes
 #ifndef D_INTEGER_MAX_DEFINED  // If the user hasn't already defined these...
-#    define D_INTEGER_MAX_DEFINED
+    #define D_INTEGER_MAX_DEFINED
 
-// The value must be 2^(n-1)-1
-#    ifndef D_S8_MAX
-#        define D_S8_MAX 127
-#    endif
-#    ifndef D_S16_MAX
-#        define D_S16_MAX 32767
-#    endif
-#    ifndef D_S32_MAX
-#        define D_S32_MAX 2147483647
-#    endif
-#    ifndef D_S64_MAX
-#        define D_S64_MAX D_S64(9223372036854775807)
-#    endif
-#    ifndef D_INTMAX_MAX
-#        define D_INTMAX_MAX D_S64_MAX
-#    endif
-#    ifndef D_INTPTR_MAX
-#        if CC_PLATFORM_PTR_SIZE == 4
-#            define D_INTPTR_MAX D_S32_MAX
-#        else
-#            define D_INTPTR_MAX D_S64_MAX
-#        endif
-#    endif
+    // The value must be 2^(n-1)-1
+    #ifndef D_S8_MAX
+        #define D_S8_MAX 127
+    #endif
+    #ifndef D_S16_MAX
+        #define D_S16_MAX 32767
+    #endif
+    #ifndef D_S32_MAX
+        #define D_S32_MAX 2147483647
+    #endif
+    #ifndef D_S64_MAX
+        #define D_S64_MAX D_S64(9223372036854775807)
+    #endif
+    #ifndef D_INTMAX_MAX
+        #define D_INTMAX_MAX D_S64_MAX
+    #endif
+    #ifndef D_INTPTR_MAX
+        #if CC_PLATFORM_PTR_SIZE == 4
+            #define D_INTPTR_MAX D_S32_MAX
+        #else
+            #define D_INTPTR_MAX D_S64_MAX
+        #endif
+    #endif
 
-// The value must be either -2^(n-1) or 1-2(n-1).
-#    ifndef D_S8_MIN
-#        define D_S8_MIN -128
-#    endif
-#    ifndef D_S16_MIN
-#        define D_S16_MIN -32768
-#    endif
-#    ifndef D_S32_MIN
-#        define D_S32_MIN (-D_S32_MAX - 1)  // -2147483648
-#    endif
-#    ifndef D_S64_MIN
-#        define D_S64_MIN (-D_S64_MAX - 1)  // -9223372036854775808
-#    endif
-#    ifndef D_INTMAX_MIN
-#        define D_INTMAX_MIN D_S64_MIN
-#    endif
-#    ifndef D_INTPTR_MIN
-#        if CC_PLATFORM_PTR_SIZE == 4
-#            define D_INTPTR_MIN D_S32_MIN
-#        else
-#            define D_INTPTR_MIN D_S64_MIN
-#        endif
-#    endif
+    // The value must be either -2^(n-1) or 1-2(n-1).
+    #ifndef D_S8_MIN
+        #define D_S8_MIN -128
+    #endif
+    #ifndef D_S16_MIN
+        #define D_S16_MIN -32768
+    #endif
+    #ifndef D_S32_MIN
+        #define D_S32_MIN (-D_S32_MAX - 1)  // -2147483648
+    #endif
+    #ifndef D_S64_MIN
+        #define D_S64_MIN (-D_S64_MAX - 1)  // -9223372036854775808
+    #endif
+    #ifndef D_INTMAX_MIN
+        #define D_INTMAX_MIN D_S64_MIN
+    #endif
+    #ifndef D_INTPTR_MIN
+        #if CC_PLATFORM_PTR_SIZE == 4
+            #define D_INTPTR_MIN D_S32_MIN
+        #else
+            #define D_INTPTR_MIN D_S64_MIN
+        #endif
+    #endif
 
-// The value must be 2^n-1
-#    ifndef D_U8_MAX
-#        define D_U8_MAX 0xffU  // 255
-#    endif
-#    ifndef D_U16_MAX
-#        define D_U16_MAX 0xffffU  // 65535
-#    endif
-#    ifndef D_U32_MAX
-#        define D_U32_MAX D_CONSTANT_U32(0xffffffff)  // 4294967295
-#    endif
-#    ifndef D_U64_MAX
-#        define D_U64_MAX D_CONSTANT_U64(0xffffffffffffffff)  // 18446744073709551615
-#    endif
-#    ifndef D_UINTMAX_MAX
-#        define D_UINTMAX_MAX D_U64_MAX
-#    endif
-#    ifndef D_UINTPTR_MAX
-#        if CC_PLATFORM_PTR_SIZE == 4
-#            define D_UINTPTR_MAX D_U32_MAX
-#        else
-#            define D_UINTPTR_MAX D_U64_MAX
-#        endif
-#    endif
+    // The value must be 2^n-1
+    #ifndef D_U8_MAX
+        #define D_U8_MAX 0xffU  // 255
+    #endif
+    #ifndef D_U16_MAX
+        #define D_U16_MAX 0xffffU  // 65535
+    #endif
+    #ifndef D_U32_MAX
+        #define D_U32_MAX D_CONSTANT_U32(0xffffffff)  // 4294967295
+    #endif
+    #ifndef D_U64_MAX
+        #define D_U64_MAX D_CONSTANT_U64(0xffffffffffffffff)  // 18446744073709551615
+    #endif
+    #ifndef D_UINTMAX_MAX
+        #define D_UINTMAX_MAX D_U64_MAX
+    #endif
+    #ifndef D_UINTPTR_MAX
+        #if CC_PLATFORM_PTR_SIZE == 4
+            #define D_UINTPTR_MAX D_U32_MAX
+        #else
+            #define D_UINTPTR_MAX D_U64_MAX
+        #endif
+    #endif
 #endif
 
     //==============================================================================
@@ -373,146 +374,146 @@ namespace ncore
     const u64 cTB = (u64)1 << 40;
 
 #if defined(CC_COMPILER_HAS_INTTYPES) && (!defined(CC_COMPILER_MSVC) || (defined(CC_COMPILER_MSVC) && CC_COMPILER_VERSION >= 1800))
-#    define CC_COMPILER_HAS_C99_FORMAT_MACROS
+    #define CC_COMPILER_HAS_C99_FORMAT_MACROS
 #endif
 
 #ifndef CC_COMPILER_HAS_C99_FORMAT_MACROS
-    // ------------------------------------------------------------------------
-    // sized printf and scanf format specifiers
-    // See the C99 standard, section 7.8.1 -- Macros for format specifiers.
-    //
-    // The C99 standard specifies that inttypes.h only define printf/scanf
-    // format macros if __STDC_FORMAT_MACROS is defined before #including
-    // inttypes.h. For consistency, we define both __STDC_FORMAT_MACROS and
-    // the printf format specifiers here. We also skip the "least/most"
-    // variations of these specifiers, as we've decided to do so with
-    // basic types.
-    //
-    // For 64 bit systems, we assume the LP64 standard is followed
-    // (as opposed to ILP64, etc.) For 32 bit systems, we assume the
-    // ILP32 standard is followed. See:
-    //    http://www.opengroup.org/public/tech/aspen/lp64_wp.htm
-    // for information about this. Thus, on both 32 and 64 bit platforms,
-    // %l refers to 32 bit data while %ll refers to 64 bit data.
+        // ------------------------------------------------------------------------
+        // sized printf and scanf format specifiers
+        // See the C99 standard, section 7.8.1 -- Macros for format specifiers.
+        //
+        // The C99 standard specifies that inttypes.h only define printf/scanf
+        // format macros if __STDC_FORMAT_MACROS is defined before #including
+        // inttypes.h. For consistency, we define both __STDC_FORMAT_MACROS and
+        // the printf format specifiers here. We also skip the "least/most"
+        // variations of these specifiers, as we've decided to do so with
+        // basic types.
+        //
+        // For 64 bit systems, we assume the LP64 standard is followed
+        // (as opposed to ILP64, etc.) For 32 bit systems, we assume the
+        // ILP32 standard is followed. See:
+        //    http://www.opengroup.org/public/tech/aspen/lp64_wp.htm
+        // for information about this. Thus, on both 32 and 64 bit platforms,
+        // %l refers to 32 bit data while %ll refers to 64 bit data.
 
-#    ifndef __STDC_FORMAT_MACROS
-#        define __STDC_FORMAT_MACROS
-#    endif
+    #ifndef __STDC_FORMAT_MACROS
+        #define __STDC_FORMAT_MACROS
+    #endif
 
-#    if defined(CC_COMPILER_MSVC)  // VC++ 7.1+ understands long long as a data type but doesn't accept %ll as a printf specifier.
-#        define CC_PRI_64_LENGTH_SPECIFIER "I64"
-#        define CC_SCN_64_LENGTH_SPECIFIER "I64"
-#    else
-#        define CC_PRI_64_LENGTH_SPECIFIER "ll"
-#        define CC_SCN_64_LENGTH_SPECIFIER "ll"
-#    endif  // It turns out that some platforms use %q to represent a 64 bit value, but these are not relevant to us at this time.
+    #if defined(CC_COMPILER_MSVC)  // VC++ 7.1+ understands long long as a data type but doesn't accept %ll as a printf specifier.
+        #define CC_PRI_64_LENGTH_SPECIFIER "I64"
+        #define CC_SCN_64_LENGTH_SPECIFIER "I64"
+    #else
+        #define CC_PRI_64_LENGTH_SPECIFIER "ll"
+        #define CC_SCN_64_LENGTH_SPECIFIER "ll"
+    #endif  // It turns out that some platforms use %q to represent a 64 bit value, but these are not relevant to us at this time.
 
-// Printf format specifiers
-#    if defined(CC_COMPILER_IS_C99) || defined(CC_COMPILER_GNUC)
-#        define PRId8 "hhd"
-#        define PRIi8 "hhi"
-#        define PRIo8 "hho"
-#        define PRIu8 "hhu"
-#        define PRIx8 "hhx"
-#        define PRIX8 "hhX"
-#    else                  // VC++, Borland, etc. which have no way to specify 8 bit values other than %c.
-#        define PRId8 "c"  // This may not work properly but it at least will not crash. Try using 16 bit versions instead.
-#        define PRIi8 "c"  //  "
-#        define PRIo8 "o"  //  "
-#        define PRIu8 "u"  //  "
-#        define PRIx8 "x"  //  "
-#        define PRIX8 "X"  //  "
-#    endif
+    // Printf format specifiers
+    #if defined(CC_COMPILER_IS_C99) || defined(CC_COMPILER_GNUC)
+        #define PRId8 "hhd"
+        #define PRIi8 "hhi"
+        #define PRIo8 "hho"
+        #define PRIu8 "hhu"
+        #define PRIx8 "hhx"
+        #define PRIX8 "hhX"
+    #else                  // VC++, Borland, etc. which have no way to specify 8 bit values other than %c.
+        #define PRId8 "c"  // This may not work properly but it at least will not crash. Try using 16 bit versions instead.
+        #define PRIi8 "c"  //  "
+        #define PRIo8 "o"  //  "
+        #define PRIu8 "u"  //  "
+        #define PRIx8 "x"  //  "
+        #define PRIX8 "X"  //  "
+    #endif
 
-#    define PRId16 "hd"
-#    define PRIi16 "hi"
-#    define PRIo16 "ho"
-#    define PRIu16 "hu"
-#    define PRIx16 "hx"
-#    define PRIX16 "hX"
+    #define PRId16 "hd"
+    #define PRIi16 "hi"
+    #define PRIo16 "ho"
+    #define PRIu16 "hu"
+    #define PRIx16 "hx"
+    #define PRIX16 "hX"
 
-#    define PRId32 "d"  // This works for both 32 bit and 64 bit systems, as we assume LP64 conventions.
-#    define PRIi32 "i"
-#    define PRIo32 "o"
-#    define PRIu32 "u"
-#    define PRIx32 "x"
-#    define PRIX32 "X"
+    #define PRId32 "d"  // This works for both 32 bit and 64 bit systems, as we assume LP64 conventions.
+    #define PRIi32 "i"
+    #define PRIo32 "o"
+    #define PRIu32 "u"
+    #define PRIx32 "x"
+    #define PRIX32 "X"
 
-#    define PRId64 CC_PRI_64_LENGTH_SPECIFIER "d"
-#    define PRIi64 CC_PRI_64_LENGTH_SPECIFIER "i"
-#    define PRIo64 CC_PRI_64_LENGTH_SPECIFIER "o"
-#    define PRIu64 CC_PRI_64_LENGTH_SPECIFIER "u"
-#    define PRIx64 CC_PRI_64_LENGTH_SPECIFIER "x"
-#    define PRIX64 CC_PRI_64_LENGTH_SPECIFIER "X"
+    #define PRId64 CC_PRI_64_LENGTH_SPECIFIER "d"
+    #define PRIi64 CC_PRI_64_LENGTH_SPECIFIER "i"
+    #define PRIo64 CC_PRI_64_LENGTH_SPECIFIER "o"
+    #define PRIu64 CC_PRI_64_LENGTH_SPECIFIER "u"
+    #define PRIx64 CC_PRI_64_LENGTH_SPECIFIER "x"
+    #define PRIX64 CC_PRI_64_LENGTH_SPECIFIER "X"
 
-#    if (CC_PLATFORM_PTR_SIZE == 4)
-#        define PRIdPTR PRId32  // Usage of pointer values will generate warnings with
-#        define PRIiPTR PRIi32  // some compilers because they are defined in terms of
-#        define PRIoPTR PRIo32  // integers. However, you can't simply use "p" because
-#        define PRIuPTR PRIu32  // 'p' is interpreted in a specific and often different
-#        define PRIxPTR PRIx32  // way by the library.
-#        define PRIXPTR PRIX32
-#    elif (CC_PLATFORM_PTR_SIZE == 8)
-#        define PRIdPTR PRId64
-#        define PRIiPTR PRIi64
-#        define PRIoPTR PRIo64
-#        define PRIuPTR PRIu64
-#        define PRIxPTR PRIx64
-#        define PRIXPTR PRIX64
-#    endif
+    #if (CC_PLATFORM_PTR_SIZE == 4)
+        #define PRIdPTR PRId32  // Usage of pointer values will generate warnings with
+        #define PRIiPTR PRIi32  // some compilers because they are defined in terms of
+        #define PRIoPTR PRIo32  // integers. However, you can't simply use "p" because
+        #define PRIuPTR PRIu32  // 'p' is interpreted in a specific and often different
+        #define PRIxPTR PRIx32  // way by the library.
+        #define PRIXPTR PRIX32
+    #elif (CC_PLATFORM_PTR_SIZE == 8)
+        #define PRIdPTR PRId64
+        #define PRIiPTR PRIi64
+        #define PRIoPTR PRIo64
+        #define PRIuPTR PRIu64
+        #define PRIxPTR PRIx64
+        #define PRIXPTR PRIX64
+    #endif
 
-// Scanf format specifiers
-#    if defined(CC_COMPILER_IS_C99) || defined(CC_COMPILER_GNUC)
-#        define SCNd8 "hhd"
-#        define SCNi8 "hhi"
-#        define SCNo8 "hho"
-#        define SCNu8 "hhu"
-#        define SCNx8 "hhx"
-#    else                  // VC++, Borland, etc. which have no way to specify 8 bit values other than %c.
-#        define SCNd8 "c"  // This will not work properly but it at least will not crash. Try using 16 bit versions instead.
-#        define SCNi8 "c"  //  "
-#        define SCNo8 "c"  //  "
-#        define SCNu8 "c"  //  "
-#        define SCNx8 "c"  //  "
-#    endif
+    // Scanf format specifiers
+    #if defined(CC_COMPILER_IS_C99) || defined(CC_COMPILER_GNUC)
+        #define SCNd8 "hhd"
+        #define SCNi8 "hhi"
+        #define SCNo8 "hho"
+        #define SCNu8 "hhu"
+        #define SCNx8 "hhx"
+    #else                  // VC++, Borland, etc. which have no way to specify 8 bit values other than %c.
+        #define SCNd8 "c"  // This will not work properly but it at least will not crash. Try using 16 bit versions instead.
+        #define SCNi8 "c"  //  "
+        #define SCNo8 "c"  //  "
+        #define SCNu8 "c"  //  "
+        #define SCNx8 "c"  //  "
+    #endif
 
-#    define SCNd16 "hd"
-#    define SCNi16 "hi"
-#    define SCNo16 "ho"
-#    define SCNu16 "hu"
-#    define SCNx16 "hx"
+    #define SCNd16 "hd"
+    #define SCNi16 "hi"
+    #define SCNo16 "ho"
+    #define SCNu16 "hu"
+    #define SCNx16 "hx"
 
-#    define SCNd32 "d"  // This works for both 32 bit and 64 bit systems, as we assume LP64 conventions.
-#    define SCNi32 "i"
-#    define SCNo32 "o"
-#    define SCNu32 "u"
-#    define SCNx32 "x"
+    #define SCNd32 "d"  // This works for both 32 bit and 64 bit systems, as we assume LP64 conventions.
+    #define SCNi32 "i"
+    #define SCNo32 "o"
+    #define SCNu32 "u"
+    #define SCNx32 "x"
 
-#    define SCNd64 CC_SCN_64_LENGTH_SPECIFIER "d"
-#    define SCNi64 CC_SCN_64_LENGTH_SPECIFIER "i"
-#    define SCNo64 CC_SCN_64_LENGTH_SPECIFIER "o"
-#    define SCNu64 CC_SCN_64_LENGTH_SPECIFIER "u"
-#    define SCNx64 CC_SCN_64_LENGTH_SPECIFIER "x"
+    #define SCNd64 CC_SCN_64_LENGTH_SPECIFIER "d"
+    #define SCNi64 CC_SCN_64_LENGTH_SPECIFIER "i"
+    #define SCNo64 CC_SCN_64_LENGTH_SPECIFIER "o"
+    #define SCNu64 CC_SCN_64_LENGTH_SPECIFIER "u"
+    #define SCNx64 CC_SCN_64_LENGTH_SPECIFIER "x"
 
-#    if defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION >= 1900)
-#        define SCNdPTR PRIdPTR
-#        define SCNiPTR PRIiPTR
-#        define SCNoPTR PRIoPTR
-#        define SCNuPTR PRIuPTR
-#        define SCNxPTR PRIxPTR
-#    elif (CC_PLATFORM_PTR_SIZE == 4)
-#        define SCNdPTR SCNd32  // Usage of pointer values will generate warnings with
-#        define SCNiPTR SCNi32  // some compilers because they are defined in terms of
-#        define SCNoPTR SCNo32  // integers. However, you can't simply use "p" because
-#        define SCNuPTR SCNu32  // 'p' is interpreted in a specific and often different
-#        define SCNxPTR SCNx32  // way by the library.
-#    elif (CC_PLATFORM_PTR_SIZE == 8)
-#        define SCNdPTR SCNd64
-#        define SCNiPTR SCNi64
-#        define SCNoPTR SCNo64
-#        define SCNuPTR SCNu64
-#        define SCNxPTR SCNx64
-#    endif
+    #if defined(CC_COMPILER_MSVC) && (CC_COMPILER_VERSION >= 1900)
+        #define SCNdPTR PRIdPTR
+        #define SCNiPTR PRIiPTR
+        #define SCNoPTR PRIoPTR
+        #define SCNuPTR PRIuPTR
+        #define SCNxPTR PRIxPTR
+    #elif (CC_PLATFORM_PTR_SIZE == 4)
+        #define SCNdPTR SCNd32  // Usage of pointer values will generate warnings with
+        #define SCNiPTR SCNi32  // some compilers because they are defined in terms of
+        #define SCNoPTR SCNo32  // integers. However, you can't simply use "p" because
+        #define SCNuPTR SCNu32  // 'p' is interpreted in a specific and often different
+        #define SCNxPTR SCNx32  // way by the library.
+    #elif (CC_PLATFORM_PTR_SIZE == 8)
+        #define SCNdPTR SCNd64
+        #define SCNiPTR SCNi64
+        #define SCNoPTR SCNo64
+        #define SCNuPTR SCNu64
+        #define SCNxPTR SCNx64
+    #endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -521,30 +522,30 @@ namespace ncore
 // a native pointer ( intptr_t is defined in STDDEF.H )
 //
 #if !defined(_INTPTR_T_DEFINED) && !defined(_intptr_t_defined) && !defined(CC_COMPILER_HAS_C99_TYPES)
-#    if (CC_PLATFORM_PTR_SIZE == 4)
+    #if (CC_PLATFORM_PTR_SIZE == 4)
     typedef s32 intptr_t;
-#    elif (CC_PLATFORM_PTR_SIZE == 8)
+    #elif (CC_PLATFORM_PTR_SIZE == 8)
     typedef s64 intptr_t;
-#    endif
+    #endif
 
-#    define _intptr_t_defined
-#    define _INTPTR_T_DEFINED
+    #define _intptr_t_defined
+    #define _INTPTR_T_DEFINED
 #endif
 
 #if !defined(_UINTPTR_T_DEFINED) && !defined(_uintptr_t_defined) && !defined(CC_COMPILER_HAS_C99_TYPES)
-#    if (CC_PLATFORM_PTR_SIZE == 4)
+    #if (CC_PLATFORM_PTR_SIZE == 4)
     typedef u32 uintptr_t;
-#    elif (CC_PLATFORM_PTR_SIZE == 8)
+    #elif (CC_PLATFORM_PTR_SIZE == 8)
     typedef u64 uintptr_t;
-#    endif
+    #endif
 
-#    define _uintptr_t_defined
-#    define _UINTPTR_T_DEFINED
+    #define _uintptr_t_defined
+    #define _UINTPTR_T_DEFINED
 #endif
 
 #if !defined(CC_COMPILER_HAS_INTTYPES)
-#    ifndef INTMAX_T_DEFINED
-#        define INTMAX_T_DEFINED
+    #ifndef INTMAX_T_DEFINED
+        #define INTMAX_T_DEFINED
 
     // At this time, all supported compilers have s64 as the max
     // integer type. Some compilers support a 128 bit integer type,
@@ -556,7 +557,7 @@ namespace ncore
 
     typedef s64 intmax_t;
     typedef u64 uintmax_t;
-#    endif
+    #endif
 #endif
 
     // ------------------------------------------------------------------------
@@ -602,55 +603,55 @@ namespace ncore
     // from char in the type system, and defined to 0 if otherwise.
 
 #if !defined(CC_CHAR16_NATIVE)
-// To do: Change this to be based on CC_COMPILER_NO_NEW_CHARACTER_TYPES.
-#    if defined(_MSC_VER) && (_MSC_VER >= 1600) && defined(_HAS_CHAR16_T_LANGUAGE_SUPPORT) && _HAS_CHAR16_T_LANGUAGE_SUPPORT  // VS2010+
-#        define CC_CHAR16_NATIVE 1
-#    elif defined(CC_COMPILER_CLANG) && defined(CC_COMPILER_CPP11_ENABLED)
-#        if __has_feature(cxx_unicode_literals)
-#            define CC_CHAR16_NATIVE 1
-#        elif (CC_COMPILER_VERSION >= 300) && !(defined(CC_PLATFORM_IPHONE) || defined(CC_PLATFORM_OSX))
-#            define CC_CHAR16_NATIVE 1
-#        elif defined(CC_PLATFORM_APPLE)
-#            define CC_CHAR16_NATIVE 1
-#        else
-#            define CC_CHAR16_NATIVE 0
-#        endif
-#    elif defined(__EDG_VERSION__) && (__EDG_VERSION__ >= 404) && defined(__CHAR16_TYPE__) && defined(CC_COMPILER_CPP11_ENABLED)  // EDG 4.4+.
-#        define CC_CHAR16_NATIVE 1
-#    elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4004) && !defined(CC_COMPILER_EDG) && (defined(CC_COMPILER_CPP11_ENABLED) || defined(__STDC_VERSION__))  // g++ (C++ compiler) 4.4+ with -std=c++0x or gcc (C compiler) 4.4+ with -std=gnu99
-#        define CC_CHAR16_NATIVE 1
-#    else
-#        define CC_CHAR16_NATIVE 0
-#    endif
+    // To do: Change this to be based on CC_COMPILER_NO_NEW_CHARACTER_TYPES.
+    #if defined(_MSC_VER) && (_MSC_VER >= 1600) && defined(_HAS_CHAR16_T_LANGUAGE_SUPPORT) && _HAS_CHAR16_T_LANGUAGE_SUPPORT  // VS2010+
+        #define CC_CHAR16_NATIVE 1
+    #elif defined(CC_COMPILER_CLANG) && defined(CC_COMPILER_CPP11_ENABLED)
+        #if __has_feature(cxx_unicode_literals)
+            #define CC_CHAR16_NATIVE 1
+        #elif (CC_COMPILER_VERSION >= 300) && !(defined(CC_PLATFORM_IPHONE) || defined(CC_PLATFORM_OSX))
+            #define CC_CHAR16_NATIVE 1
+        #elif defined(CC_PLATFORM_APPLE)
+            #define CC_CHAR16_NATIVE 1
+        #else
+            #define CC_CHAR16_NATIVE 0
+        #endif
+    #elif defined(__EDG_VERSION__) && (__EDG_VERSION__ >= 404) && defined(__CHAR16_TYPE__) && defined(CC_COMPILER_CPP11_ENABLED)  // EDG 4.4+.
+        #define CC_CHAR16_NATIVE 1
+    #elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4004) && !defined(CC_COMPILER_EDG) && (defined(CC_COMPILER_CPP11_ENABLED) || defined(__STDC_VERSION__))  // g++ (C++ compiler) 4.4+ with -std=c++0x or gcc (C compiler) 4.4+ with -std=gnu99
+        #define CC_CHAR16_NATIVE 1
+    #else
+        #define CC_CHAR16_NATIVE 0
+    #endif
 #endif
 
 #if !defined(CC_CHAR32_NATIVE)  // Microsoft currently ties char32_t language support to char16_t language support. So we use CHAR16_T here.
-// To do: Change this to be based on CC_COMPILER_NO_NEW_CHARACTER_TYPES.
-#    if defined(_MSC_VER) && (_MSC_VER >= 1600) && defined(_HAS_CHAR16_T_LANGUAGE_SUPPORT) && _HAS_CHAR16_T_LANGUAGE_SUPPORT  // VS2010+
-#        define CC_CHAR32_NATIVE 1
-#    elif defined(CC_COMPILER_CLANG) && defined(CC_COMPILER_CPP11_ENABLED)
-#        if __has_feature(cxx_unicode_literals)
-#            define CC_CHAR32_NATIVE 1
-#        elif (CC_COMPILER_VERSION >= 300) && !(defined(CC_PLATFORM_IPHONE) || defined(CC_PLATFORM_OSX))
-#            define CC_CHAR32_NATIVE 1
-#        elif defined(CC_PLATFORM_APPLE)
-#            define CC_CHAR32_NATIVE 1
-#        else
-#            define CC_CHAR32_NATIVE 0
-#        endif
-#    elif defined(__EDG_VERSION__) && (__EDG_VERSION__ >= 404) && defined(__CHAR32_TYPE__) && defined(CC_COMPILER_CPP11_ENABLED)  // EDG 4.4+.
-#        define CC_CHAR32_NATIVE 1
-#    elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4004) && !defined(CC_COMPILER_EDG) && (defined(CC_COMPILER_CPP11_ENABLED) || defined(__STDC_VERSION__))  // g++ (C++ compiler) 4.4+ with -std=c++0x or gcc (C compiler) 4.4+ with -std=gnu99
-#        define CC_CHAR32_NATIVE 1
-#    else
-#        define CC_CHAR32_NATIVE 0
-#    endif
+    // To do: Change this to be based on CC_COMPILER_NO_NEW_CHARACTER_TYPES.
+    #if defined(_MSC_VER) && (_MSC_VER >= 1600) && defined(_HAS_CHAR16_T_LANGUAGE_SUPPORT) && _HAS_CHAR16_T_LANGUAGE_SUPPORT  // VS2010+
+        #define CC_CHAR32_NATIVE 1
+    #elif defined(CC_COMPILER_CLANG) && defined(CC_COMPILER_CPP11_ENABLED)
+        #if __has_feature(cxx_unicode_literals)
+            #define CC_CHAR32_NATIVE 1
+        #elif (CC_COMPILER_VERSION >= 300) && !(defined(CC_PLATFORM_IPHONE) || defined(CC_PLATFORM_OSX))
+            #define CC_CHAR32_NATIVE 1
+        #elif defined(CC_PLATFORM_APPLE)
+            #define CC_CHAR32_NATIVE 1
+        #else
+            #define CC_CHAR32_NATIVE 0
+        #endif
+    #elif defined(__EDG_VERSION__) && (__EDG_VERSION__ >= 404) && defined(__CHAR32_TYPE__) && defined(CC_COMPILER_CPP11_ENABLED)  // EDG 4.4+.
+        #define CC_CHAR32_NATIVE 1
+    #elif defined(CC_COMPILER_GNUC) && (CC_COMPILER_VERSION >= 4004) && !defined(CC_COMPILER_EDG) && (defined(CC_COMPILER_CPP11_ENABLED) || defined(__STDC_VERSION__))  // g++ (C++ compiler) 4.4+ with -std=c++0x or gcc (C compiler) 4.4+ with -std=gnu99
+        #define CC_CHAR32_NATIVE 1
+    #else
+        #define CC_CHAR32_NATIVE 0
+    #endif
 #endif
 
 #if CC_CHAR16_NATIVE || CC_CHAR32_NATIVE
-#    define CC_WCHAR_UNIQUE 1
+    #define CC_WCHAR_UNIQUE 1
 #else
-#    define CC_WCHAR_UNIQUE 0
+    #define CC_WCHAR_UNIQUE 0
 #endif
 
 // CC_CHAR8_UNIQUE
@@ -664,49 +665,49 @@ namespace ncore
 // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0482r6.html
 //
 #ifdef __cpp_char8_t
-#    define CHAR8_T_DEFINED
-#    define CC_CHAR8_UNIQUE 1
+    #define CHAR8_T_DEFINED
+    #define CC_CHAR8_UNIQUE 1
 #else
-#    define CC_CHAR8_UNIQUE 0
+    #define CC_CHAR8_UNIQUE 0
 #endif
 
 #ifndef CHAR8_T_DEFINED  // If the user hasn't already defined these...
-#    define CHAR8_T_DEFINED
-#    if defined(CC_PLATFORM_APPLE)
-#        define char8_t char  // The Apple debugger is too stupid to realize char8_t is typedef'd to char, so we #define it.
-#    else
+    #define CHAR8_T_DEFINED
+    #if defined(CC_PLATFORM_APPLE)
+        #define char8_t char  // The Apple debugger is too stupid to realize char8_t is typedef'd to char, so we #define it.
+    #else
     typedef char char8_t;
-#    endif
+    #endif
 
-#    if CC_CHAR16_NATIVE
-// In C++, char16_t and char32_t are already defined by the compiler.
-// In MS C, char16_t and char32_t are already defined by the compiler/standard library.
-// In GCC C, __CHAR16_TYPE__ and __CHAR32_TYPE__ are defined instead, and we must define char16_t and char32_t from these.
-#        if defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__) && defined(__CHAR16_TYPE__)  // If using GCC and compiling in C...
+    #if CC_CHAR16_NATIVE
+        // In C++, char16_t and char32_t are already defined by the compiler.
+        // In MS C, char16_t and char32_t are already defined by the compiler/standard library.
+        // In GCC C, __CHAR16_TYPE__ and __CHAR32_TYPE__ are defined instead, and we must define char16_t and char32_t from these.
+        #if defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__) && defined(__CHAR16_TYPE__)  // If using GCC and compiling in C...
     typedef __CHAR16_TYPE__ char16_t;
     typedef __CHAR32_TYPE__ char32_t;
-#        endif
-#    elif (CC_WCHAR_SIZE == 2)
-#        if (defined(_MSC_VER) && (_MSC_VER >= 1600))  // if VS2010+ or using platforms that use Dinkumware under a compiler that doesn't natively support C++11 char16_t.
-#            if !defined(_CHAR16T)
-#                define _CHAR16T
-#            endif
-#            if !defined(_HAS_CHAR16_T_LANGUAGE_SUPPORT) || !_HAS_CHAR16_T_LANGUAGE_SUPPORT
+        #endif
+    #elif (CC_WCHAR_SIZE == 2)
+        #if (defined(_MSC_VER) && (_MSC_VER >= 1600))  // if VS2010+ or using platforms that use Dinkumware under a compiler that doesn't natively support C++11 char16_t.
+            #if !defined(_CHAR16T)
+                #define _CHAR16T
+            #endif
+            #if !defined(_HAS_CHAR16_T_LANGUAGE_SUPPORT) || !_HAS_CHAR16_T_LANGUAGE_SUPPORT
     typedef wchar_t char16_t;
     typedef u32 char32_t;
-#            endif
-#        else
+            #endif
+        #else
     typedef wchar_t char16_t;
     typedef u32 char32_t;
-#        endif
-#    else
+        #endif
+    #else
     typedef u16 char16_t;
-#        if defined(__cplusplus)
+        #if defined(__cplusplus)
     typedef wchar_t char32_t;
-#        else
+        #else
     typedef u32 char32_t;
-#        endif
-#    endif
+        #endif
+    #endif
 #endif
 
 // CHAR8_MIN, CHAR8_MAX, etc.
@@ -723,27 +724,27 @@ namespace ncore
 #define CC_LIMITS_MAX(T)       ((CC_LIMITS_IS_SIGNED(T) ? CC_LIMITS_MAX_S(T) : CC_LIMITS_MAX_U(T)))
 
 #if !defined(CHAR8_MIN)
-#    define CHAR8_MIN CC_LIMITS_MIN(char8_t)
+    #define CHAR8_MIN CC_LIMITS_MIN(char8_t)
 #endif
 
 #if !defined(CHAR8_MAX)
-#    define CHAR8_MAX CC_LIMITS_MAX(char8_t)
+    #define CHAR8_MAX CC_LIMITS_MAX(char8_t)
 #endif
 
 #if !defined(CHAR16_MIN)
-#    define CHAR16_MIN CC_LIMITS_MIN(char16_t)
+    #define CHAR16_MIN CC_LIMITS_MIN(char16_t)
 #endif
 
 #if !defined(CHAR16_MAX)
-#    define CHAR16_MAX CC_LIMITS_MAX(char16_t)
+    #define CHAR16_MAX CC_LIMITS_MAX(char16_t)
 #endif
 
 #if !defined(CHAR32_MIN)
-#    define CHAR32_MIN CC_LIMITS_MIN(char32_t)
+    #define CHAR32_MIN CC_LIMITS_MIN(char32_t)
 #endif
 
 #if !defined(CHAR32_MAX)
-#    define CHAR32_MAX CC_LIMITS_MAX(char32_t)
+    #define CHAR32_MAX CC_LIMITS_MAX(char32_t)
 #endif
 
 // CC_CHAR8 / CC_CHAR16 / CC_CHAR32 / CC_WCHAR
@@ -757,52 +758,52 @@ namespace ncore
 //     const char32_t  c   = CC_CHAR32('\x3001');
 //
 #ifndef CC_CHAR8
-#    if CC_CHAR8_UNIQUE
-#        define CC_CHAR8(s) u8##s
-#    else
-#        define CC_CHAR8(s) s
-#    endif
+    #if CC_CHAR8_UNIQUE
+        #define CC_CHAR8(s) u8##s
+    #else
+        #define CC_CHAR8(s) s
+    #endif
 #endif
 
 #ifndef CC_WCHAR
-#    define CC_WCHAR_(s) L##s
-#    define CC_WCHAR(s)  CC_WCHAR_(s)
+    #define CC_WCHAR_(s) L##s
+    #define CC_WCHAR(s)  CC_WCHAR_(s)
 #endif
 
 #ifndef CC_CHAR16
-#    if CC_CHAR16_NATIVE && !defined(_MSC_VER)  // Microsoft doesn't support char16_t string literals.
-#        define CC_CHAR16_(s) u##s
-#        define CC_CHAR16(s)  CC_CHAR16_(s)
-#    elif (CC_WCHAR_SIZE == 2)
-#        if defined(_MSC_VER) && (_MSC_VER >= 1900) && defined(__cplusplus)  // VS2015 supports u"" string literals.
-#            define CC_CHAR16_(s) u##s
-#            define CC_CHAR16(s)  CC_CHAR16_(s)
-#        else
-#            define CC_CHAR16_(s) L##s
-#            define CC_CHAR16(s)  CC_CHAR16_(s)
-#        endif
-#    else
-    // #define CC_CHAR16(s) // Impossible to implement efficiently.
-#    endif
+    #if CC_CHAR16_NATIVE && !defined(_MSC_VER)  // Microsoft doesn't support char16_t string literals.
+        #define CC_CHAR16_(s) u##s
+        #define CC_CHAR16(s)  CC_CHAR16_(s)
+    #elif (CC_WCHAR_SIZE == 2)
+        #if defined(_MSC_VER) && (_MSC_VER >= 1900) && defined(__cplusplus)  // VS2015 supports u"" string literals.
+            #define CC_CHAR16_(s) u##s
+            #define CC_CHAR16(s)  CC_CHAR16_(s)
+        #else
+            #define CC_CHAR16_(s) L##s
+            #define CC_CHAR16(s)  CC_CHAR16_(s)
+        #endif
+    #else
+            // #define CC_CHAR16(s) // Impossible to implement efficiently.
+    #endif
 #endif
 
 #ifndef CC_CHAR32
-#    if CC_CHAR32_NATIVE && !defined(_MSC_VER)  // Microsoft doesn't support char32_t string literals.
-#        define CC_CHAR32_(s) U##s
-#        define CC_CHAR32(s)  CC_CHAR32_(s)
-#    elif (CC_WCHAR_SIZE == 2)
-#        if defined(_MSC_VER) && (_MSC_VER >= 1900) && defined(__cplusplus)  // VS2015 supports u"" string literals.
-#            define CC_CHAR32_(s) U##s
-#            define CC_CHAR32(s)  CC_CHAR32_(s)
-#        else
-    // #define CC_CHAR32(s) // Impossible to implement.
-#        endif
-#    elif (CC_WCHAR_SIZE == 4)
-#        define CC_CHAR32_(s) L##s
-#        define CC_CHAR32(s)  CC_CHAR32_(s)
-#    else
-#        error Unexpected size of wchar_t
-#    endif
+    #if CC_CHAR32_NATIVE && !defined(_MSC_VER)  // Microsoft doesn't support char32_t string literals.
+        #define CC_CHAR32_(s) U##s
+        #define CC_CHAR32(s)  CC_CHAR32_(s)
+    #elif (CC_WCHAR_SIZE == 2)
+        #if defined(_MSC_VER) && (_MSC_VER >= 1900) && defined(__cplusplus)  // VS2015 supports u"" string literals.
+            #define CC_CHAR32_(s) U##s
+            #define CC_CHAR32(s)  CC_CHAR32_(s)
+        #else
+                // #define CC_CHAR32(s) // Impossible to implement.
+        #endif
+    #elif (CC_WCHAR_SIZE == 4)
+        #define CC_CHAR32_(s) L##s
+        #define CC_CHAR32(s)  CC_CHAR32_(s)
+    #else
+        #error Unexpected size of wchar_t
+    #endif
 #endif
 
 // ------------------------------------------------------------------------
@@ -817,9 +818,9 @@ namespace ncore
 //     size_t arrayCount = CCArrayCount(array); // arrayCount is 75.
 //
 #if defined(CC_COMPILER_NO_CONSTEXPR)
-#    ifndef DArrayCount
-#        define DArrayCount(x) (sizeof(x) / sizeof(x[0]))
-#    endif
+    #ifndef DArrayCount
+        #define DArrayCount(x) (sizeof(x) / sizeof(x[0]))
+    #endif
 #else
     // This C++11 version is a little smarter than the macro version above;
     // it can tell the difference between arrays and pointers. Other simpler
@@ -831,7 +832,7 @@ namespace ncore
     template <typename T, size_t N>
     char (&CCARRAYSIZEHELPER(T (&&x)[N]))[N];
 
-#    define DARRAYSIZE(x) ((size_t)sizeof(ncore::CCARRAYSIZEHELPER(x)))
+    #define DARRAYSIZE(x) ((size_t)sizeof(ncore::CCARRAYSIZEHELPER(x)))
 #endif
 
 // ------------------------------------------------------------------------
@@ -846,62 +847,62 @@ namespace ncore
 //     static_assert(sizeof(int) == 4, "int must be 32 bits");
 //
 #if defined(_MSC_VER) && (_MSC_VER >= 1600) && defined(__cplusplus)
-    // static_assert is defined by the compiler for both C and C++.
-#    define STATIC_ASSERT(c)     static_assert(c)
-#    define STATIC_ASSERTS(c, m) static_assert(c, m)
+        // static_assert is defined by the compiler for both C and C++.
+    #define STATIC_ASSERT(c)     static_assert(c)
+    #define STATIC_ASSERTS(c, m) static_assert(c, m)
 #elif !defined(__cplusplus) && defined(CC_PLATFORM_ANDROID) && ((defined(__STDC_VERSION__) && __STDC_VERSION__ < 201100L) || !defined(__STDC_VERSION__))
-// AndroidNDK does not support static_assert despite claiming it's a C11 compiler
-#    define NEED_CUSTOM_STATIC_ASSERT
+    // AndroidNDK does not support static_assert despite claiming it's a C11 compiler
+    #define NEED_CUSTOM_STATIC_ASSERT
 #elif defined(__clang__) && defined(__cplusplus)
-// We need to separate these checks on a new line, as the pre-processor on other compilers will fail on the _has_feature macros
-#    if !(__has_feature(cxx_static_assert) || __has_extension(cxx_static_assert))
-#        define NEED_CUSTOM_STATIC_ASSERT
-#    else
-#        define STATIC_ASSERT(c)     static_assert(c)
-#        define STATIC_ASSERTS(c, m) static_assert(c, m)
-#    endif
+    // We need to separate these checks on a new line, as the pre-processor on other compilers will fail on the _has_feature macros
+    #if !(__has_feature(cxx_static_assert) || __has_extension(cxx_static_assert))
+        #define NEED_CUSTOM_STATIC_ASSERT
+    #else
+        #define STATIC_ASSERT(c)     static_assert(c)
+        #define STATIC_ASSERTS(c, m) static_assert(c, m)
+    #endif
 #elif defined(__GNUC__) && (defined(__GXX_EXPERIMENTAL_CXX0X__) || (defined(__cplusplus) && (__cplusplus >= 201103L)))
-    // static_assert is defined by the compiler.
-#    define STATIC_ASSERT(c)     static_assert(c)
-#    define STATIC_ASSERTS(c, m) static_assert(c, m)
+        // static_assert is defined by the compiler.
+    #define STATIC_ASSERT(c)     static_assert(c)
+    #define STATIC_ASSERTS(c, m) static_assert(c, m)
 #elif defined(__EDG_VERSION__) && (__EDG_VERSION__ >= 401) && defined(CC_COMPILER_CPP11_ENABLED)
-// static_assert is defined by the compiler.
-#    define STATIC_ASSERT(c)     static_assert(c)
-#    define STATIC_ASSERTS(c, m) static_assert(c, m)
+    // static_assert is defined by the compiler.
+    #define STATIC_ASSERT(c)     static_assert(c)
+    #define STATIC_ASSERTS(c, m) static_assert(c, m)
 #elif !defined(__cplusplus) && defined(__GLIBC__) && defined(__USE_ISOC11)
-    // static_assert is defined by the compiler.
-#    define STATIC_ASSERT(c)     static_assert(c)
-#    define STATIC_ASSERTS(c, m) static_assert(c, m)
+        // static_assert is defined by the compiler.
+    #define STATIC_ASSERT(c)     static_assert(c)
+    #define STATIC_ASSERTS(c, m) static_assert(c, m)
 #elif !defined(__cplusplus) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201100L
-    // static_assert is defined by the compiler.
-#    define STATIC_ASSERT(c)     static_assert(c)
-#    define STATIC_ASSERTS(c, m) static_assert(c, m)
+        // static_assert is defined by the compiler.
+    #define STATIC_ASSERT(c)     static_assert(c)
+    #define STATIC_ASSERTS(c, m) static_assert(c, m)
 #else
-#    define NEED_CUSTOM_STATIC_ASSERT
+    #define NEED_CUSTOM_STATIC_ASSERT
 #endif
 
 #ifdef NEED_CUSTOM_STATIC_ASSERT
-#    ifdef __GNUC__
-// On GCC the 'unused' attribute can be used to indicate a typedef is not actually used
-// (such as in the static_assert implementation below).  New versions of GCC generate
-// warnings for unused typedefs in function/method scopes.
-#        define CC_STATIC_ASSERT_UNUSED_ATTRIBUTE __attribute__((unused))
-#    else
-#        define CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
-#    endif
+    #ifdef __GNUC__
+        // On GCC the 'unused' attribute can be used to indicate a typedef is not actually used
+        // (such as in the static_assert implementation below).  New versions of GCC generate
+        // warnings for unused typedefs in function/method scopes.
+        #define CC_STATIC_ASSERT_UNUSED_ATTRIBUTE __attribute__((unused))
+    #else
+        #define CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
+    #endif
 
-#    define CC_STATIC_ASSERT_TOKEN_PASTE(a, b)        a##b
-#    define CC_STATIC_ASSERT_CONCATENATE_HELPER(a, b) CC_STATIC_ASSERT_TOKEN_PASTE(a, b)
+    #define CC_STATIC_ASSERT_TOKEN_PASTE(a, b)        a##b
+    #define CC_STATIC_ASSERT_CONCATENATE_HELPER(a, b) CC_STATIC_ASSERT_TOKEN_PASTE(a, b)
 
-#    if defined(__COUNTER__)  // If this extension is available, which allows multiple statements per line...
-#        define STATIC_ASSERT(expression)               typedef char CC_STATIC_ASSERT_CONCATENATE_HELPER(compileTimeAssert, __COUNTER__)[((expression) != 0) ? 1 : -1] CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
-#        define STATIC_ASSERTS(expression, description) typedef char CC_STATIC_ASSERT_CONCATENATE_HELPER(compileTimeAssert, __COUNTER__)[((expression) != 0) ? 1 : -1] CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
-#    else
-#        define STATIC_ASSERT(expression)               typedef char CC_STATIC_ASSERT_CONCATENATE_HELPER(compileTimeAssert, __COUNTER__)[((expression) != 0) ? 1 : -1] CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
-#        define STATIC_ASSERTS(expression, description) typedef char CC_STATIC_ASSERT_CONCATENATE_HELPER(compileTimeAssert, __LINE__)[((expression) != 0) ? 1 : -1] CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
-#    endif
+    #if defined(__COUNTER__)  // If this extension is available, which allows multiple statements per line...
+        #define STATIC_ASSERT(expression)               typedef char CC_STATIC_ASSERT_CONCATENATE_HELPER(compileTimeAssert, __COUNTER__)[((expression) != 0) ? 1 : -1] CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
+        #define STATIC_ASSERTS(expression, description) typedef char CC_STATIC_ASSERT_CONCATENATE_HELPER(compileTimeAssert, __COUNTER__)[((expression) != 0) ? 1 : -1] CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
+    #else
+        #define STATIC_ASSERT(expression)               typedef char CC_STATIC_ASSERT_CONCATENATE_HELPER(compileTimeAssert, __COUNTER__)[((expression) != 0) ? 1 : -1] CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
+        #define STATIC_ASSERTS(expression, description) typedef char CC_STATIC_ASSERT_CONCATENATE_HELPER(compileTimeAssert, __LINE__)[((expression) != 0) ? 1 : -1] CC_STATIC_ASSERT_UNUSED_ATTRIBUTE
+    #endif
 
-#    undef NEED_CUSTOM_STATIC_ASSERT
+    #undef NEED_CUSTOM_STATIC_ASSERT
 #endif
 
     // ------------------------------------------------------------------------

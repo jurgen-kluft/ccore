@@ -3,7 +3,7 @@
 #include "ccore/c_math.h"
 #include "ccore/c_memory.h"
 
-#include "ccore/c_chunked_bin.h"
+#include "ccore/c_chunk_bin.h"
 
 namespace ncore
 {
@@ -251,7 +251,6 @@ namespace ncore
             ASSERT(new_layer1 == ((bin->m_layer1_num_u64 > 0) ? narena::base_ptr_as<u64>(bin->m_layer1) + (active_chunk_index * bin->m_layer1_num_u64) : nullptr));
 
             s_chunk_init(bin, active_chunk, new_layer1);
-            bin->m_chunk_count += 1;
 
             // This chunk is now active, add it to the active chunk list
             s_dlist_insert(chunk_array, sizeof(cchunk_t), bin->m_chunk_active_list_head, bin->m_chunk_active_list_size, active_chunk_index);
@@ -351,7 +350,7 @@ namespace ncore
     };
     // clang-format on
 
-    void bin_setup(cbin_t* bin, uint_t reserved_size, u16 item_sizeof)
+    void bin_setup(cbin_t* bin, void* base_address, uint_t reserved_size, u16 item_sizeof)
     {
         // Note: Item size >= 8 B and <= 32 KiB
         ASSERT(item_sizeof <= (32 * cKB));
@@ -382,8 +381,18 @@ namespace ncore
         // If chunks need layer 1 then initialize the arena for this
         bin->m_layer1 = (layer1_num_u64 > 0) ? narena::new_arena((uint_t)max_chunk_count * layer1_num_u64 * sizeof(u64), 0) : nullptr;
 
-        bin->m_address_base = v_alloc_reserve(reserved_size);
-        bin->m_address_size = reserved_size;
+        if (base_address != nullptr)
+        {
+            bin->m_address_base = base_address;
+            bin->m_address_size = reserved_size;
+            bin->m_ownership    = false;
+        }
+        else
+        {
+            bin->m_address_base = v_alloc_reserve(reserved_size);
+            bin->m_address_size = reserved_size;
+            bin->m_ownership    = true;
+        }
 
         bin->m_chunk_free_list_head   = c_index16_null;
         bin->m_chunk_active_list_head = c_index16_null;
@@ -392,7 +401,6 @@ namespace ncore
         bin->m_chunk_free_list_size   = 0;
         bin->m_chunk_active_list_size = 0;
         bin->m_chunk_full_list_size   = 0;
-        bin->m_chunk_count            = 0;
         bin->m_chunk_max_count        = (u16)max_chunk_count;
         bin->m_chunks                 = narena::new_arena(max_chunk_count * sizeof(cchunk_t), 0);
         bin->m_chunk_size_shift       = chunk_size_shift;
@@ -402,7 +410,9 @@ namespace ncore
         bin->m_item_sizeof         = (u16)1 << item_size_shift;
     }
 
-    u32 bin_size(cbin_t const * bin)
+    void bin_setup(cbin_t* bin, uint_t reserved_size, u16 item_sizeof) { bin_setup(bin, nullptr, reserved_size, item_sizeof); }
+
+    u32 bin_size(cbin_t const* bin)
     {
         // The global item count
         return bin->m_total_items_count;
@@ -429,7 +439,10 @@ namespace ncore
         }
         if (bin->m_address_base != nullptr)
         {
-            v_alloc_release(bin->m_address_base, bin->m_address_size);
+            if (bin->m_ownership)
+            {
+                v_alloc_release(bin->m_address_base, bin->m_address_size);
+            }
         }
 
         g_memclr(bin, sizeof(cbin_t));

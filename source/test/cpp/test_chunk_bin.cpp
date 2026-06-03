@@ -1,7 +1,7 @@
 #include "ccore/c_target.h"
 #include "ccore/c_memory.h"
 
-#include "ccore/c_chunked_bin.h"
+#include "ccore/c_chunk_bin.h"
 
 #include "cunittest/cunittest.h"
 
