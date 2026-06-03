@@ -222,33 +222,16 @@ namespace ncore
         static constexpr u32       binmask     = ((u32)1 << binshift) - 1;
         static constexpr bintype_t binconstant = (bintype_t) ~(bintype_t)0;
 
-        static inline u32 word_count_for_bits(u32 maxbits)
-        {
-            ASSERT(maxbits > 0);
-            return (maxbits + (binbits - 1)) >> binshift;
-        }
-
-        static inline bintype_t mask_for_count(u32 count)
-        {
-            if (count >= binbits)
-                return binconstant;
-            return (bintype_t)(((bintype_t)1 << count) - 1);
-        }
-
+        static inline u32       word_count_for_bits(u32 maxbits) { return (maxbits + (binbits - 1)) >> binshift; }
         static inline bintype_t valid_level0_mask(u32 maxbits) { return mask_for_count(word_count_for_bits(maxbits)); }
 
+        static inline bintype_t mask_for_count(u32 count) { return (count >= binbits) ? binconstant : ~(bintype_t)(binconstant << count); }
+        static inline bintype_t mask_through(u32 bit) { return (bit >= binmask) ? binconstant : (bintype_t) ~((bintype_t)(binconstant << 1) << bit); }
         static inline bintype_t mask_from(u32 bit)
         {
             if (bit >= binbits)
                 return 0;
             return (bit == 0) ? binconstant : (bintype_t)(binconstant << bit);
-        }
-
-        static inline bintype_t mask_through(u32 bit)
-        {
-            if (bit >= binmask)
-                return binconstant;
-            return (bintype_t)(((bintype_t)1 << (bit + 1)) - 1);
         }
 
         static void setup_used_lazy(bintype_t* CC_RESTRICT _bin0, bintype_t* CC_RESTRICT _bin1, u32 maxbits) { *_bin0 = 0; }
@@ -469,25 +452,14 @@ namespace ncore
         static constexpr u32       binmask     = binbits - 1;
         static constexpr bintype_t binconstant = (bintype_t) ~(bintype_t)0;
 
-        static inline u32 word_count_for_bits(u32 maxbits)
-        {
-            ASSERT(maxbits > 0);
-            return (maxbits + (binbits - 1)) >> binshift;
-        }
-
+        static inline u32 word_count_for_bits(u32 maxbits) { return (maxbits + (binbits - 1)) >> binshift; }
         static inline u32 level1_word_count(u32 maxbits)
         {
             u32 const level2_words = word_count_for_bits(maxbits);
             return (level2_words + (binbits - 1)) >> binshift;
         }
 
-        static inline bintype_t mask_for_count(u32 count)
-        {
-            if (count >= binbits)
-                return binconstant;
-            return (bintype_t)(((bintype_t)1 << count) - 1);
-        }
-
+        static inline bintype_t mask_for_count(u32 count) { return (count >= binbits) ? binconstant : ~(bintype_t)(binconstant << count); }
         static inline bintype_t valid_level0_mask(u32 maxbits) { return mask_for_count(level1_word_count(maxbits)); }
 
         static inline bintype_t mask_from(u32 bit)
@@ -497,12 +469,7 @@ namespace ncore
             return (bit == 0) ? binconstant : (bintype_t)(binconstant << bit);
         }
 
-        static inline bintype_t mask_through(u32 bit)
-        {
-            if (bit >= binmask)
-                return binconstant;
-            return (bintype_t)(((bintype_t)1 << (bit + 1)) - 1);
-        }
+        static inline bintype_t mask_through(u32 bit) { return (bit >= binmask) ? binconstant : (bintype_t) ~((bintype_t)(binconstant << 1) << bit); }
 
         static void setup_used_lazy(bintype_t* CC_RESTRICT _bin0, bintype_t* CC_RESTRICT _bin1, bintype_t* CC_RESTRICT _bin2, u32 maxbits) { *_bin0 = 0; }
         static void tick_used_lazy(bintype_t* CC_RESTRICT _bin0, bintype_t* CC_RESTRICT _bin1, bintype_t* CC_RESTRICT _bin2, u32 maxbits, u32 bit)
@@ -817,12 +784,7 @@ namespace ncore
         static constexpr u32       binmask     = binbits - 1;
         static constexpr bintype_t binconstant = (bintype_t) ~(bintype_t)0;
 
-        static inline u32 word_count_for_bits(u32 maxbits)
-        {
-            ASSERT(maxbits > 0);
-            return (maxbits + (binbits - 1)) >> binshift;
-        }
-
+        static inline u32 word_count_for_bits(u32 maxbits) { return (maxbits + (binbits - 1)) >> binshift; }
         static inline u32 level2_word_count(u32 maxbits)
         {
             u32 const level3_words = word_count_for_bits(maxbits);
@@ -835,13 +797,7 @@ namespace ncore
             return (level2_words + (binbits - 1)) >> binshift;
         }
 
-        static inline bintype_t mask_for_count(u32 count)
-        {
-            if (count >= binbits)
-                return binconstant;
-            return (bintype_t)(((bintype_t)1 << count) - 1);
-        }
-
+        static inline bintype_t mask_for_count(u32 count) { return (count >= binbits) ? binconstant : ~(bintype_t)(binconstant << count); }
         static inline bintype_t valid_level0_mask(u32 maxbits) { return mask_for_count(level1_word_count(maxbits)); }
 
         static inline bintype_t mask_from(u32 bit)
@@ -851,12 +807,7 @@ namespace ncore
             return (bit == 0) ? binconstant : (bintype_t)(binconstant << bit);
         }
 
-        static inline bintype_t mask_through(u32 bit)
-        {
-            if (bit >= binmask)
-                return binconstant;
-            return (bintype_t)(((bintype_t)1 << (bit + 1)) - 1);
-        }
+        static inline bintype_t mask_through(u32 bit) { return (bit >= binmask) ? binconstant : (bintype_t) ~((bintype_t)(binconstant << 1) << bit); }
 
         static void setup_used_lazy(bintype_t* CC_RESTRICT _bin0, bintype_t* CC_RESTRICT _bin1, bintype_t* CC_RESTRICT _bin2, bintype_t* CC_RESTRICT _bin3, u32 maxbits) { *_bin0 = 0; }
         static void tick_used_lazy(bintype_t* CC_RESTRICT _bin0, bintype_t* CC_RESTRICT _bin1, bintype_t* CC_RESTRICT _bin2, bintype_t* CC_RESTRICT _bin3, u32 maxbits, u32 bit)
