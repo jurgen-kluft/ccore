@@ -1214,6 +1214,21 @@ namespace ncore
             layout.m_bin0 = (len + 63) >> 6;
         }
 
+        void compute_3_layers(u32 number_of_bits, layout64_t& layout)
+        {
+            ASSERT(number_of_bits > 0 && number_of_bits <= 256 * 1024);
+
+            layout.m_maxbits = number_of_bits;
+
+            // force 3 layers
+            u32 len       = number_of_bits;
+            len           = (len + 63) >> 6;
+            layout.m_bin2 = len > 0 ? len : 1;
+            len           = (len + 63) >> 6;
+            layout.m_bin1 = len > 0 ? len : 1;
+            layout.m_bin0 = 1;
+        }
+
         void pointers(byte* ptr, layout64_t const & l, u64*& bin0, u64*& bin1, u64*& bin2, u64*& bin3)
         {
             bin0 = (u64*)ptr;

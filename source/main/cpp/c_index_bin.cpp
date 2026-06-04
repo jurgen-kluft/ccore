@@ -2,7 +2,7 @@
 #include "ccore/c_statevec.h"
 #include "ccore/c_math.h"
 #include "ccore/c_memory.h"
-#include "ccore/c_indexed_bin.h"
+#include "ccore/c_index_bin.h"
 
 namespace ncore
 {

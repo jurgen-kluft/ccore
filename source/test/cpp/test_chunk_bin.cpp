@@ -7,7 +7,7 @@
 
 using namespace ncore;
 
-UNITTEST_SUITE_BEGIN(chunked_bin)
+UNITTEST_SUITE_BEGIN(chunk_bin)
 {
     UNITTEST_FIXTURE(create_destroy)
     {

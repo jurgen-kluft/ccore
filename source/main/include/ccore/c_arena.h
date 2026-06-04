@@ -109,28 +109,56 @@ namespace ncore
     }
 
     template <typename T>
-    inline T* g_allocate_and_clear(arena_t* arena, u32 alignment = sizeof(void*))
+    inline T* g_allocate_and_clear(arena_t* arena)
+    {
+        void* ptr = narena::alloc_and_zero(arena, sizeof(T));
+        return (T*)ptr;
+    }
+
+    template <typename T>
+    inline T* g_allocate_and_clear(arena_t* arena, u32 alignment)
     {
         void* ptr = narena::alloc_and_zero(arena, sizeof(T), alignment);
         return (T*)ptr;
     }
 
     template <typename T>
-    inline T* g_allocate_array(arena_t* arena, u32 maxsize, u32 alignment = sizeof(void*))
+    inline T* g_allocate_array(arena_t* arena, u32 maxsize)
+    {
+        void* ptr = narena::alloc(arena, maxsize * sizeof(T));
+        return (T*)ptr;
+    }
+
+    template <typename T>
+    inline T* g_allocate_array(arena_t* arena, u32 maxsize, u32 alignment)
     {
         void* ptr = narena::alloc(arena, maxsize * sizeof(T), alignment);
         return (T*)ptr;
     }
 
     template <typename T>
-    inline T* g_allocate_array_and_clear(arena_t* arena, u32 maxsize, u32 alignment = sizeof(void*))
+    inline T* g_allocate_array_and_clear(arena_t* arena, u32 maxsize)
+    {
+        void* ptr = narena::alloc_and_zero(arena, maxsize * sizeof(T));
+        return (T*)ptr;
+    }
+
+    template <typename T>
+    inline T* g_allocate_array_and_clear(arena_t* arena, u32 maxsize, u32 alignment)
     {
         void* ptr = narena::alloc_and_zero(arena, maxsize * sizeof(T), alignment);
         return (T*)ptr;
     }
 
     template <typename T>
-    inline T* g_allocate_array_and_fill(arena_t* arena, u32 maxsize, u32 fill, u32 alignment = sizeof(void*))
+    inline T* g_allocate_array_and_fill(arena_t* arena, u32 maxsize, u32 fill)
+    {
+        void* ptr = narena::alloc_and_fill(arena, maxsize * sizeof(T), fill);
+        return (T*)ptr;
+    }
+
+    template <typename T>
+    inline T* g_allocate_array_and_fill(arena_t* arena, u32 maxsize, u32 fill, u32 alignment)
     {
         void* ptr = narena::alloc_and_fill(arena, maxsize * sizeof(T), alignment, fill);
         return (T*)ptr;

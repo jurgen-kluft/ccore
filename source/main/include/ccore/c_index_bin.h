@@ -1,5 +1,5 @@
-#ifndef __CCORE_INDEXED_BIN_H__
-#define __CCORE_INDEXED_BIN_H__
+#ifndef __CCORE_INDEX_BIN_H__
+#define __CCORE_INDEX_BIN_H__
 #include "ccore/c_target.h"
 #ifdef USE_PRAGMA_ONCE
 #    pragma once
@@ -74,4 +74,4 @@ namespace ncore
 
 }  // namespace ncore
 
-#endif  // __CCORE_INDEXED_BIN_H__
+#endif  // __CCORE_INDEX_BIN_H__
