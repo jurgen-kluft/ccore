@@ -154,7 +154,9 @@ namespace ncore
             }
 
             // if i == length, then we have passed the test
-            return (i == inLength) ? 0 : (*(u8 *)p1 - *(u8 *)p2);
+            const u8 a = *(u8 *)p1;
+            const u8 b = *(u8 *)p2;
+            return (i == inLength) ? 0 : ((a == b) ? 0 : ((a < b) ? -1 : 1));
         }
 
         inline void memswap(void *inLHS, void *inRHS, int_t inLength)

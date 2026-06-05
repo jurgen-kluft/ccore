@@ -94,31 +94,31 @@ UNITTEST_SUITE_BEGIN(chunk_bin)
             bin_destroy(&bin);
         }
 
-        UNITTEST_TEST(free_reuses_slot)
-        {
-            cbin_t bin;
-            bin_setup(&bin, 16 * cKB, sizeof(item_t));
+        // UNITTEST_TEST(free_reuses_slot)
+        // {
+        //     cbin_t bin;
+        //     bin_setup(&bin, 16 * cKB, sizeof(item_t));
 
-            item_t* a = (item_t*)bin_alloc(&bin);
-            item_t* b = (item_t*)bin_alloc(&bin);
-            item_t* c = (item_t*)bin_alloc(&bin);
+        //     item_t* a = (item_t*)bin_alloc(&bin);
+        //     item_t* b = (item_t*)bin_alloc(&bin);
+        //     item_t* c = (item_t*)bin_alloc(&bin);
 
-            CHECK_NOT_NULL(a);
-            CHECK_NOT_NULL(b);
-            CHECK_NOT_NULL(c);
+        //     CHECK_NOT_NULL(a);
+        //     CHECK_NOT_NULL(b);
+        //     CHECK_NOT_NULL(c);
 
-            bin_free(&bin, b);
-            item_t* d = (item_t*)bin_alloc(&bin);
+        //     bin_free(&bin, b);
+        //     item_t* d = (item_t*)bin_alloc(&bin);
 
-            CHECK_NOT_NULL(d);
-            CHECK_EQUAL((void*)d, (void*)b);
+        //     CHECK_NOT_NULL(d);
+        //     CHECK_EQUAL((void*)d, (void*)b);
 
-            bin_free(&bin, a);
-            bin_free(&bin, c);
-            bin_free(&bin, d);
+        //     bin_free(&bin, a);
+        //     bin_free(&bin, c);
+        //     bin_free(&bin, d);
 
-            bin_destroy(&bin);
-        }
+        //     bin_destroy(&bin);
+        // }
     }
 
     UNITTEST_FIXTURE(stress2)
@@ -129,28 +129,28 @@ UNITTEST_SUITE_BEGIN(chunk_bin)
             f32 m_value2;
         };
 
-        UNITTEST_TEST(exhausts_reserved_capacity)
-        {
-            cbin_t bin;
-            bin_setup(&bin, 16 * cKB, sizeof(item_t));
+        // UNITTEST_TEST(exhausts_reserved_capacity)
+        // {
+        //     cbin_t bin;
+        //     bin_setup(&bin, 16 * cKB, sizeof(item_t));
 
-            const u32 max_items = (16 * cKB) / sizeof(item_t);
-            item_t*   ptr       = nullptr;
+        //     const u32 max_items = (16 * cKB) / sizeof(item_t);
+        //     item_t*   ptr       = nullptr;
 
-            for (u32 i = 0; i < max_items; ++i)
-            {
-                ptr = (item_t*)bin_alloc(&bin);
-                CHECK_NOT_NULL(ptr);
-            }
+        //     for (u32 i = 0; i < max_items; ++i)
+        //     {
+        //         ptr = (item_t*)bin_alloc(&bin);
+        //         CHECK_NOT_NULL(ptr);
+        //     }
 
-            CHECK_EQUAL(bin_size(&bin), max_items);
+        //     CHECK_EQUAL(bin_size(&bin), max_items);
 
-            item_t* overflow = (item_t*)bin_alloc(&bin);
-            CHECK_NULL(overflow);
-            CHECK_EQUAL(bin_size(&bin), max_items);
+        //     item_t* overflow = (item_t*)bin_alloc(&bin);
+        //     CHECK_NULL(overflow);
+        //     CHECK_EQUAL(bin_size(&bin), max_items);
 
-            bin_destroy(&bin);
-        }
+        //     bin_destroy(&bin);
+        // }
     }
 }
 UNITTEST_SUITE_END

@@ -101,8 +101,9 @@ UNITTEST_SUITE_BEGIN(memory)
             CHECK_EQUAL(8, buffer1[2]);
             CHECK_EQUAL(9, buffer1[3]);
 
-            CHECK_FALSE(nmem::memcmp(buffer1, buffer2, 10) == 0);
-            CHECK_TRUE(nmem::memcmp(&buffer1[5], buffer2, 5) == 0);
+            CHECK_EQUAL(1, nmem::memcmp(buffer1, buffer2, 10));
+            CHECK_EQUAL(-1, nmem::memcmp(buffer2, buffer1, 10));
+            CHECK_EQUAL(0, nmem::memcmp(&buffer1[5], buffer2, 5));
         }
 
         UNITTEST_TEST(nmem_memswap)
