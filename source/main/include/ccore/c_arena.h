@@ -48,6 +48,7 @@ namespace ncore
         inline bool within_committed(arena_t* arena, void* ptr) { return ((ptr_t)ptr >= (ptr_t)base_ptr(arena)) && ((ptr_t)ptr < (ptr_t)(base_ptr(arena) + committed_size(arena))); }
 
         bool  commit(arena_t* arena, uint_t size_in_bytes);                          // set committed size of the allocator, this will not change 'pos'
+        bool  recommit(arena_t* arena, uint_t size_in_bytes);                          // set committed size of the allocator, this will not change 'pos'
         void* alloc(arena_t* arena, uint_t size);                                    // allocate 'size' from the reserved region
         void* alloc(arena_t* arena, uint_t size, u32 alignment);                     // allocate 'size' from the reserved region with the given alignment
         void* alloc_and_zero(arena_t* arena, uint_t size);                           // allocate 'size' from the reserved region

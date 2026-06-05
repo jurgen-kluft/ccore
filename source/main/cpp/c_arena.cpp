@@ -4,12 +4,12 @@
 // - Investigate the use of madvise(MADV_FREE) to decommit memory on Mac, madvise(MADV_DONTNEED) on Linux, and VirtualAlloc(MEM_RESET)
 
 #if defined(TARGET_PC)
-#    define WIN32_LEAN_AND_MEAN
-#    include <windows.h>
+    #define WIN32_LEAN_AND_MEAN
+    #include <windows.h>
 
-#    include "ccore/c_arena.h"
-#    include "ccore/c_math.h"
-#    include "ccore/c_memory.h"
+    #include "ccore/c_arena.h"
+    #include "ccore/c_math.h"
+    #include "ccore/c_memory.h"
 
 namespace ncore
 {
@@ -59,12 +59,12 @@ namespace ncore
 
 #elif defined(TARGET_LINUX) || defined(TARGET_MAC)
 
-#    include <unistd.h>
-#    include <sys/mman.h>
+    #include <unistd.h>
+    #include <sys/mman.h>
 
-#    include "ccore/c_arena.h"
-#    include "ccore/c_math.h"
-#    include "ccore/c_memory.h"
+    #include "ccore/c_arena.h"
+    #include "ccore/c_math.h"
+    #include "ccore/c_memory.h"
 
 namespace ncore
 {
@@ -107,9 +107,9 @@ namespace ncore
 
 #else
 
-#    include "ccore/c_arena.h"
-#    include "ccore/c_math.h"
-#    include "ccore/c_memory.h"
+    #include "ccore/c_arena.h"
+    #include "ccore/c_math.h"
+    #include "ccore/c_memory.h"
 
 namespace ncore
 {
@@ -293,39 +293,52 @@ namespace ncore
 
         bool commit(arena_t* arena, uint_t committed_size_in_bytes)
         {
-            const u32 want_committed_pages = math::max((u32)(math::alignUp(committed_size_in_bytes, (uint_t)1 << arena->m_page_size_shift) >> arena->m_page_size_shift), (u32)1);
-            const u32 total_reserved_pages = arena->m_reserved_pages;
-            const s8  page_size_shift      = arena->m_page_size_shift;
-
-            byte* base_address            = base_ptr(arena);
-            u32   current_committed_pages = arena->m_committed_pages;
+            const u32 want_committed_pages    = math::max((u32)(math::alignUp(committed_size_in_bytes, (uint_t)1 << arena->m_page_size_shift) >> arena->m_page_size_shift), (u32)1);
+            const u32 total_reserved_pages    = arena->m_reserved_pages;
+            const s8  page_size_shift         = arena->m_page_size_shift;
+            const u32 current_committed_pages = arena->m_committed_pages;
 
             if (want_committed_pages > current_committed_pages)
             {
                 const uint_t extra_needed_pages = (uint_t)(want_committed_pages - current_committed_pages);
                 if ((current_committed_pages + extra_needed_pages) > total_reserved_pages)
-                    return current_committed_pages;
-                const bool result = v_alloc_commit(base_address + ((uint_t)current_committed_pages << page_size_shift), extra_needed_pages << page_size_shift);
-                if (!result)
-                    return current_committed_pages;
-                current_committed_pages += (u32)extra_needed_pages;
-
-                const bool success       = (current_committed_pages == want_committed_pages);
-                arena->m_committed_pages = current_committed_pages;
-                return success;
+                    return false;
+                if (!v_alloc_commit(base_ptr(arena) + ((uint_t)current_committed_pages << page_size_shift), extra_needed_pages << page_size_shift))
+                    return false;
             }
 
-            // don't run the logic to shrink
-            // else if (want_committed_pages < current_committed_pages)
-            // {
-            //     // decommit the extra pages
-            //     const int_t decommit_size_in_bytes = ((int_t)current_committed_pages - want_committed_pages) << page_size_shift;
-            //     byte       *decommit_start         = base_address + (want_committed_pages << page_size_shift);
-            //     if (!v_alloc_decommit(decommit_start, decommit_size_in_bytes))
-            //         return current_committed_pages;
-            //     current_committed_pages = (s32)want_committed_pages;
-            // }
+            arena->m_committed_pages = want_committed_pages;
+            return true;
+        }
 
+        bool recommit(arena_t* arena, uint_t committed_size_in_bytes)
+        {
+            const u32 want_committed_pages    = math::max((u32)(math::alignUp(committed_size_in_bytes, (uint_t)1 << arena->m_page_size_shift) >> arena->m_page_size_shift), (u32)1);
+            const u32 total_reserved_pages    = arena->m_reserved_pages;
+            const s8  page_size_shift         = arena->m_page_size_shift;
+            const u32 current_committed_pages = arena->m_committed_pages;
+
+            if (want_committed_pages > current_committed_pages)
+            {
+                const uint_t extra_needed_pages = (uint_t)(want_committed_pages - current_committed_pages);
+                if ((current_committed_pages + extra_needed_pages) > total_reserved_pages)
+                    return false;
+                if (!v_alloc_commit(base_ptr(arena) + ((uint_t)current_committed_pages << page_size_shift), extra_needed_pages << page_size_shift))
+                    return false;
+            }
+            else if (want_committed_pages < current_committed_pages)
+            {
+                // decommit the extra pages
+                const int_t decommit_size_in_bytes = ((int_t)current_committed_pages - want_committed_pages) << page_size_shift;
+                byte*       decommit_start         = base_ptr(arena) + (want_committed_pages << page_size_shift);
+                if (!v_alloc_decommit(decommit_start, decommit_size_in_bytes))
+                    return false;
+
+                if (arena->m_pos > (want_committed_pages << page_size_shift))
+                    arena->m_pos = want_committed_pages << page_size_shift;
+            }
+
+            arena->m_committed_pages = want_committed_pages;
             return true;
         }
 
@@ -414,11 +427,11 @@ namespace ncore
             ASSERT(ptr >= base_ptr(arena));
             const uint_t position = (uint_t)((byte*)ptr - base_ptr(arena));
             ASSERT(position < (arena->m_committed_pages << arena->m_page_size_shift));
-#    ifdef TARGET_DEBUG
+    #ifdef TARGET_DEBUG
             // clear the memory that is being 'freed' for debug purposes
             if ((arena->m_pos - position) > 0)
                 nmem::memset(base_ptr(arena) + position, 0xFEFEFEFE, arena->m_pos - position);
-#    endif
+    #endif
             arena->m_pos = position;
         }
 
