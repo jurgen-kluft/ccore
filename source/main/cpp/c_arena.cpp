@@ -313,7 +313,7 @@ namespace ncore
 
         bool recommit(arena_t* arena, uint_t committed_size_in_bytes)
         {
-            const u32 want_committed_pages    = math::max((u32)(math::alignUp(committed_size_in_bytes, (uint_t)1 << arena->m_page_size_shift) >> arena->m_page_size_shift), (u32)1);
+            const u32 want_committed_pages    = (u32)(math::alignUp(committed_size_in_bytes, (uint_t)1 << arena->m_page_size_shift) >> arena->m_page_size_shift);
             const u32 total_reserved_pages    = arena->m_reserved_pages;
             const s8  page_size_shift         = arena->m_page_size_shift;
             const u32 current_committed_pages = arena->m_committed_pages;
@@ -426,10 +426,10 @@ namespace ncore
         {
             ASSERT(ptr >= base_ptr(arena));
             const uint_t position = (uint_t)((byte*)ptr - base_ptr(arena));
-            ASSERT(position < (arena->m_committed_pages << arena->m_page_size_shift));
+            ASSERT(position <= (arena->m_committed_pages << arena->m_page_size_shift));
     #ifdef TARGET_DEBUG
             // clear the memory that is being 'freed' for debug purposes
-            if ((arena->m_pos - position) > 0)
+            if (arena->m_pos > position && (arena->m_pos - position) > 0)
                 nmem::memset(base_ptr(arena) + position, 0xFEFEFEFE, arena->m_pos - position);
     #endif
             arena->m_pos = position;
