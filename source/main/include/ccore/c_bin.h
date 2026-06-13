@@ -5,6 +5,8 @@
 #    pragma once
 #endif
 
+#include "ccore/c_debug.h"
+
 namespace ncore
 {
     struct arena_t;
@@ -27,13 +29,13 @@ namespace ncore
 
     void  bin_setup(bin32_t* bin, u16 item_size, u32 max_items);  // e.g. item_size = 256, max_items = 65535, 16 MiB
     void  bin_destroy(bin32_t* bin);                              // destroy the bin
-    u32   bin_size(bin32_t const* bin);                           // number of items currently in the bin
+    u32   bin_size(bin32_t const * bin);                          // number of items currently in the bin
     void* bin_alloc(bin32_t* bin);                                // allocate an item from the bin
     void  bin_free(bin32_t* bin, void* ptr);                      // free an item back to the bin
-    u32   bin_ptr2idx(bin32_t const* bin, void* ptr);             // convert a pointer to an index within the bin
+    u32   bin_ptr2idx(bin32_t const * bin, void* ptr);            // convert a pointer to an index within the bin
     void* bin_idx2ptr(bin32_t* bin, u32 index);                   // convert an index to a pointer within the bin
-    u32   bin_highwater_mark(bin32_t const* bin);                 // highest number of items that have been in the bin
-    s32   bin_highest_free(bin32_t const* bin);                   // highest index of free item in the bin
+    u32   bin_highwater_mark(bin32_t const * bin);                // highest number of items that have been in the bin
+    s32   bin_highest_free(bin32_t const * bin);                  // highest index of free item in the bin
 
     // This is an allocation bin that can allocate small fixed size items, however you can
     // make a bin for any size you want (soft limit to 1 KiB per item).
@@ -42,23 +44,34 @@ namespace ncore
 
     struct bin16_t
     {
-        arena_t* m_items;             // pointer to items
-        u32      m_items_count;       // number of items currently in use
-        u16      m_item_sizeof;       // sizeof(item)
-        u16      m_bin_level_count;   // binmap, number of levels
-        arena_t* m_bin;               // level 0, 1 and 2 of binmap
+        arena_t* m_items;            // pointer to items
+        u32      m_items_count;      // number of items currently in use
+        u16      m_item_sizeof;      // sizeof(item)
+        u16      m_bin_level_count;  // binmap, number of levels
+        arena_t* m_bin;              // level 0, 1 and 2 of binmap
     };
 
     void  bin_setup(bin16_t* bin, u16 item_size, u32 max_items);  // e.g. item_size = 256, max_items = 65535, 16 MiB
     void  bin_destroy(bin16_t* bin);                              // destroy the bin
-    u32   bin_size(bin16_t const* bin);                           // number of items currently in the bin
-    u32   bin_capacity(bin16_t const* bin);                       // maximum number of items the bin can hold
+    u32   bin_size(bin16_t const * bin);                          // number of items currently in the bin
+    u32   bin_capacity(bin16_t const * bin);                      // maximum number of items the bin can hold
     void* bin_alloc(bin16_t* bin);                                // allocate an item from the bin
     void  bin_free(bin16_t* bin, void* ptr);                      // free an item back to the bin
-    i32   bin_ptr2idx(bin16_t const* bin, void* ptr);             // convert a pointer to an index within the bin
+    i32   bin_ptr2idx(bin16_t const * bin, void* ptr);            // convert a pointer to an index within the bin
     void* bin_idx2ptr(bin16_t* bin, u16 index);                   // convert an index to a pointer within the bin
-    u32   bin_highwater_mark(bin16_t const* bin);                 // highest number of items that have been in the bin
-    s32   bin_highest_free(bin16_t const* bin);                   // highest index of free item in the bin
+    u32   bin_highwater_mark(bin16_t const * bin);                // highest number of items that have been in the bin
+    s32   bin_highest_free(bin16_t const * bin);                  // highest index of free item in the bin
+
+    template <typename T>
+    T* g_allocate(bin16_t* bin)
+    {
+        ASSERT(sizeof(T) <= bin->m_item_sizeof);
+        return (T*)bin_alloc(bin);
+    }
+
+    template <typename T>
+    void g_deallocate(bin16_t* bin, T* ptr)
+    { bin_free(bin, ptr); }
 
 }  // namespace ncore
 
