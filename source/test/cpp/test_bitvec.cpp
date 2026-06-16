@@ -16,27 +16,21 @@ UNITTEST_SUITE_BEGIN(bitvec)
         {
             u64       bin0;
             u64       bin1[64];
-            u64       expected_bin1[64];
 
             g_memset(&bin0, -1, sizeof(bin0));
             g_memset(bin1, -1, sizeof(bin1));
-            g_memset(expected_bin1, -1, sizeof(expected_bin1));
 
             const u32 maxbits = 130;
 
-            u64 expected_bin0 = 0;
-
             nbitvec12::setup_used_lazy(&bin0, bin1, maxbits);
 
-            CHECK_EQUAL(expected_bin0, bin0);
+            CHECK_EQUAL(0, bin0);
             for (u32 i = 0; i < maxbits; i++)
             {
                 nbitvec12::tick_used_lazy(&bin0, bin1, maxbits, i);
 
-                expected_bin1[i >> 6] = 0;
-
-                CHECK_EQUAL(expected_bin0, bin0);
-                CHECK_EQUAL(expected_bin1[i >> 6], bin1[i >> 6]);
+                CHECK_EQUAL(0, bin0);
+                CHECK_EQUAL(0, bin1[i >> 6]);
                 CHECK_FALSE(nbitvec12::get(&bin0, bin1, maxbits, i));
             }
 

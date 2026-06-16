@@ -79,7 +79,7 @@ UNITTEST_SUITE_BEGIN(segment)
 
             // Test: allocation from higher class forces split
             nsegment::allocator_t allocator;
-            nsegment::initialize(&allocator, 1024 * 1024 * page_size, 1 * page_size, 65536 * page_size);  // smaller address space
+            nsegment::initialize(&allocator, (uint_t)1024 * 1024 * page_size, (uint_t)1 * page_size, (uint_t)65536 * page_size);  // smaller address space
 
             // First, exhaust the smallest class by requesting many 1-page allocations
             // Then request from a higher class to force splits
@@ -104,7 +104,7 @@ UNITTEST_SUITE_BEGIN(segment)
 
             // Test: allocation exhaustion returns cINVALID_NODE
             nsegment::allocator_t allocator;
-            nsegment::initialize(&allocator, 1024 * page_size, 1 * page_size, 512 * page_size);
+            nsegment::initialize(&allocator, (uint_t)1024 * page_size, (uint_t)1 * page_size, (uint_t)512 * page_size);
 
             // Allocate all available space
             nsegment::node_t node1 = nsegment::alloc_node(&allocator, (u64)512 * page_size);
@@ -141,7 +141,7 @@ UNITTEST_SUITE_BEGIN(segment)
             for (u32 round = 0; round < 24; ++round)
             {
                 nsegment::allocator_t allocator;
-                nsegment::initialize(&allocator, address_space_pages * page_size, 1 * page_size, max_segment_pages * page_size);
+                nsegment::initialize(&allocator, (uint_t)address_space_pages * page_size, (uint_t)1 * page_size, (uint_t)max_segment_pages * page_size);
 
                 g_memset(seen, 0, sizeof(seen));
 
@@ -215,7 +215,7 @@ UNITTEST_SUITE_BEGIN(segment)
 
             const u32 page_size           = (u32)v_alloc_get_page_size();
             const u32 address_space_pages = 1u << 12;  // 4096 pages
-            const u32 max_segment_pages   = 1u << 8;   // 256 pages
+            const u32 max_segment_pages  = 1u << 8;   // 256 pages
             const u32 max_nodes           = address_space_pages;
 
             u8 seen[max_nodes];
@@ -223,7 +223,7 @@ UNITTEST_SUITE_BEGIN(segment)
             for (u32 round = 0; round < 20; ++round)
             {
                 nsegment::allocator_t allocator;
-                nsegment::initialize(&allocator, address_space_pages * page_size, 1 * page_size, max_segment_pages * page_size);
+                nsegment::initialize(&allocator, (uint_t)address_space_pages * page_size, (uint_t)1 * page_size, (uint_t)max_segment_pages * page_size);
 
                 g_memset(seen, 0, sizeof(seen));
 
