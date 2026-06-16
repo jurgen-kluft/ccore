@@ -360,6 +360,7 @@ namespace ncore
         void initialize(allocator_t* allocator, uint_t address_space_size, uint_t segment_min_size, uint_t segment_max_size)
         {
             ASSERT(allocator != nullptr);
+            ASSERT(address_space_size > 0);
 
             u32 const page_size = v_alloc_get_page_size();
             ASSERT(segment_min_size >= page_size && segment_max_size >= segment_min_size);

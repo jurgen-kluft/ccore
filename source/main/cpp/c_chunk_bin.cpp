@@ -237,7 +237,7 @@ namespace ncore
     {
         ASSERT(ptr != nullptr && ptr >= bin->m_address_base && ptr < (byte*)bin->m_address_base + bin->m_address_size);
 
-        cchunk_t* chunk_array      = (cchunk_t*)(narena::base_ptr_as<u64>(bin->m_arena) + (bin->m_bitvec_num_u64 << 1));
+        cchunk_t* chunk_array      = (cchunk_t*)(narena::base_ptr_as<u64>(bin->m_arena) + ((u32)bin->m_bitvec_num_u64 << 1));
         const u8  chunk_size_shift = bin->m_chunk_size_shift;
 
         // Find the chunk this item belongs to
@@ -316,23 +316,26 @@ namespace ncore
         const u32 items_per_chunk = chunk_size / item_sizeof;
         ASSERT(items_per_chunk >= 4 && items_per_chunk <= (64 * 64));
 
+        // Clear the structure
+        g_memclr(bin, sizeof(cbin_t));
+
         // Calculate the number of u64s we need for chunk layer1
         ASSERT((sizeof(cchunk_t) & 7) == 0);  // ensure chunk struct is a multiple of u64
         const u32 chunk_entry_num_u64 = items_per_chunk > 64 ? (items_per_chunk + 63) / 64 : 0;
         bin->m_chunk_entry_num_u64    = sizeof(cchunk_t) + (u16)chunk_entry_num_u64;
 
         // the maximum number of chunks is calculated based on the reserved
-        // size and the calculated chunk size, but must be < 65536.
+        // size and the calculated chunk size, but must be < 4096.
         const u32 max_chunk_count = (u32)(reserved_size / chunk_size);
-        ASSERT(max_chunk_count > 0 && max_chunk_count < 65536);
+        ASSERT(max_chunk_count > 0 && max_chunk_count <= 4096);
 
         bin->m_bitvec_num_u64 = (max_chunk_count + 63) / 64;
         bin->m_bitvec_num_u64 += 1;  // layer 0 is always present
 
         bin->m_arena = narena::new_arena((uint_t)max_chunk_count * (chunk_entry_num_u64 * sizeof(u64)), 0);
 
-        g_allocate_and_clear<u64>(bin->m_arena, bin->m_bitvec_num_u64);  // allocate bitvec for free chunks
-        g_allocate_and_clear<u64>(bin->m_arena, bin->m_bitvec_num_u64);  // allocate bitvec for active chunks
+        g_allocate_array_and_clear<u64>(bin->m_arena, bin->m_bitvec_num_u64);  // allocate bitvec for free chunks
+        g_allocate_array_and_clear<u64>(bin->m_arena, bin->m_bitvec_num_u64);  // allocate bitvec for active chunks
 
         if (base_address != nullptr)
         {
@@ -346,8 +349,6 @@ namespace ncore
             bin->m_address_size = reserved_size;
             bin->m_ownership    = true;
         }
-
-        bin->m_arena = narena::new_arena(max_chunk_count * sizeof(cchunk_t), 0);
 
         bin->m_chunk_max_count  = (u16)max_chunk_count;
         bin->m_chunk_size_shift = chunk_size_shift;
