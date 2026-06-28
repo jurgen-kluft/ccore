@@ -61,11 +61,11 @@ namespace ncore
 
         template <typename T>
         inline T alignUp4(T value)
-        { return (value + 3) & (~(T)3); }
+        { return math::alignUp(value, (T)4); }
 
         template <typename T>
         inline T alignUp8(T value)
-        { return (value + 7) & (~(T)7); }
+        { return math::alignUp(value, (T)8); }
 
         // Return the rounded up value as a power of 2
         inline u32 roundUpPow2(u32 value, u32 alignment)

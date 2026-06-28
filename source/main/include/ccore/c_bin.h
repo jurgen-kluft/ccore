@@ -44,11 +44,7 @@ namespace ncore
 
     struct bin16_t
     {
-        arena_t* m_items;            // pointer to items
-        u32      m_items_count;      // number of items currently in use
-        u16      m_item_sizeof;      // sizeof(item)
-        u16      m_bin_level_count;  // binmap, number of levels
-        arena_t* m_bin;              // level 0, 1 and 2 of binmap
+        arena_t* m_arena;
     };
 
     void  bin_setup(bin16_t* bin, u16 item_size, u32 max_items);  // e.g. item_size = 256, max_items = 65535, 16 MiB

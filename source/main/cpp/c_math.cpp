@@ -8,6 +8,7 @@
 #    include <math.h>
 #endif
 
+#if defined(TARGET_PC) || defined(TARGET_MAC)
 namespace ncore
 {
     namespace math
@@ -37,3 +38,5 @@ namespace ncore
         f32 fmodf(f32 v, f32 w) { return ::fmodf(v, w); }
     }  // namespace math
 }  // namespace ncore
+
+#endif

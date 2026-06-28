@@ -25,7 +25,7 @@ namespace ncore
         };
 
         // Note: @address_space_num_pages MUST be a power of two
-        void initialize(allocator_t* allocator, uint_t address_space_size = 128 * cGB, uint_t segment_min_size = 8 * cMB, uint_t segment_max_size = 1 * cGB);
+        void initialize(allocator_t* allocator, u64 address_space_size = 128 * cGB, u64 segment_min_size = 8 * cMB, u64 segment_max_size = 1 * cGB);
         void teardown(allocator_t* allocator);
 
         // Note: size should be a power-of-two number of pages

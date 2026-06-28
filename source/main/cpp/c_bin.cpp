@@ -55,9 +55,9 @@ namespace ncore
             narena::destroy(bin->m_bin);
     }
 
-    u32 bin_size(bin32_t const* bin) { return bin->m_items_count; }
-    u32 bin_capacity(bin32_t const* bin) { return (u32)(narena::reserved_size(bin->m_items) / bin->m_item_sizeof); }
-    u32 bin_highwater_mark(bin32_t const* bin) { return (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof); }
+    u32 bin_size(bin32_t const * bin) { return bin->m_items_count; }
+    u32 bin_capacity(bin32_t const * bin) { return (u32)(narena::reserved_size(bin->m_items) / bin->m_item_sizeof); }
+    u32 bin_highwater_mark(bin32_t const * bin) { return (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof); }
 
     void* bin_alloc(bin32_t* bin)
     {
@@ -149,13 +149,13 @@ namespace ncore
     }
 
     // convert a pointer to an index within the bin
-    u32 bin_ptr2idx(bin32_t const* bin, void* ptr)
+    u32 bin_ptr2idx(bin32_t const * bin, void* ptr)
     {
         const byte* items = narena::base_ptr(bin->m_items);
         if (ptr < (void*)items)
             return D_U32_MAX;  // invalid pointer
         const u32 item_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
-        const u32 index = (u32)(((const byte*)ptr - items) / bin->m_item_sizeof);
+        const u32 index           = (u32)(((const byte*)ptr - items) / bin->m_item_sizeof);
         if (index >= item_free_index)
             return D_U32_MAX;  // invalid pointer
         return index;
@@ -173,10 +173,10 @@ namespace ncore
     }
 
     // highest index of free item in the bin
-    s32 bin_highest_free(bin32_t const* bin)
+    s32 bin_highest_free(bin32_t const * bin)
     {
         const u32 item_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
-        s32       hi        = -1;
+        s32       hi              = -1;
 
         u64* bm0 = (u64*)narena::base_ptr(bin->m_bin);
         u64* bm1 = bm0 + 1;
@@ -196,6 +196,17 @@ namespace ncore
     // ----------------------------------------------------------------------------------------------------------------------
     // bin16 implementation
     // ----------------------------------------------------------------------------------------------------------------------
+    struct ibin16_t
+    {
+        u32  m_items_count;     // number of items currently in use
+        u32  m_items_capacity;  // maximum number of items the bin can hold
+        u16  m_item_sizeof;     // sizeof(item)
+        u16  m_reserved;        // reserved for future use
+        u32  m_items_offset;    // offset in pages to the items array
+        u64  m_bin0;
+        u64* m_bin1;
+        u64* m_bin2;
+    };
 
     void bin_setup(bin16_t* bin, u16 item_size, u32 max_items)
     {
@@ -208,122 +219,110 @@ namespace ncore
         // align the maximum number of items to a multiple of 64 (for binmap)
         max_items = math::alignUp(max_items, 64);
 
-        const int_t items_memory_size = (int_t)item_size * max_items;
-        bin->m_items                  = narena::new_arena(items_memory_size, items_memory_size);
-        bin->m_items_count            = 0;
-        bin->m_item_sizeof            = item_size;
-
         // compute bin16_t struct and most of the binmap
         nbitvec::layout64_t layout;
         nbitvec::compute(max_items, layout);
 
-        bin->m_bin_level_count = layout.m_levels;
-        bin->m_bin             = narena::new_arena(nbitvec::sizeof_data(layout) * sizeof(u64), layout.m_bin2 * sizeof(u64));
+        const uint_t bin16_memory_size = math::alignUp(sizeof(ibin16_t) + (1 + 64 + 64 * 64) * sizeof(u64), v_alloc_get_page_size());
+        const uint_t items_memory_size = (int_t)item_size * max_items;
+        const uint_t arena_memory_size = bin16_memory_size + items_memory_size;
+        arena_t*     arena             = narena::new_arena(arena_memory_size, bin16_memory_size);
+        bin->m_arena                   = arena;
 
-        u64* bin0 = (u64*)narena::base_ptr(bin->m_bin);
-        *bin0     = D_U64_MAX;
+        ibin16_t* ibin         = g_allocate<ibin16_t>(arena);
+        ibin->m_items_count    = 0;
+        ibin->m_items_capacity = max_items;
+        ibin->m_item_sizeof    = item_size;
+
+        ibin->m_bin1 = g_allocate_array<u64>(arena, 64);
+        ibin->m_bin2 = g_allocate_array<u64>(arena, 64 * 64);
+
+        ibin->m_items_offset = bin16_memory_size;
+
+        void* items = narena::base_ptr(arena) + ibin->m_items_offset;
+        narena::restore_address(arena, items);
+
+        nbitvec18::setup_used_lazy(&ibin->m_bin0, ibin->m_bin1, ibin->m_bin2, max_items);
     }
 
     void bin_destroy(bin16_t* bin)
     {
-        if (bin->m_items != nullptr)
-            narena::destroy(bin->m_items);
-        if (bin->m_bin != nullptr)
-            narena::destroy(bin->m_bin);
+        if (bin->m_arena != nullptr)
+            narena::destroy(bin->m_arena);
     }
 
-    u32 bin_size(bin16_t const* bin) { return bin->m_items_count; }
-    u32 bin_capacity(bin16_t const* bin)
+    u32 bin_size(bin16_t const * bin)
     {
-        const u32 max_items = (u32)(narena::reserved_size(bin->m_items) / bin->m_item_sizeof);
-        return max_items > 65536 ? 65536 : max_items;
+        ibin16_t* ibin = narena::base_ptr_as<ibin16_t>(bin->m_arena);
+        return ibin->m_items_count;
     }
-    u32 bin_highwater_mark(bin16_t const* bin) { return (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof); }
+
+    u32 bin_capacity(bin16_t const * bin) { return 65536; }
+
+    u32 bin_highwater_mark(bin16_t const * bin)
+    {
+        const ibin16_t* ibin            = narena::base_ptr_as<ibin16_t>(bin->m_arena);
+        const uint_t    items_array_pos = ((uint_t)ibin->m_items_offset);
+        return (u32)((narena::current_pos(bin->m_arena) - items_array_pos) / ibin->m_item_sizeof);
+    }
 
     void* bin_alloc(bin16_t* bin)
     {
-        const u32 items_capacity = (u32)(narena::reserved_size(bin->m_items) / bin->m_item_sizeof);
-        if (bin->m_items_count >= items_capacity)
+        ibin16_t* ibin = narena::base_ptr_as<ibin16_t>(bin->m_arena);
+        if (ibin->m_items_count >= ibin->m_items_capacity)
             return nullptr;  // bin is full
 
-        byte* items = narena::base_ptr(bin->m_items);
+        byte* items = narena::base_ptr(bin->m_arena) + ibin->m_items_offset;
 
-        u64* bm0 = (u64*)narena::base_ptr(bin->m_bin);
-        u64* bm1 = bm0 + 1;
-        u64* bm2 = bm1 + 16;
+        const uint_t items_array_pos = ((uint_t)ibin->m_items_offset);
+        const u32    item_free_index = (u32)(narena::current_pos(bin->m_arena) - items_array_pos) / ibin->m_item_sizeof;
 
-        const u32 item_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
-
-        if (bin->m_items_count < item_free_index)
+        if (ibin->m_items_count < item_free_index)
         {
             s32 item_index = -1;
 
             // We should have a free item in the binmap, where is it?
-            switch (bin->m_bin_level_count)
-            {
-                case 2: item_index = nbitvec18::find_free_and_remove(bm0, bm1, bm2, item_free_index); break;
-                case 1: item_index = nbitvec12::find_free_and_remove(bm0, bm1, item_free_index); break;
-                case 0: item_index = nbitvec6::find_free_and_remove(bm0, item_free_index); break;
-            }
+            item_index = nbitvec18::find_free_and_remove(&ibin->m_bin0, ibin->m_bin1, ibin->m_bin2, item_free_index);
             ASSERT(item_index >= 0);
 
-            bin->m_items_count += 1;
-            return items + (item_index * bin->m_item_sizeof);
+            ibin->m_items_count += 1;
+            return items + (item_index * ibin->m_item_sizeof);
         }
         else
         {
-            // Before touching the binmap, make sure we have committed enough memory for it
-            switch (bin->m_bin_level_count)
-            {
-                case 2: narena::commit(bin->m_bin, 1 + 16 + ((item_free_index + 1 + 63) >> 6)); break;
-            }
+            nbitvec18::tick_used_lazy(&ibin->m_bin0, ibin->m_bin1, ibin->m_bin2, ibin->m_items_capacity, item_free_index);
 
-            switch (bin->m_bin_level_count)
-            {
-                case 2: nbitvec18::tick_used_lazy(bm0, bm1, bm2, items_capacity, item_free_index); break;
-                case 1: nbitvec12::tick_used_lazy(bm0, bm1, items_capacity, item_free_index); break;
-                case 0: break;
-            }
-
-            bin->m_items_count += 1;
-            void* item = narena::alloc(bin->m_items, bin->m_item_sizeof);
+            ibin->m_items_count += 1;
+            void* item = narena::alloc(bin->m_arena, ibin->m_item_sizeof);
             return item;
         }
     }
 
     void bin_free(bin16_t* bin, void* ptr)
     {
-        const u32 item_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
-
-        const byte* items      = narena::base_ptr(bin->m_items);
-        const s32   item_index = (s32)(((const byte*)ptr - items) / bin->m_item_sizeof);
+        ibin16_t* ibin            = narena::base_ptr_as<ibin16_t>(bin->m_arena);
+        byte*     items           = narena::base_ptr(bin->m_arena) + ibin->m_items_offset;
+        const u32 item_free_index = (u32)(narena::current_pos(bin->m_arena) - ibin->m_items_offset) / ibin->m_item_sizeof;
+        const s32 item_index      = (s32)(((const byte*)ptr - items) / ibin->m_item_sizeof);
         if (item_index < 0 || (u32)item_index >= item_free_index)
             return;  // invalid pointer
 
-        // Mark the item as free in the binmap
-        u64* bm0 = (u64*)narena::base_ptr(bin->m_bin);
-        u64* bm1 = bm0 + 1;
-        u64* bm2 = bm1 + 16;
-
-        switch (bin->m_bin_level_count)
-        {
-            case 2: nbitvec18::set_free(bm0, bm1, bm2, item_free_index, item_index); break;
-            case 1: nbitvec12::set_free(bm0, bm1, item_free_index, item_index); break;
-            case 0: nbitvec6::set_free(bm0, item_free_index, item_index); break;
-        }
+        nbitvec18::set_free(&ibin->m_bin0, ibin->m_bin1, ibin->m_bin2, item_free_index, item_index);
 
         // Decrease number of used items
-        bin->m_items_count -= 1;
+        ibin->m_items_count -= 1;
     }
 
     // convert a pointer to an index within the bin
-    i32 bin_ptr2idx(bin16_t const* bin, void* ptr)
+    i32 bin_ptr2idx(bin16_t const * bin, void* ptr)
     {
-        const byte* items = narena::base_ptr(bin->m_items);
+        ibin16_t* ibin = narena::base_ptr_as<ibin16_t>(bin->m_arena);
+
+        byte* items = narena::base_ptr(bin->m_arena) + ibin->m_items_offset;
         if (ptr < items)
             return -1;  // invalid pointer
-        const u32 index = (u32)(((const byte*)ptr - items) / bin->m_item_sizeof);
-        const u32 item_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
+        const u32 index           = (u32)(((const byte*)ptr - items) / ibin->m_item_sizeof);
+        const u32 item_free_index = (u32)(narena::current_pos(bin->m_arena) - ibin->m_items_offset) / ibin->m_item_sizeof;
         if (index >= item_free_index)
             return -1;  // invalid index
         return (i32)index;
@@ -332,28 +331,21 @@ namespace ncore
     // convert an index to a pointer within the bin
     void* bin_idx2ptr(bin16_t* bin, u16 index)
     {
-        const u32 item_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
+        ibin16_t* ibin = narena::base_ptr_as<ibin16_t>(bin->m_arena);
+
+        const u32 item_free_index = (u32)(narena::current_pos(bin->m_arena) - ibin->m_items_offset) / ibin->m_item_sizeof;
         if (index >= item_free_index)
             return nullptr;  // invalid index
-        return narena::base_ptr(bin->m_items) + (index * bin->m_item_sizeof);
+        byte* items = narena::base_ptr(bin->m_arena) + ibin->m_items_offset;
+        return items + (index * ibin->m_item_sizeof);
     }
 
     // highest index of free item in the bin
-    s32 bin_highest_free(bin16_t const* bin)
+    s32 bin_highest_free(bin16_t const * bin)
     {
-        const u32 item_free_index = (u32)(narena::current_pos(bin->m_items) / bin->m_item_sizeof);
-        s32       hi        = -1;
-
-        u64* bm0 = (u64*)narena::base_ptr(bin->m_bin);
-        u64* bm1 = bm0 + 1;
-        u64* bm2 = bm1 + 16;
-
-        switch (bin->m_bin_level_count)
-        {
-            case 2: hi = nbitvec18::find_free_last(bm0, bm1, bm2, item_free_index); break;
-            case 1: hi = nbitvec12::find_free_last(bm0, bm1, item_free_index); break;
-            case 0: hi = nbitvec6::find_free_last(bm0, item_free_index); break;
-        }
+        ibin16_t* ibin            = narena::base_ptr_as<ibin16_t>(bin->m_arena);
+        const u32 item_free_index = (u32)(narena::current_pos(bin->m_arena) - ibin->m_items_offset) / ibin->m_item_sizeof;
+        const s32 hi              = nbitvec18::find_free_last(&ibin->m_bin0, ibin->m_bin1, ibin->m_bin2, item_free_index);
         return hi;
     }
 

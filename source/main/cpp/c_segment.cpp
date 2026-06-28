@@ -357,7 +357,7 @@ namespace ncore
         //   888   888   Y8888   888       888       888    d8888888888 888        888    d88P       888
         // 8888888 888    Y888 8888888     888     8888888 d88P     888 88888888 8888888 d8888888888 8888888888
 
-        void initialize(allocator_t* allocator, uint_t address_space_size, uint_t segment_min_size, uint_t segment_max_size)
+        void initialize(allocator_t* allocator, u64 address_space_size, u64 segment_min_size, u64 segment_max_size)
         {
             ASSERT(allocator != nullptr);
             ASSERT(address_space_size > 0);
