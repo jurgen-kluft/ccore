@@ -9,11 +9,11 @@ namespace ncore
 {
 #undef printf
 
-    const uchar32 cEOS = 0x00;  // \0, end of string
-    const uchar32 cEOF = 0x05;  // end of file
-    const uchar32 cEOL = 0x0A;  // \n, end of line
-    const uchar32 cCR  = 0x0D;  // \r, carriage return
-    const uchar32 cTAB = 0x09;  // \t, tab
+    const char cEOS = 0x00;  // \0, end of string
+    const char cEOF = 0x05;  // end of file
+    const char cEOL = 0x0A;  // \n, end of line
+    const char cCR  = 0x0D;  // \r, carriage return
+    const char cTAB = 0x09;  // \t, tab
 
     namespace ascii
     {
@@ -22,6 +22,7 @@ namespace ncore
         typedef const rune* pcrune;
         static const char   TERMINATOR   = '\0';
         static const u8     TYPE         = 1;
+        static const u8     CONST_TYPE   = TYPE | 0x80;
         static const u64    EMPTY_STRING = 0;
 
         void reverse(char* str, char* end);
@@ -70,6 +71,7 @@ namespace ncore
     namespace ucs2
     {
         static const u8      TYPE         = 8;
+        static const u8      CONST_TYPE   = TYPE | 0x80;
         static const uchar16 TERMINATOR   = {'\0'};
         static const u64     EMPTY_STRING = 0;
         typedef uchar16      rune;
@@ -101,6 +103,7 @@ namespace ncore
     namespace utf8
     {
         static const u8     TYPE         = 16;
+        static const u8     CONST_TYPE   = TYPE | 0x80;
         static const u8     TERMINATOR   = '\0';
         static const u64    EMPTY_STRING = 0;
         typedef uchar8      rune;
@@ -132,6 +135,7 @@ namespace ncore
     namespace utf16
     {
         static const u8      TYPE         = 2;
+        static const u8      CONST_TYPE   = TYPE | 0x80;
         static const uchar16 TERMINATOR   = '\0';
         static const u64     EMPTY_STRING = 0;
         typedef uchar16      rune;
@@ -163,6 +167,7 @@ namespace ncore
     namespace utf32
     {
         static const u8      TYPE         = 4;
+        static const u8      CONST_TYPE   = TYPE | 0x80;
         static const uchar32 TERMINATOR   = '\0';
         static const u64     EMPTY_STRING = 0;
         typedef uchar32      rune;
