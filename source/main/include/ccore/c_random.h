@@ -124,43 +124,32 @@ namespace ncore
 
         void generate(u8* outData, u32 numBytes) override
         {
-            if (numBytes == 0)
-                return;
-
-            // Head
-            u32 n = (8 - ((u64)outData & 0x07)) & 0x07;
-            if (n != 0)
+            // Words
+            // Directly copy 8-byte chunks as long as there is enough data
+            u32 const numWords = numBytes >> 3;
+            for (u32 i = 0; i < numWords; ++i)
             {
-                u64 const val = next();
-                u8 const* p   = (u8 const*)&val;
-                if (n > numBytes)
-                    n = numBytes;
-                numBytes -= n;
-                switch (n)
-                {
-                    case 7: *outData++ = *p++;
-                    case 6: *outData++ = *p++;
-                    case 5: *outData++ = *p++;
-                    case 4: *outData++ = *p++;
-                    case 3: *outData++ = *p++;
-                    case 2: *outData++ = *p++;
-                    case 1: *outData++ = *p++;
-                }
+                u64 const  val = next();
+                u8 const * p   = (u8 const *)&val;
+
+                // Unaligned 8-byte copy loop (compilers optimize this to a single instruction)
+                *outData++ = *p++;
+                *outData++ = *p++;
+                *outData++ = *p++;
+                *outData++ = *p++;
+                *outData++ = *p++;
+                *outData++ = *p++;
+                *outData++ = *p++;
+                *outData++ = *p++;
             }
 
-            // Words
-            u32 const numWords = numBytes >> 3;
-            u64*      words    = (u64*)outData;
-            for (u32 i = 0; i < numWords; ++i)
-                *words++ = next();
-            outData = (u8*)words;
-
             // Tail
+            // Handle the remaining 1 to 7 bytes
             numBytes &= 0x07;
             if (numBytes != 0)
             {
-                u64 const val = next();
-                u8 const* p   = (u8 const*)&val;
+                u64 const  val = next();
+                u8 const * p   = (u8 const *)&val;
                 switch (numBytes)
                 {
                     case 7: *outData++ = *p++;
@@ -194,7 +183,7 @@ namespace ncore
     private:
         u64 m_seed;
     };
-    
+
 };  // namespace ncore
 
 #endif  // __CCORE_RANDOM_H__

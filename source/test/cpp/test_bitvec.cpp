@@ -24,13 +24,13 @@ UNITTEST_SUITE_BEGIN(bitvec)
 
             nbitvec12::setup_used_lazy(&bin0, bin1, maxbits);
 
-            CHECK_EQUAL(0, bin0);
+            CHECK_EQUAL((u64)0, bin0);
             for (u32 i = 0; i < maxbits; i++)
             {
                 nbitvec12::tick_used_lazy(&bin0, bin1, maxbits, i);
 
-                CHECK_EQUAL(0, bin0);
-                CHECK_EQUAL(0, bin1[i >> 6]);
+                CHECK_EQUAL((u64)0, bin0);
+                CHECK_EQUAL((u64)0, bin1[i >> 6]);
                 CHECK_FALSE(nbitvec12::get(&bin0, bin1, maxbits, i));
             }
 

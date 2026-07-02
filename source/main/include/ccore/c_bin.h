@@ -53,6 +53,7 @@ namespace ncore
     u32   bin_capacity(bin16_t const * bin);                      // maximum number of items the bin can hold
     void* bin_alloc(bin16_t* bin);                                // allocate an item from the bin
     void  bin_free(bin16_t* bin, void* ptr);                      // free an item back to the bin
+    u32   bin_item_sizeof(bin16_t const * bin);                   // sizeof(item)
     i32   bin_ptr2idx(bin16_t const * bin, void* ptr);            // convert a pointer to an index within the bin
     void* bin_idx2ptr(bin16_t* bin, u16 index);                   // convert an index to a pointer within the bin
     u32   bin_highwater_mark(bin16_t const * bin);                // highest number of items that have been in the bin
@@ -61,13 +62,16 @@ namespace ncore
     template <typename T>
     T* g_allocate(bin16_t* bin)
     {
-        ASSERT(sizeof(T) <= bin->m_item_sizeof);
+        ASSERT(sizeof(T) <= bin_item_sizeof(bin));
         return (T*)bin_alloc(bin);
     }
 
     template <typename T>
     void g_deallocate(bin16_t* bin, T* ptr)
-    { bin_free(bin, ptr); }
+    {
+        ASSERT(sizeof(T) <= bin_item_sizeof(bin));
+        bin_free(bin, ptr);
+    }
 
 }  // namespace ncore
 
