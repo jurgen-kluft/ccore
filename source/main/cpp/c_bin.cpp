@@ -9,8 +9,7 @@ namespace ncore
 {
     void bin_setup(bin32_t* bin, u16 item_size, u32 max_items)
     {
-        const s32 page_size = v_alloc_get_page_size();
-        ASSERT(item_size < (page_size >> 1));
+        ASSERT(item_size < (v_alloc_get_page_size() >> 1));
 
         // align the maximum number of items to a multiple of 64 (for binmap)
         max_items = math::alignUp(max_items, 64);
@@ -220,10 +219,7 @@ namespace ncore
     void bin_setup(bin16_t* bin, u16 item_size, u32 max_items)
     {
         ASSERT(max_items <= 65536);
-
-        const s32 page_size = v_alloc_get_page_size();
-
-        ASSERT(item_size < (page_size >> 1));
+        ASSERT(item_size < (v_alloc_get_page_size() >> 1));
 
         // align the maximum number of items to a multiple of 64 (for binmap)
         max_items = math::alignUp(max_items, 64);
