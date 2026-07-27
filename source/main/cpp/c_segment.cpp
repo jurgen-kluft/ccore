@@ -10,8 +10,6 @@ namespace ncore
 {
     namespace nsegment
     {
-        typedef u32 offset_t;
-
         // constraints:
         // - segment size must be a power of two
         // - smallest segment is
@@ -19,18 +17,18 @@ namespace ncore
         // 512 GiB / 8 MiB = 65536 segments
         //
 
-        // sizeof(chain_t) = 24 bytes
+        // sizeof(chain_t) = 12 bytes
         struct chain_t
         {
-            u32      m_next;                  // index of the next node in the chain, or 0 if this is the last node in the chain
-            u32      m_prev;                  // index of the previous node in the chain, or 0 if this is the first node in the chain
-            u32      m_next_free;             // index of the next node in the free list, or cINVALID_INDEX if this is the last node in the free list
-            offset_t m_offset;                // offset in pages from the base address of the arena
-            u32      m_committed_pages : 24;  // number of pages currently committed for this node (for used nodes) or for the buddy (for free nodes)
-            u32      m_flags : 8;             // flags for this node (e.g. free/used, left/right buddy)
+            u16 m_index;                 // index * minimum segment size = offset in pages of the node (for used nodes) or for the buddy (for free nodes)
+            u16 m_next;                  // index of the next node in the chain, or 0 if this is the last node in the chain
+            u16 m_prev;                  // index of the previous node in the chain, or 0 if this is the first node in the chain
+            u16 m_next_free;             // index of the next node in the free list, or cINVALID_INDEX if this is the last node in the free list
+            u32 m_committed_pages : 24;  // number of pages currently committed for this node (for used nodes) or for the buddy (for free nodes)
+            u32 m_flags : 8;             // flags for this node (e.g. free/used, left/right buddy)
         };
 
-        const u32 cINVALID_INDEX = ~0u;
+        const u16 cINVALID_INDEX = (u16)~0u;
 
         // 8888888888 888             d8888  .d8888b.   .d8888b.
         // 888        888            d88888 d88P  Y88b d88P  Y88b
@@ -151,7 +149,7 @@ namespace ncore
             if (chain == nullptr)
                 return nullptr;  // allocation failed
 
-            chain->m_offset          = 0;
+            chain->m_index           = 0;
             chain->m_flags           = 0;
             chain->m_prev            = cINVALID_INDEX;
             chain->m_next            = cINVALID_INDEX;
@@ -210,6 +208,8 @@ namespace ncore
             u32      current_node_index = source_node;
             chain_t* current_node       = s_chain_index_to_ptr(allocator, current_node_index);
 
+            const u32 min_segment_size = allocator->m_segment_min_pages * page_size;
+
             while (current_class > target_class)
             {
                 // Create right buddy node
@@ -222,7 +222,7 @@ namespace ncore
                 const u32 half_segment_size  = class_segment_size >> 1;
 
                 // Right buddy gets second half of offset
-                right_buddy->m_offset = current_node->m_offset + half_segment_size;
+                right_buddy->m_index = current_node->m_index + (half_segment_size / min_segment_size);
 
                 // Set flags: current is left, right is right
                 flags_t left_flag     = current_node->m_flags;
@@ -294,20 +294,20 @@ namespace ncore
 
             // calculate the address of the node from its index and the base address of the arena
             // return the address and the number of pages in the node
-            chain_t const * chain  = s_chain_index_to_ptr(allocator, node);
-            const offset_t  offset = chain->m_offset;
+            chain_t const * chain = s_chain_index_to_ptr(allocator, node);
 
             // num_pages can be calculated from the node's offset and the next node's offset in the chain
             // note: offset unit is pages
+            u32 offset = chain->m_index * allocator->m_segment_min_pages;
             if (chain->m_next != cINVALID_INDEX)
             {
                 chain_t const * right_buddy = s_chain_index_to_ptr(allocator, chain->m_next);
-                num_pages                   = (right_buddy->m_offset - offset);
+                num_pages                   = (right_buddy->m_index - chain->m_index) * allocator->m_segment_min_pages;
             }
 
             else
             {
-                num_pages = allocator->m_total_pages - offset;
+                num_pages = allocator->m_total_pages - (chain->m_index * allocator->m_segment_min_pages);
             }
 
             const u32 page_size = v_alloc_get_page_size();
@@ -408,7 +408,7 @@ namespace ncore
                 current->m_prev            = (i > 0) ? i - 1 : cINVALID_INDEX;
                 current->m_next            = cINVALID_INDEX;
                 current->m_next_free       = cINVALID_INDEX;  // will be set when pushing onto free list
-                current->m_offset          = i * segment_max_pages;
+                current->m_index           = (i * segment_max_pages) / segment_min_pages;
                 current->m_flags           = set_free(0);
                 current->m_flags           = set_side(current->m_flags, i & 1);
                 current->m_committed_pages = 0;
