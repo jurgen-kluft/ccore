@@ -18,7 +18,7 @@ namespace ncore
     // added to the list.
 
     // Note: Chunk size is fixed at 16 KiB
-    // Note: Maximum number of chunks is 4096
+    // Note: Maximum number of chunks is 65536
     // Note; Reserved size must be a multiple of chunk size
 
     struct cchunk_t;

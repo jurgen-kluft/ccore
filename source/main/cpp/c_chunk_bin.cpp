@@ -38,13 +38,13 @@ namespace ncore
     static inline u64* s_get_chunk_layer0(cchunk_t* chunk)
     {
         ASSERT((sizeof(cchunk_t) & 7) == 0);  // ensure chunk header is a multiple of 8 bytes
-        return (u64*)(chunk + 1);           // bitvec data starts right after the chunk header
+        return (u64*)(chunk + 1);             // bitvec data starts right after the chunk header
     }
 
-    static inline u64* s_get_chunk_layer1(cbin_t* bin, cchunk_t* chunk)
+    static inline u64* s_get_chunk_layer1(cchunk_t* chunk)
     {
-        u64* layer0 = s_get_chunk_layer0(chunk);
-        return (bin->m_chunk_entry_num_u64 > 2) ? layer0 + 1 : nullptr;
+        ASSERT((sizeof(cchunk_t) & 7) == 0);  // ensure chunk header is a multiple of 8 bytes
+        return (u64*)(chunk + 2);             // bitvec data starts right after the chunk header
     }
 
     static inline void s_chunk_init(cbin_t* bin, cchunk_t* chunk)
@@ -52,36 +52,22 @@ namespace ncore
         chunk->m_item_count      = 0;                          // no items allocated yet
         chunk->m_pages_committed = 0;                          // no pages committed yet
         u64* layer0              = s_get_chunk_layer0(chunk);  // bitvec data starts right after the chunk header
-        u64* layer1              = s_get_chunk_layer1(bin, chunk);
+        u64* layer1              = s_get_chunk_layer1(chunk);
 
         // TODO setup_used_lazy
 
-        if (layer1 != nullptr)
-        {
-            nbitvec12::set_all_free(layer0, layer1, bin->m_chunk_max_items);
-        }
-        else
-        {
-            nbitvec6::setup(layer0, bin->m_chunk_max_items);
-        }
+        nbitvec12::set_all_free(layer0, layer1, bin->m_chunk_max_items);
     }
 
     static void* s_chunk_alloc_item(cbin_t* bin, cchunk_t* chunk, u32 chunk_index)
     {
-        u64*      layer0 = s_get_chunk_layer0(chunk);  // bitvec data starts right after the chunk header
-        u64*      layer1 = s_get_chunk_layer1(bin, chunk);
+        u64* layer0 = s_get_chunk_layer0(chunk);  // bitvec data starts right after the chunk header
+        u64* layer1 = s_get_chunk_layer1(chunk);
 
         // TODO tick_used_lazy and use count + free index to optimize free slot search
 
         s32 free_item_index = -1;
-        if (layer1 != nullptr)
-        {
-            free_item_index = nbitvec12::find_free_and_remove(layer0, layer1, bin->m_chunk_max_items);
-        }
-        else
-        {
-            free_item_index = nbitvec6::find_free_and_remove(layer0, bin->m_chunk_max_items);
-        }
+        free_item_index     = nbitvec12::find_free_and_remove(layer0, layer1, bin->m_chunk_max_items);
 
         if (free_item_index >= 0)
         {
@@ -106,15 +92,8 @@ namespace ncore
 
         // Mark this item as free in the bitvec
         u64* layer0 = s_get_chunk_layer0(chunk);
-        u64* layer1 = s_get_chunk_layer1(bin, chunk);
-        if (layer1 != nullptr)
-        {
-            nbitvec12::set_free(layer0, layer1, bin->m_chunk_max_items, item_index);
-        }
-        else
-        {
-            nbitvec6::set_free(layer0, bin->m_chunk_max_items, item_index);
-        }
+        u64* layer1 = s_get_chunk_layer1(chunk);
+        nbitvec12::set_free(layer0, layer1, bin->m_chunk_max_items, item_index);
         chunk->m_item_count -= 1;  // decrease item count
     }
 
@@ -325,9 +304,9 @@ namespace ncore
         bin->m_chunk_entry_num_u64    = sizeof(cchunk_t) + (u16)chunk_entry_num_u64;
 
         // the maximum number of chunks is calculated based on the reserved
-        // size and the calculated chunk size, but must be < 4096.
+        // size and the calculated chunk size, but must be <= 65536.
         const u32 max_chunk_count = (u32)(reserved_size / chunk_size);
-        ASSERT(max_chunk_count > 0 && max_chunk_count <= 4096);
+        ASSERT(max_chunk_count > 0 && max_chunk_count <= 65536);
 
         bin->m_bitvec_num_u64 = (max_chunk_count + 63) / 64;
         bin->m_bitvec_num_u64 += 1;  // layer 0 is always present
@@ -360,7 +339,7 @@ namespace ncore
 
     void bin_setup(cbin_t* bin, uint_t reserved_size, u16 item_sizeof) { bin_setup(bin, nullptr, reserved_size, item_sizeof); }
 
-    u32 bin_size(cbin_t const * bin)
+    u32 bin_size(cbin_t const* bin)
     {
         // The global item count
         return bin->m_total_items_count;
