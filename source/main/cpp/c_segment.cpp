@@ -143,6 +143,127 @@ namespace ncore
             allocator->m_free_list_heads[class_index] = node_index;
         }
 
+        static inline bool s_is_active_node(allocator_t* allocator, u16 node_index)
+        {
+            if (allocator == nullptr || allocator->m_chain == nullptr || node_index >= allocator->m_total_minsize_segments)
+                return false;
+
+            chain_t const* node = &allocator->m_chain[node_index];
+            if (node_index == 0)
+            {
+                if (node->m_prev != cINVALID_INDEX)
+                    return false;
+            }
+            else
+            {
+                if (node->m_prev == cINVALID_INDEX || node->m_prev >= allocator->m_total_minsize_segments)
+                    return false;
+                if (allocator->m_chain[node->m_prev].m_next != node_index)
+                    return false;
+            }
+
+            if (node->m_next != cINVALID_INDEX)
+            {
+                if (node->m_next <= node_index || node->m_next >= allocator->m_total_minsize_segments)
+                    return false;
+                if (allocator->m_chain[node->m_next].m_prev != node_index)
+                    return false;
+            }
+
+            return true;
+        }
+
+        static inline i32 s_node_class(allocator_t* allocator, u16 node_index)
+        {
+            ASSERT(s_is_active_node(allocator, node_index));
+            chain_t const* node = &allocator->m_chain[node_index];
+            const u32 span = node->m_next != cINVALID_INDEX ? (u32)node->m_next - node_index : allocator->m_total_minsize_segments - node_index;
+            if (span == 0 || !math::ispo2(span))
+                return -1;
+
+            const i32 class_index = math::ilog2(span);
+            const i32 top_class  = allocator->m_segment_maxsize_shift - allocator->m_segment_minsize_shift;
+            return class_index <= top_class ? class_index : -1;
+        }
+
+        static inline bool s_set_committed_pages(allocator_t* allocator, u16 node_index, u32 target_pages)
+        {
+            if (!s_is_active_node(allocator, node_index))
+                return false;
+
+            chain_t* node = &allocator->m_chain[node_index];
+            if (!is_used(node->m_flags))
+                return false;
+
+            const i32 class_index = s_node_class(allocator, node_index);
+            if (class_index < 0)
+                return false;
+
+            const u64 pages_per_min_segment = (u64)1u << (allocator->m_segment_minsize_shift - allocator->m_pagesize_shift);
+            const u64 available_pages       = ((u64)1u << class_index) * pages_per_min_segment;
+            if (target_pages > available_pages || target_pages > 0x00ffffffu)
+                return false;
+
+            const u32 current_pages = node->m_committed_pages;
+            if (target_pages == current_pages)
+                return true;
+
+            byte* node_address = allocator->m_base_address + ((u64)node_index << allocator->m_segment_minsize_shift);
+            bool  result       = false;
+            if (target_pages > current_pages)
+            {
+                byte* commit_address = node_address + ((u64)current_pages << allocator->m_pagesize_shift);
+                const uint_t commit_size = (uint_t)(target_pages - current_pages) << allocator->m_pagesize_shift;
+                result = v_alloc_commit(commit_address, commit_size);
+            }
+            else
+            {
+                byte* decommit_address = node_address + ((u64)target_pages << allocator->m_pagesize_shift);
+                const uint_t decommit_size = (uint_t)(current_pages - target_pages) << allocator->m_pagesize_shift;
+                result = v_alloc_decommit(decommit_address, decommit_size);
+            }
+
+            if (!result)
+                return false;
+
+            node->m_committed_pages = target_pages;
+            return true;
+        }
+
+        static inline void s_remove_from_free_list(allocator_t* allocator, i32 class_index, u16 node_index)
+        {
+            ASSERT(allocator != nullptr);
+            ASSERT(allocator->m_free != nullptr);
+            ASSERT(class_index >= 0 && class_index < 32);
+            ASSERT(node_index < allocator->m_total_minsize_segments);
+
+            dlnode_t& free_node = allocator->m_free[node_index];
+            const u16 previous_node = free_node.m_prev;
+            const u16 next_node     = free_node.m_next;
+
+            if (previous_node == cINVALID_INDEX)
+            {
+                ASSERT(allocator->m_free_list_heads[class_index] == node_index);
+                allocator->m_free_list_heads[class_index] = next_node;
+            }
+            else
+            {
+                ASSERT(previous_node < allocator->m_total_minsize_segments);
+                ASSERT(allocator->m_free[previous_node].m_next == node_index);
+                allocator->m_free[previous_node].m_next = next_node;
+            }
+
+            if (next_node != cINVALID_INDEX)
+            {
+                ASSERT(next_node < allocator->m_total_minsize_segments);
+                ASSERT(allocator->m_free[next_node].m_prev == node_index);
+                allocator->m_free[next_node].m_prev = previous_node;
+            }
+
+            free_node.m_next = cINVALID_INDEX;
+            free_node.m_prev = cINVALID_INDEX;
+        }
+
         //        d8888 888      888      .d88888b.   .d8888b.
         //       d88888 888      888     d88P" "Y88b d88P  Y88b
         //      d88P888 888      888     888     888 888    888
@@ -242,12 +363,70 @@ namespace ncore
 
         void dealloc_node(allocator_t* allocator, node_t node)
         {
-            if (node == cINVALID_NODE)
+            if (allocator == nullptr || allocator->m_base_address == nullptr || node < 0 || (u32)node >= allocator->m_total_minsize_segments)
                 return;
 
-            // deallocate a node
-            // mark the node as free
-            // check merging (recursively merge upwards)
+            u16 current_index = (u16)node;
+            if (!s_is_active_node(allocator, current_index))
+                return;
+
+            chain_t* current_node = &allocator->m_chain[current_index];
+            if (is_free(current_node->m_flags))
+                return;
+
+            if (!s_set_committed_pages(allocator, current_index, 0))
+                return;
+
+            i32 current_class = s_node_class(allocator, current_index);
+            if (current_class < 0)
+                return;
+
+            current_node->m_flags = set_free(current_node->m_flags);
+            const i32 top_class = allocator->m_segment_maxsize_shift - allocator->m_segment_minsize_shift;
+
+            while (current_class < top_class)
+            {
+                const u32 buddy_index_u32 = (u32)current_index ^ (1u << current_class);
+                if (buddy_index_u32 >= allocator->m_total_minsize_segments)
+                    break;
+
+                const u16 buddy_index = (u16)buddy_index_u32;
+                if (!s_is_active_node(allocator, buddy_index))
+                    break;
+
+                chain_t* buddy_node = &allocator->m_chain[buddy_index];
+                if (!is_free(buddy_node->m_flags) || s_node_class(allocator, buddy_index) != current_class)
+                    break;
+
+                const u16 left_index  = math::min(current_index, buddy_index);
+                const u16 right_index = math::max(current_index, buddy_index);
+                chain_t* left_node    = &allocator->m_chain[left_index];
+                chain_t* right_node   = &allocator->m_chain[right_index];
+                if (left_node->m_next != right_index || right_node->m_prev != left_index)
+                    break;
+
+                ASSERT(current_node->m_committed_pages == 0);
+                ASSERT(buddy_node->m_committed_pages == 0);
+                s_remove_from_free_list(allocator, current_class, buddy_index);
+
+                left_node->m_next = right_node->m_next;
+                if (right_node->m_next != cINVALID_INDEX)
+                    allocator->m_chain[right_node->m_next].m_prev = left_index;
+
+                right_node->m_next            = cINVALID_INDEX;
+                right_node->m_prev            = cINVALID_INDEX;
+                right_node->m_committed_pages = 0;
+                right_node->m_flags           = 0;
+                allocator->m_free[right_index].m_next = cINVALID_INDEX;
+                allocator->m_free[right_index].m_prev = cINVALID_INDEX;
+
+                ++current_class;
+                current_index         = left_index;
+                current_node          = left_node;
+                current_node->m_flags = set_free(set_side(current_node->m_flags, (current_index >> current_class) & 1));
+            }
+
+            s_push_on_free_list(allocator, current_class, current_index);
         }
 
         //        d8888 8888888b.  8888888b.  8888888b.  8888888888 .d8888b.   .d8888b.
@@ -310,8 +489,18 @@ namespace ncore
 
         void commit(allocator_t* allocator, node_t node, u32 num_pages)
         {
-            // commit the pages of the node, this should be called after allocating a node and before using the memory of the node
-            // num_pages must be <= the number of pages in the block
+            if (allocator == nullptr || allocator->m_base_address == nullptr || node < 0 || (u32)node >= allocator->m_total_minsize_segments)
+                return;
+
+            const u16 node_index = (u16)node;
+            if (!s_is_active_node(allocator, node_index) || !is_used(allocator->m_chain[node_index].m_flags))
+                return;
+
+            if (num_pages < allocator->m_chain[node_index].m_committed_pages)
+                return;
+
+            const bool result = s_set_committed_pages(allocator, node_index, num_pages);
+            ASSERT(result);
         }
 
         // 8888888b.  8888888888 .d8888b.   .d88888b.  888b     d888 888b     d888 8888888 88888888888
@@ -325,8 +514,18 @@ namespace ncore
 
         void decommit(allocator_t* allocator, node_t node, u32 num_pages)
         {
-            // decommit the pages of the node, this should be called when the memory of the node is no longer needed
-            // num_pages must be <= the number of pages in the block
+            if (allocator == nullptr || allocator->m_base_address == nullptr || node < 0 || (u32)node >= allocator->m_total_minsize_segments)
+                return;
+
+            const u16 node_index = (u16)node;
+            if (!s_is_active_node(allocator, node_index) || !is_used(allocator->m_chain[node_index].m_flags))
+                return;
+
+            if (num_pages > allocator->m_chain[node_index].m_committed_pages)
+                return;
+
+            const bool result = s_set_committed_pages(allocator, node_index, num_pages);
+            ASSERT(result);
         }
 
         // 8888888 888b    888 8888888 88888888888 8888888        d8888 888      8888888 8888888888P 8888888888

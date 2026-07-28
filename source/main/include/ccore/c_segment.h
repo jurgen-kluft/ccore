@@ -44,8 +44,10 @@ namespace ncore
         // return the virtual address of a node from its index including the number of pages available
         void* get_address(allocator_t* allocator, node_t node, u32& num_pages);
 
-        void commit(allocator_t* allocator, node_t node, u32 num_pages);    // num_pages must be <= the number of pages in the block
-        void decommit(allocator_t* allocator, node_t node, u32 num_pages);  // num_pages must be <= the number of pages in the block
+        // Grow or shrink the physically backed prefix of an allocated node to an absolute page target.
+        // Targets must fit the node and the 24-bit committed-page counter.
+        void commit(allocator_t* allocator, node_t node, u32 target_pages);    // target_pages >= current committed pages
+        void decommit(allocator_t* allocator, node_t node, u32 target_pages);  // target_pages <= current committed pages
 
     }  // namespace nsegment
 }  // namespace ncore

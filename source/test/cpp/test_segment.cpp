@@ -235,6 +235,195 @@ UNITTEST_SUITE_BEGIN(segment)
             nsegment::teardown(&allocator);
         }
 
+        UNITTEST_TEST(dealloc_reuses_unmerged_node)
+        {
+            const u32 page_size = (u32)v_alloc_get_page_size();
+
+            nsegment::allocator_t allocator;
+            nsegment::initialize(&allocator, (u64)1024 * page_size, (u64)page_size, (u64)256 * page_size);
+
+            const nsegment::node_t node0 = nsegment::alloc_node(&allocator, page_size);
+            const nsegment::node_t node1 = nsegment::alloc_node(&allocator, page_size);
+            CHECK_EQUAL(0, node0);
+            CHECK_EQUAL(1, node1);
+
+            nsegment::dealloc_node(&allocator, node0);
+            CHECK(s_validate_free_lists(allocator));
+
+            const nsegment::node_t reused = nsegment::alloc_node(&allocator, page_size);
+            CHECK_EQUAL(node0, reused);
+            CHECK(s_validate_free_lists(allocator));
+
+            nsegment::teardown(&allocator);
+        }
+
+        UNITTEST_TEST(dealloc_coalesces_both_orders)
+        {
+            const u32 page_size = (u32)v_alloc_get_page_size();
+
+            for (u32 reverse = 0; reverse < 2; ++reverse)
+            {
+                nsegment::allocator_t allocator;
+                nsegment::initialize(&allocator, (u64)1024 * page_size, (u64)page_size, (u64)256 * page_size);
+
+                const nsegment::node_t node0 = nsegment::alloc_node(&allocator, page_size);
+                const nsegment::node_t node1 = nsegment::alloc_node(&allocator, page_size);
+                CHECK_EQUAL(0, node0);
+                CHECK_EQUAL(1, node1);
+
+                nsegment::dealloc_node(&allocator, reverse != 0 ? node1 : node0);
+                CHECK(s_validate_free_lists(allocator));
+                nsegment::dealloc_node(&allocator, reverse != 0 ? node0 : node1);
+                CHECK(s_validate_free_lists(allocator));
+
+                // Double-free and absorbed-node handles must be harmless.
+                nsegment::dealloc_node(&allocator, node0);
+                nsegment::dealloc_node(&allocator, node1);
+                nsegment::dealloc_node(&allocator, nsegment::cINVALID_NODE);
+                nsegment::dealloc_node(&allocator, -2);
+                nsegment::dealloc_node(&allocator, 2048);
+                CHECK(s_validate_free_lists(allocator));
+
+                const nsegment::node_t merged = nsegment::alloc_node(&allocator, (u64)256 * page_size);
+                CHECK_EQUAL(0, merged);
+                CHECK(s_validate_free_lists(allocator));
+
+                nsegment::teardown(&allocator);
+            }
+        }
+
+        UNITTEST_TEST(dealloc_recursively_restores_capacity)
+        {
+            const u32 page_size = (u32)v_alloc_get_page_size();
+            const u32 node_count = 256;
+            nsegment::node_t nodes[node_count];
+
+            nsegment::allocator_t allocator;
+            nsegment::initialize(&allocator, (u64)1024 * page_size, (u64)page_size, (u64)256 * page_size);
+
+            for (u32 i = 0; i < node_count; ++i)
+            {
+                nodes[i] = nsegment::alloc_node(&allocator, page_size);
+                CHECK_EQUAL((i32)i, nodes[i]);
+            }
+
+            for (u32 i = 0; i < node_count; ++i)
+            {
+                nsegment::dealloc_node(&allocator, nodes[i]);
+                CHECK(s_validate_free_lists(allocator));
+            }
+
+            const nsegment::node_t restored = nsegment::alloc_node(&allocator, (u64)256 * page_size);
+            CHECK_EQUAL(0, restored);
+
+            // Top-level blocks remain independent and never merge past the configured maximum.
+            nsegment::dealloc_node(&allocator, restored);
+            const nsegment::node_t top0 = nsegment::alloc_node(&allocator, (u64)256 * page_size);
+            const nsegment::node_t top1 = nsegment::alloc_node(&allocator, (u64)256 * page_size);
+            CHECK_EQUAL(0, top0);
+            CHECK_EQUAL(256, top1);
+            nsegment::dealloc_node(&allocator, top0);
+            nsegment::dealloc_node(&allocator, top1);
+            CHECK(s_validate_free_lists(allocator));
+
+            CHECK_EQUAL(256, nsegment::alloc_node(&allocator, (u64)256 * page_size));
+            CHECK_EQUAL(0, nsegment::alloc_node(&allocator, (u64)256 * page_size));
+
+            nsegment::teardown(&allocator);
+        }
+
+        UNITTEST_TEST(commit_decommit_absolute_targets)
+        {
+            const u32 page_size = (u32)v_alloc_get_page_size();
+
+            nsegment::allocator_t allocator;
+            nsegment::initialize(&allocator, (u64)1024 * page_size, (u64)page_size, (u64)256 * page_size);
+
+            const nsegment::node_t node = nsegment::alloc_node(&allocator, (u64)8 * page_size);
+            CHECK(node != nsegment::cINVALID_NODE);
+
+            u32   available_pages;
+            byte* address = (byte*)nsegment::get_address(&allocator, node, available_pages);
+            CHECK(address != nullptr);
+            CHECK_EQUAL(8u, available_pages);
+
+            nsegment::commit(&allocator, node, 3);
+            nsegment::commit(&allocator, node, 3);  // idempotent
+            for (u32 page = 0; page < 3; ++page)
+                g_memset(address + (u64)page * page_size, (u8)(0x31 + page), page_size);
+
+            nsegment::commit(&allocator, node, 8);
+            for (u32 page = 0; page < 3; ++page)
+                CHECK_EQUAL((u8)(0x31 + page), address[(u64)page * page_size]);
+            for (u32 page = 3; page < 8; ++page)
+                g_memset(address + (u64)page * page_size, (u8)(0x41 + page), page_size);
+
+            nsegment::decommit(&allocator, node, 3);
+            nsegment::decommit(&allocator, node, 3);  // idempotent
+            for (u32 page = 0; page < 3; ++page)
+                CHECK_EQUAL((u8)(0x31 + page), address[(u64)page * page_size]);
+
+            nsegment::commit(&allocator, node, 8);
+            for (u32 page = 0; page < 3; ++page)
+                CHECK_EQUAL((u8)(0x31 + page), address[(u64)page * page_size]);
+            for (u32 page = 3; page < 8; ++page)
+            {
+                g_memset(address + (u64)page * page_size, (u8)(0x61 + page), page_size);
+                CHECK_EQUAL((u8)(0x61 + page), address[(u64)page * page_size]);
+            }
+
+            nsegment::decommit(&allocator, node, 0);
+            nsegment::dealloc_node(&allocator, node);
+            CHECK(s_validate_free_lists(allocator));
+            nsegment::teardown(&allocator);
+        }
+
+        UNITTEST_TEST(dealloc_automatically_decommits)
+        {
+            const u32 page_size = (u32)v_alloc_get_page_size();
+
+            for (u32 reverse = 0; reverse < 2; ++reverse)
+            {
+                nsegment::allocator_t allocator;
+                nsegment::initialize(&allocator, (u64)1024 * page_size, (u64)page_size, (u64)256 * page_size);
+
+                const nsegment::node_t node0 = nsegment::alloc_node(&allocator, page_size);
+                const nsegment::node_t node1 = nsegment::alloc_node(&allocator, page_size);
+                CHECK_EQUAL(0, node0);
+                CHECK_EQUAL(1, node1);
+
+                u32   node0_pages;
+                u32   node1_pages;
+                byte* node0_address = (byte*)nsegment::get_address(&allocator, node0, node0_pages);
+                byte* node1_address = (byte*)nsegment::get_address(&allocator, node1, node1_pages);
+                nsegment::commit(&allocator, node0, node0_pages);
+                nsegment::commit(&allocator, node1, node1_pages);
+                g_memset(node0_address, 0x55, page_size);
+                g_memset(node1_address, 0xaa, page_size);
+
+                nsegment::dealloc_node(&allocator, reverse != 0 ? node1 : node0);
+                nsegment::dealloc_node(&allocator, reverse != 0 ? node0 : node1);
+                CHECK(s_validate_free_lists(allocator));
+
+                const nsegment::node_t merged = nsegment::alloc_node(&allocator, (u64)2 * page_size);
+                CHECK_EQUAL(0, merged);
+                u32   merged_pages;
+                byte* merged_address = (byte*)nsegment::get_address(&allocator, merged, merged_pages);
+                CHECK_EQUAL(2u, merged_pages);
+                nsegment::commit(&allocator, merged, merged_pages);
+                g_memset(merged_address, 0x7c, merged_pages * page_size);
+                for (u32 page = 0; page < merged_pages; ++page)
+                    CHECK_EQUAL((u8)0x7c, merged_address[(u64)page * page_size]);
+
+                nsegment::dealloc_node(&allocator, merged);
+                nsegment::commit(&allocator, merged, 1);  // free handle is a no-op
+                nsegment::decommit(&allocator, merged, 0);
+                nsegment::teardown(&allocator);
+                nsegment::commit(&allocator, merged, 1);  // torn-down allocator is a no-op
+                nsegment::decommit(&allocator, merged, 0);
+            }
+        }
+
         UNITTEST_TEST(out_of_memory)
         {
             const u32 page_size = (u32)v_alloc_get_page_size();
