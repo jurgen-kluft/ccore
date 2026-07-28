@@ -12,8 +12,7 @@ using namespace ncore;
 namespace
 {
     static const u32    s_item_size     = 16 * cKB;
-    static const uint_t s_block_size    = 512 * cKB;
-    static const uint_t s_reserved_size = 4 * s_block_size;
+    static const uint_t s_reserved_size = 32 * cMB;
 }  // namespace
 
 UNITTEST_SUITE_BEGIN(block_bin)
@@ -35,7 +34,7 @@ UNITTEST_SUITE_BEGIN(block_bin)
             CHECK_TRUE(bin.m_ownership);
             CHECK_EQUAL((u32)0, bin_size(&bin));
             CHECK_EQUAL((u32)0, bin.m_block_count);
-            CHECK_EQUAL((u32)4, bin.m_block_max_count);
+            CHECK_EQUAL((u32)2048, bin.m_block_max_count);
             CHECK_NOT_NULL(bin.m_blocks);
 
             bin_destroy(&bin);
@@ -62,7 +61,7 @@ UNITTEST_SUITE_BEGIN(block_bin)
             CHECK_EQUAL(s_reserved_size, bin.m_address_size);
             CHECK_FALSE(bin.m_ownership);
             CHECK_EQUAL((u32)0, bin_size(&bin));
-            CHECK_EQUAL((u32)4, bin.m_block_max_count);
+            CHECK_EQUAL((u32)2048, bin.m_block_max_count);
 
             bin_destroy(&bin);
 
@@ -87,8 +86,8 @@ UNITTEST_SUITE_BEGIN(block_bin)
 
             CHECK_EQUAL((u32)3, bin_size(&bin));
             CHECK_EQUAL((u32)3, bin.m_block_count);
-            CHECK_EQUAL((void*)((byte*)a + s_block_size), b);
-            CHECK_EQUAL((void*)((byte*)b + s_block_size), c);
+            CHECK_EQUAL((void*)((byte*)a + s_item_size), b);
+            CHECK_EQUAL((void*)((byte*)b + s_item_size), c);
 
             bin_free(&bin, b);
 
@@ -114,7 +113,7 @@ UNITTEST_SUITE_BEGIN(block_bin)
             static const u32 iterations = 20000;
 
             bbin_t bin;
-            bin_setup(&bin, (uint_t)max_blocks * s_block_size, s_item_size);
+            bin_setup(&bin, (uint_t)max_blocks * s_item_size, s_item_size);
 
             void* slots[max_blocks];
             for (u32 i = 0; i < max_blocks; ++i)
@@ -167,7 +166,7 @@ UNITTEST_SUITE_BEGIN(block_bin)
         UNITTEST_TEST(exhausts_reserved_capacity)
         {
             bbin_t bin;
-            bin_setup(&bin, 2 * s_block_size, s_item_size);
+            bin_setup(&bin, 2 * s_item_size, s_item_size);
 
             void* first  = bin_alloc(&bin, s_item_size);
             void* second = bin_alloc(&bin, s_item_size);

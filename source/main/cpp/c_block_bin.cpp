@@ -160,7 +160,7 @@ namespace ncore
 
         bin->m_page_size_shift = v_alloc_get_page_size_shift();
 
-        // Find the appropriate block size based on the block size, this is done by
+        // Find the appropriate block size shift based on the block size, this is done by
         // calculating the block size shift, which must be at least the page size shift.
         const u8 block_size_shift  = math::max((u8)math::ilog2(math::ceilpo2(block_size)), (u8)bin->m_page_size_shift);
         ASSERT(block_size_shift > 0);
@@ -169,7 +169,7 @@ namespace ncore
         // the maximum number of blocks is calculated based on the reserved
         // size and the calculated block size, but must be < 65536.
         const u32 max_block_count = (u32)(reserved_size / block_size_aligned);
-        ASSERT(max_block_count > 0 && max_block_count < 65536);
+        ASSERT(max_block_count > 0 && max_block_count <= 65536);
 
         if (base_address != nullptr)
         {
