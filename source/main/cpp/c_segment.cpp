@@ -105,21 +105,21 @@ namespace ncore
         static inline u32 s_pop_from_free_list(allocator_t* allocator, i32 class_index)
         {
             ASSERT(allocator != nullptr);
-            ASSERT(allocator->m_free != nullptr);
+            ASSERT(allocator->m_nodes != nullptr);
             ASSERT(class_index >= 0 && class_index < 32);
             const u16 node_index = allocator->m_free_list_heads[class_index];
             if (node_index != cINVALID_INDEX)
             {
                 ASSERT(node_index < allocator->m_total_minsize_segments);
-                const u16 next_node                       = allocator->m_free[node_index].m_next;
+                const u16 next_node                       = allocator->m_nodes[node_index].m_free.m_next;
                 allocator->m_free_list_heads[class_index] = next_node;
                 if (next_node != cINVALID_INDEX)
                 {
                     ASSERT(next_node < allocator->m_total_minsize_segments);
-                    allocator->m_free[next_node].m_prev = cINVALID_INDEX;
+                    allocator->m_nodes[next_node].m_free.m_prev = cINVALID_INDEX;
                 }
-                allocator->m_free[node_index].m_next = cINVALID_INDEX;
-                allocator->m_free[node_index].m_prev = cINVALID_INDEX;
+                allocator->m_nodes[node_index].m_free.m_next = cINVALID_INDEX;
+                allocator->m_nodes[node_index].m_free.m_prev = cINVALID_INDEX;
             }
             return node_index;
         }
@@ -128,17 +128,17 @@ namespace ncore
         static inline void s_push_on_free_list(allocator_t* allocator, i32 class_index, u16 node_index)
         {
             ASSERT(allocator != nullptr);
-            ASSERT(allocator->m_free != nullptr);
+            ASSERT(allocator->m_nodes != nullptr);
             ASSERT(class_index >= 0 && class_index < 32);
             ASSERT(node_index != cINVALID_INDEX);
             ASSERT(node_index < allocator->m_total_minsize_segments);
-            const u16 previous_head              = allocator->m_free_list_heads[class_index];
-            allocator->m_free[node_index].m_next = previous_head;
-            allocator->m_free[node_index].m_prev = cINVALID_INDEX;
+            const u16 previous_head                            = allocator->m_free_list_heads[class_index];
+            allocator->m_nodes[node_index].m_free.m_next       = previous_head;
+            allocator->m_nodes[node_index].m_free.m_prev       = cINVALID_INDEX;
             if (previous_head != cINVALID_INDEX)
             {
                 ASSERT(previous_head < allocator->m_total_minsize_segments);
-                allocator->m_free[previous_head].m_prev = node_index;
+                allocator->m_nodes[previous_head].m_free.m_prev = node_index;
             }
             allocator->m_free_list_heads[class_index] = node_index;
         }
@@ -233,11 +233,11 @@ namespace ncore
         static inline void s_remove_from_free_list(allocator_t* allocator, i32 class_index, u16 node_index)
         {
             ASSERT(allocator != nullptr);
-            ASSERT(allocator->m_free != nullptr);
+            ASSERT(allocator->m_nodes != nullptr);
             ASSERT(class_index >= 0 && class_index < 32);
             ASSERT(node_index < allocator->m_total_minsize_segments);
 
-            dlnode_t& free_node = allocator->m_free[node_index];
+            dlnode_t& free_node = allocator->m_nodes[node_index].m_free;
             const u16 previous_node = free_node.m_prev;
             const u16 next_node     = free_node.m_next;
 
@@ -249,15 +249,15 @@ namespace ncore
             else
             {
                 ASSERT(previous_node < allocator->m_total_minsize_segments);
-                ASSERT(allocator->m_free[previous_node].m_next == node_index);
-                allocator->m_free[previous_node].m_next = next_node;
+                ASSERT(allocator->m_nodes[previous_node].m_free.m_next == node_index);
+                allocator->m_nodes[previous_node].m_free.m_next = next_node;
             }
 
             if (next_node != cINVALID_INDEX)
             {
                 ASSERT(next_node < allocator->m_total_minsize_segments);
-                ASSERT(allocator->m_free[next_node].m_prev == node_index);
-                allocator->m_free[next_node].m_prev = previous_node;
+                ASSERT(allocator->m_nodes[next_node].m_free.m_prev == node_index);
+                allocator->m_nodes[next_node].m_free.m_prev = previous_node;
             }
 
             free_node.m_next = cINVALID_INDEX;
@@ -336,8 +336,8 @@ namespace ncore
                 }
                 current_node->m_next                        = right_buddy_index;
                 right_buddy->m_committed_pages              = 0;
-                allocator->m_free[right_buddy_index].m_next = cINVALID_INDEX;
-                allocator->m_free[right_buddy_index].m_prev = cINVALID_INDEX;
+                allocator->m_nodes[right_buddy_index].m_free.m_next = cINVALID_INDEX;
+                allocator->m_nodes[right_buddy_index].m_free.m_prev = cINVALID_INDEX;
 
                 // Push right buddy to lower class free list
                 current_class--;
@@ -348,6 +348,8 @@ namespace ncore
 
             // Mark final node as USED
             current_node->m_flags = set_used(current_node->m_flags);
+            allocator->m_nodes[current_node_index].m_user.m_tag    = 0;
+            allocator->m_nodes[current_node_index].m_user.m_unused = 0;
 
             return (node_t)current_node_index;
         }
@@ -417,8 +419,8 @@ namespace ncore
                 right_node->m_prev            = cINVALID_INDEX;
                 right_node->m_committed_pages = 0;
                 right_node->m_flags           = 0;
-                allocator->m_free[right_index].m_next = cINVALID_INDEX;
-                allocator->m_free[right_index].m_prev = cINVALID_INDEX;
+                allocator->m_nodes[right_index].m_free.m_next = cINVALID_INDEX;
+                allocator->m_nodes[right_index].m_free.m_prev = cINVALID_INDEX;
 
                 ++current_class;
                 current_index         = left_index;
@@ -427,6 +429,32 @@ namespace ncore
             }
 
             s_push_on_free_list(allocator, current_class, current_index);
+        }
+
+        void set_node_tag(allocator_t* allocator, node_t node, u16 tag)
+        {
+            if (allocator == nullptr || allocator->m_base_address == nullptr || node < 0 || (u32)node >= allocator->m_total_minsize_segments)
+                return;
+
+            const u16 node_index = (u16)node;
+            if (!s_is_active_node(allocator, node_index) || !is_used(allocator->m_chain[node_index].m_flags))
+                return;
+
+            allocator->m_nodes[node_index].m_user.m_tag = tag;
+        }
+
+        bool get_node_tag(allocator_t* allocator, node_t node, u16& tag)
+        {
+            tag = 0;
+            if (allocator == nullptr || allocator->m_base_address == nullptr || node < 0 || (u32)node >= allocator->m_total_minsize_segments)
+                return false;
+
+            const u16 node_index = (u16)node;
+            if (!s_is_active_node(allocator, node_index) || !is_used(allocator->m_chain[node_index].m_flags))
+                return false;
+
+            tag = allocator->m_nodes[node_index].m_user.m_tag;
+            return true;
         }
 
         //        d8888 8888888b.  8888888b.  8888888b.  8888888888 .d8888b.   .d8888b.
@@ -472,6 +500,48 @@ namespace ncore
 
             num_pages = min_segments_count << (allocator->m_segment_minsize_shift - allocator->m_pagesize_shift);
             return (void*)(allocator->m_base_address + min_segments_offset);
+        }
+
+        node_t address_to_node(allocator_t* allocator, void* address)
+        {
+            if (allocator == nullptr || allocator->m_base_address == nullptr || address == nullptr)
+                return cINVALID_NODE;
+
+            const uptr_t base_address = (uptr_t)allocator->m_base_address;
+            const uptr_t query_address = (uptr_t)address;
+            if (query_address < base_address)
+                return cINVALID_NODE;
+
+            const u64 address_space_size = (u64)allocator->m_total_minsize_segments << allocator->m_segment_minsize_shift;
+            const u64 address_offset     = (u64)(query_address - base_address);
+            if (address_offset >= address_space_size)
+                return cINVALID_NODE;
+
+            const u32 slot_index = (u32)(address_offset >> allocator->m_segment_minsize_shift);
+            const i32 top_class  = allocator->m_segment_maxsize_shift - allocator->m_segment_minsize_shift;
+            for (i32 class_index = 0; class_index <= top_class; ++class_index)
+            {
+                const u32 class_span     = 1u << class_index;
+                const u32 candidate_u32 = slot_index & ~(class_span - 1u);
+                if (candidate_u32 >= allocator->m_total_minsize_segments)
+                    continue;
+
+                const u16 candidate = (u16)candidate_u32;
+                if (!s_is_active_node(allocator, candidate))
+                    continue;
+
+                chain_t const* node = &allocator->m_chain[candidate];
+                if (!is_used(node->m_flags) || s_node_class(allocator, candidate) != class_index)
+                    continue;
+
+                const u64 node_offset        = (u64)candidate << allocator->m_segment_minsize_shift;
+                const u64 offset_within_node = address_offset - node_offset;
+                const u64 committed_size     = (u64)node->m_committed_pages << allocator->m_pagesize_shift;
+                if (offset_within_node < committed_size)
+                    return (node_t)candidate;
+            }
+
+            return cINVALID_NODE;
         }
 
         // Virtual memory helper functions for committing and decommitting pages of a node, this should
@@ -569,7 +639,7 @@ namespace ncore
             const u32 max_nodes = 1u << node_count_shift;
             ASSERT(max_nodes < (u32)cINVALID_INDEX);
 
-            const u64 bookkeeping_bytes     = (u64)max_nodes * (sizeof(chain_t) + sizeof(dlnode_t));
+            const u64 bookkeeping_bytes     = (u64)max_nodes * (sizeof(chain_t) + sizeof(node_data_t));
             const u64 bookkeeping_num_pages = (bookkeeping_bytes + page_size - 1) >> page_size_shift;
             ASSERT(bookkeeping_num_pages <= 0xffu);
             allocator->m_bookkeeping_num_pages = (u8)bookkeeping_num_pages;
@@ -590,7 +660,7 @@ namespace ncore
             allocator->m_pagesize_shift        = page_size_shift;
 
             allocator->m_chain = (chain_t*)(allocator->m_base_address + ((u64)allocator->m_total_minsize_segments << segment_minsize_shift));
-            allocator->m_free  = (dlnode_t*)((byte*)allocator->m_chain + max_nodes * sizeof(chain_t));
+            allocator->m_nodes = (node_data_t*)((byte*)allocator->m_chain + max_nodes * sizeof(chain_t));
 
             // Commit the bookkeeping pages for the chain and free list nodes
             const uint_t bookkeeping_commit_size = (uint_t)allocator->m_bookkeeping_num_pages << page_size_shift;
@@ -612,8 +682,8 @@ namespace ncore
             const u16 step = (u16)(1u << (segment_maxsize_shift - segment_minsize_shift));
             for (u32 i = 0; i < max_nodes; ++i)
             {
-                allocator->m_free[i].m_next = cINVALID_INDEX;
-                allocator->m_free[i].m_prev = cINVALID_INDEX;
+                allocator->m_nodes[i].m_free.m_next = cINVALID_INDEX;
+                allocator->m_nodes[i].m_free.m_prev = cINVALID_INDEX;
             }
             for (u32 i = 0; i < num_top_nodes; ++i)
             {
@@ -627,8 +697,8 @@ namespace ncore
                 current->m_flags                   = set_free(0);
                 current->m_flags                   = set_side(current->m_flags, i & 1);
                 current->m_committed_pages         = 0;
-                allocator->m_free[icurrent].m_next = inext;
-                allocator->m_free[icurrent].m_prev = iprev;
+                allocator->m_nodes[icurrent].m_free.m_next = inext;
+                allocator->m_nodes[icurrent].m_free.m_prev = iprev;
             }
         }
 

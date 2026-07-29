@@ -20,17 +20,33 @@ namespace ncore
             u16 m_prev;
         };
 
+        struct user_data_t
+        {
+            u16 m_tag;
+            u16 m_unused;
+        };
+
+        union node_data_t
+        {
+            dlnode_t    m_free;
+            user_data_t m_user;
+        };
+
+        CC_STATIC_ASSERTS(sizeof(dlnode_t) == sizeof(user_data_t), "Free-list and user node data must have equal size");
+        CC_STATIC_ASSERTS(CC_ALIGN_OF(dlnode_t) == CC_ALIGN_OF(user_data_t), "Free-list and user node data must have equal alignment");
+        CC_STATIC_ASSERTS(sizeof(node_data_t) == sizeof(dlnode_t), "Node data overlay must not increase bookkeeping size");
+
         struct allocator_t
         {
-            byte*     m_base_address;            // base address of the reserved address space for this allocator
-            u32       m_total_minsize_segments;  // total number of minsize segments in the address space
-            u8        m_segment_minsize_shift;   // minimum size (1u << m_segment_minsize_shift) for a segment
-            u8        m_segment_maxsize_shift;   // maximum size (1u << m_segment_maxsize_shift) for a segment
-            u8        m_pagesize_shift;          // page size (1u << m_pagesize_shift)
-            u8        m_bookkeeping_num_pages;   // bookkeeping num pages
-            u16       m_free_list_heads[32];     // free list heads for each size class (0 = smallest, 31 = largest)
-            chain_t*  m_chain;                   // m_chain[max_nodes]
-            dlnode_t* m_free;                    // m_free[max_nodes]
+            byte*        m_base_address;            // base address of the reserved address space for this allocator
+            u32          m_total_minsize_segments;  // total number of minsize segments in the address space
+            u8           m_segment_minsize_shift;   // minimum size (1u << m_segment_minsize_shift) for a segment
+            u8           m_segment_maxsize_shift;   // maximum size (1u << m_segment_maxsize_shift) for a segment
+            u8           m_pagesize_shift;          // page size (1u << m_pagesize_shift)
+            u8           m_bookkeeping_num_pages;   // bookkeeping num pages
+            u16          m_free_list_heads[32];     // free list heads for each size class (0 = smallest, 31 = largest)
+            chain_t*     m_chain;                   // m_chain[max_nodes]
+            node_data_t* m_nodes;                   // m_nodes[max_nodes], free-list links or allocated-node user data
         };
 
         // Note: @address_space_num_pages MUST be a power of two
@@ -41,8 +57,18 @@ namespace ncore
         node_t alloc_node(allocator_t* allocator, u64 size);
         void   dealloc_node(allocator_t* allocator, node_t node);
 
-        // return the virtual address of a node from its index including the number of pages available
+        // Set or get a 16-bit tag for a node, only valid for allocated nodes
+        void set_node_tag(allocator_t* allocator, node_t node, u16 tag);
+        bool get_node_tag(allocator_t* allocator, node_t node, u16& tag);
+
+        // Return the virtual address of a node from its index including the number of pages available
+        // Note: returns nullptr if the node is invalid or free, and sets num_pages to 0
+        // Note: num_pages is the number of pages in the node, not the number of committed pages
+        // Note: the address returned is the base of the node
         void* get_address(allocator_t* allocator, node_t node, u32& num_pages);
+
+        // Return the allocated node owning an address in its committed prefix.
+        node_t address_to_node(allocator_t* allocator, void* address);
 
         // Grow or shrink the physically backed prefix of an allocated node to an absolute page target.
         // Targets must fit the node and the 24-bit committed-page counter.

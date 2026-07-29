@@ -24,7 +24,7 @@ static bool s_validate_free_lists(nsegment::allocator_t const & allocator)
             if (forward_node >= allocator.m_total_minsize_segments)
                 return false;
 
-            nsegment::dlnode_t const & free_node = allocator.m_free[forward_node];
+            nsegment::dlnode_t const & free_node = allocator.m_nodes[forward_node].m_free;
             if (free_node.m_prev != previous_node)
                 return false;
 
@@ -39,7 +39,7 @@ static bool s_validate_free_lists(nsegment::allocator_t const & allocator)
         u32 backward_count = 0;
         while (tail_node != invalid_index)
         {
-            nsegment::dlnode_t const & free_node = allocator.m_free[tail_node];
+            nsegment::dlnode_t const & free_node = allocator.m_nodes[tail_node].m_free;
             if (free_node.m_next != next_node)
                 return false;
 
@@ -84,13 +84,13 @@ UNITTEST_SUITE_BEGIN(segment)
             CHECK(allocator.m_pagesize_shift == v_alloc_get_page_size_shift());
             CHECK(allocator.m_total_minsize_segments == 4096);
             CHECK(allocator.m_chain != nullptr);
-            CHECK(allocator.m_free != nullptr);
+            CHECK(allocator.m_nodes != nullptr);
 
             nsegment::teardown(&allocator);
 
             CHECK(allocator.m_base_address == nullptr);
             CHECK(allocator.m_chain == nullptr);
-            CHECK(allocator.m_free == nullptr);
+            CHECK(allocator.m_nodes == nullptr);
             CHECK(allocator.m_total_minsize_segments == 0);
         }
 
@@ -229,8 +229,10 @@ UNITTEST_SUITE_BEGIN(segment)
                 CHECK(allocator.m_free_list_heads[class_index] == (u16)~0u);
             for (u32 node_index = 0; node_index < page_count; ++node_index)
             {
-                CHECK(allocator.m_free[node_index].m_next == (u16)~0u);
-                CHECK(allocator.m_free[node_index].m_prev == (u16)~0u);
+                u16 tag = (u16)~0u;
+                CHECK(nsegment::get_node_tag(&allocator, (nsegment::node_t)node_index, tag));
+                CHECK_EQUAL(0u, tag);
+                CHECK_EQUAL(0u, allocator.m_nodes[node_index].m_user.m_unused);
             }
             nsegment::teardown(&allocator);
         }
@@ -329,6 +331,147 @@ UNITTEST_SUITE_BEGIN(segment)
             CHECK_EQUAL(256, nsegment::alloc_node(&allocator, (u64)256 * page_size));
             CHECK_EQUAL(0, nsegment::alloc_node(&allocator, (u64)256 * page_size));
 
+            nsegment::teardown(&allocator);
+        }
+
+        UNITTEST_TEST(node_tags)
+        {
+            const u32 page_size = (u32)v_alloc_get_page_size();
+
+            nsegment::allocator_t allocator;
+            nsegment::initialize(&allocator, (u64)1024 * page_size, (u64)page_size, (u64)256 * page_size);
+
+            const nsegment::node_t node0 = nsegment::alloc_node(&allocator, page_size);
+            const nsegment::node_t node1 = nsegment::alloc_node(&allocator, (u64)2 * page_size);
+            CHECK_EQUAL(0, node0);
+            CHECK_EQUAL(2, node1);
+
+            u16 tag = (u16)~0u;
+            CHECK(nsegment::get_node_tag(&allocator, node0, tag));
+            CHECK_EQUAL(0u, tag);
+            CHECK(nsegment::get_node_tag(&allocator, node1, tag));
+            CHECK_EQUAL(0u, tag);
+
+            nsegment::set_node_tag(&allocator, node0, (u16)~0u);
+            nsegment::set_node_tag(&allocator, node1, 42);
+            CHECK(nsegment::get_node_tag(&allocator, node0, tag));
+            CHECK_EQUAL((u16)~0u, tag);
+            CHECK(nsegment::get_node_tag(&allocator, node1, tag));
+            CHECK_EQUAL(42u, tag);
+
+            nsegment::commit(&allocator, node1, 2);
+            nsegment::decommit(&allocator, node1, 1);
+            CHECK(nsegment::get_node_tag(&allocator, node1, tag));
+            CHECK_EQUAL(42u, tag);
+            nsegment::set_node_tag(&allocator, node1, 0);
+            CHECK(nsegment::get_node_tag(&allocator, node1, tag));
+            CHECK_EQUAL(0u, tag);
+
+            nsegment::dealloc_node(&allocator, node0);
+            tag = 123;
+            CHECK(!nsegment::get_node_tag(&allocator, node0, tag));
+            CHECK_EQUAL(0u, tag);
+            CHECK(s_validate_free_lists(allocator));
+
+            const nsegment::node_t reused = nsegment::alloc_node(&allocator, page_size);
+            CHECK_EQUAL(node0, reused);
+            CHECK(nsegment::get_node_tag(&allocator, reused, tag));
+            CHECK_EQUAL(0u, tag);
+
+            nsegment::set_node_tag(nullptr, reused, 9);
+            tag = 123;
+            CHECK(!nsegment::get_node_tag(nullptr, reused, tag));
+            CHECK_EQUAL(0u, tag);
+            CHECK(!nsegment::get_node_tag(&allocator, nsegment::cINVALID_NODE, tag));
+            CHECK(!nsegment::get_node_tag(&allocator, 2048, tag));
+
+            nsegment::dealloc_node(&allocator, reused);
+            nsegment::dealloc_node(&allocator, node1);
+            CHECK(s_validate_free_lists(allocator));
+            nsegment::teardown(&allocator);
+
+            tag = 123;
+            CHECK(!nsegment::get_node_tag(&allocator, reused, tag));
+            CHECK_EQUAL(0u, tag);
+        }
+
+        UNITTEST_TEST(address_to_node_committed_prefix)
+        {
+            const u32 page_size = (u32)v_alloc_get_page_size();
+
+            nsegment::allocator_t allocator;
+            nsegment::initialize(&allocator, (u64)1024 * page_size, (u64)page_size, (u64)256 * page_size);
+
+            const nsegment::node_t node0 = nsegment::alloc_node(&allocator, (u64)4 * page_size);
+            const nsegment::node_t node1 = nsegment::alloc_node(&allocator, (u64)2 * page_size);
+            const nsegment::node_t node2 = nsegment::alloc_node(&allocator, (u64)256 * page_size);
+            CHECK_EQUAL(0, node0);
+            CHECK_EQUAL(4, node1);
+            CHECK_EQUAL(256, node2);
+
+            u32   node0_pages;
+            u32   node1_pages;
+            u32   node2_pages;
+            byte* node0_address = (byte*)nsegment::get_address(&allocator, node0, node0_pages);
+            byte* node1_address = (byte*)nsegment::get_address(&allocator, node1, node1_pages);
+            byte* node2_address = (byte*)nsegment::get_address(&allocator, node2, node2_pages);
+            CHECK_EQUAL(4u, node0_pages);
+            CHECK_EQUAL(2u, node1_pages);
+            CHECK_EQUAL(256u, node2_pages);
+
+            CHECK_EQUAL(nsegment::cINVALID_NODE, nsegment::address_to_node(&allocator, node0_address));
+            nsegment::commit(&allocator, node0, 3);
+            CHECK_EQUAL(node0, nsegment::address_to_node(&allocator, node0_address));
+            CHECK_EQUAL(node0, nsegment::address_to_node(&allocator, node0_address + 1));
+            CHECK_EQUAL(node0, nsegment::address_to_node(&allocator, node0_address + page_size));
+            CHECK_EQUAL(node0, nsegment::address_to_node(&allocator, node0_address + 3 * page_size - 1));
+            CHECK_EQUAL(nsegment::cINVALID_NODE, nsegment::address_to_node(&allocator, node0_address + 3 * page_size));
+            CHECK_EQUAL(nsegment::cINVALID_NODE, nsegment::address_to_node(&allocator, node0_address + 4 * page_size - 1));
+
+            nsegment::commit(&allocator, node1, 2);
+            CHECK_EQUAL(nsegment::cINVALID_NODE, nsegment::address_to_node(&allocator, node1_address - 1));
+            CHECK_EQUAL(node1, nsegment::address_to_node(&allocator, node1_address));
+            CHECK_EQUAL(node1, nsegment::address_to_node(&allocator, node1_address + 2 * page_size - 1));
+
+            nsegment::commit(&allocator, node2, 1);
+            CHECK_EQUAL(node2, nsegment::address_to_node(&allocator, node2_address));
+            CHECK_EQUAL(node2, nsegment::address_to_node(&allocator, node2_address + page_size - 1));
+            CHECK_EQUAL(nsegment::cINVALID_NODE, nsegment::address_to_node(&allocator, node2_address + page_size));
+
+            nsegment::decommit(&allocator, node0, 1);
+            CHECK_EQUAL(node0, nsegment::address_to_node(&allocator, node0_address + page_size - 1));
+            CHECK_EQUAL(nsegment::cINVALID_NODE, nsegment::address_to_node(&allocator, node0_address + page_size));
+            nsegment::commit(&allocator, node0, 4);
+            CHECK_EQUAL(node0, nsegment::address_to_node(&allocator, node0_address + 4 * page_size - 1));
+
+            nsegment::dealloc_node(&allocator, node1);
+            CHECK_EQUAL(nsegment::cINVALID_NODE, nsegment::address_to_node(&allocator, node1_address));
+            CHECK_EQUAL(nsegment::cINVALID_NODE, nsegment::address_to_node(nullptr, node0_address));
+            CHECK_EQUAL(nsegment::cINVALID_NODE, nsegment::address_to_node(&allocator, nullptr));
+            CHECK_EQUAL(nsegment::cINVALID_NODE, nsegment::address_to_node(&allocator, (void*)((uptr_t)allocator.m_base_address - 1)));
+
+            byte* address_space_end = allocator.m_base_address + ((u64)allocator.m_total_minsize_segments << allocator.m_segment_minsize_shift);
+            CHECK_EQUAL(nsegment::cINVALID_NODE, nsegment::address_to_node(&allocator, address_space_end));
+            CHECK_EQUAL(nsegment::cINVALID_NODE, nsegment::address_to_node(&allocator, address_space_end + 1));
+
+            nsegment::teardown(&allocator);
+            CHECK_EQUAL(nsegment::cINVALID_NODE, nsegment::address_to_node(&allocator, node0_address));
+
+            nsegment::initialize(&allocator, (u64)1024 * page_size, (u64)page_size, (u64)256 * page_size);
+            const nsegment::node_t child0 = nsegment::alloc_node(&allocator, page_size);
+            const nsegment::node_t child1 = nsegment::alloc_node(&allocator, page_size);
+            u32 child_pages;
+            byte* child1_address = (byte*)nsegment::get_address(&allocator, child1, child_pages);
+            nsegment::commit(&allocator, child0, 1);
+            nsegment::commit(&allocator, child1, 1);
+            nsegment::dealloc_node(&allocator, child0);
+            nsegment::dealloc_node(&allocator, child1);
+            CHECK_EQUAL(nsegment::cINVALID_NODE, nsegment::address_to_node(&allocator, child1_address));
+
+            const nsegment::node_t parent = nsegment::alloc_node(&allocator, (u64)2 * page_size);
+            CHECK_EQUAL(0, parent);
+            nsegment::commit(&allocator, parent, 2);
+            CHECK_EQUAL(parent, nsegment::address_to_node(&allocator, child1_address));
             nsegment::teardown(&allocator);
         }
 
