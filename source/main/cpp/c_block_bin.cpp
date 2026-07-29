@@ -1,5 +1,3 @@
-#include "ccore/c_arena.h"
-#include "ccore/c_bitvec.h"
 #include "ccore/c_math.h"
 #include "ccore/c_memory.h"
 
@@ -7,29 +5,87 @@
 
 namespace ncore
 {
+    static const u16 cINVALID_BLOCK_INDEX = (u16)~0u;
 
-    // 888888b.   888      .d88888b.   .d8888b.  888    d8P
-    // 888  "88b  888     d88P" "Y88b d88P  Y88b 888   d8P
-    // 888  .88P  888     888     888 888    888 888  d8P
-    // 8888888K.  888     888     888 888        888d88K
-    // 888  "Y88b 888     888     888 888        8888888b
-    // 888    888 888     888     888 888    888 888  Y88b
-    // 888   d88P 888     Y88b. .d88P Y88b  d88P 888   Y88b
-    // 8888888P"  88888888 "Y88888P"   "Y8888P"  888    Y88b
-
-    struct bblock_t
+    union bblock_t
     {
         u32 m_pages_committed;  // number of pages committed by this block
+        u32 m_free_next;        // index of the next free block in the list
     };
 
-    static inline void s_block_init(bbin_t* bin, bblock_t* block)
+    struct bbin_t
     {
-        block->m_pages_committed = 0;  // no pages committed yet
+        void* m_address_base;           // base address of the virtual address range managed by this bin
+        u32   m_address_size_in_pages;  // total size of the virtual address range managed by this bin
+        u8    m_bin_size_in_pages;      // total size of the bin structure (+ array of blocks) in pages
+        u8    m_block_size_shift;       // block size in shift (e.g. 14 for 16 KiB block size)
+        u16   m_free_head;              // index of the head of the free list
+        u16   m_block_count;            // number of blocks currently allocated
+        u16   m_block_max_count;        // maximum number of blocks that can be allocated
+        u16   m_block_free_index;       // highest free index
+        u8    m_page_size_shift;        // page size in shift (e.g. 12 for 4 KiB page size)
+        b8    m_ownership;              // do we own the reserved address space?
+        // bblock_t* m_blocks;          // array of blocks (follows bbin_t in memory)
+    };
+
+    static inline bblock_t* s_blocks(bbin_t* bin) { return (bblock_t*)((byte*)bin + sizeof(bbin_t)); }
+
+    static void s_add_to_list(bbin_t* bin, u16& head, u16 block_index)
+    {
+        bblock_t* blocks                = s_blocks(bin);
+        blocks[block_index].m_free_next = head;
+        head                            = block_index;
     }
 
-    static void* s_commit_block(bbin_t* bin, bblock_t* block, u32 block_index, u32 item_size)
+    static u16 s_pop_from_list(bbin_t* bin, u16& head)
     {
-        // commit enough pages for this block to cover the item size, if not already committed
+        if (head == cINVALID_BLOCK_INDEX)
+            return cINVALID_BLOCK_INDEX;
+
+        bblock_t* blocks                = s_blocks(bin);
+        u16       block_index           = head;
+        head                            = blocks[block_index].m_free_next;
+        blocks[block_index].m_free_next = cINVALID_BLOCK_INDEX;
+        return block_index;
+    }
+
+    struct bbin_layout_t
+    {
+        u8  m_page_size_shift;
+        u8  m_block_size_shift;
+        u16 m_block_max_count;
+        u8  m_bin_size_in_pages;
+    };
+
+    static void s_bin_calculate_size(uint_t reserved_size, u32 block_size, bbin_layout_t& layout)
+    {
+        ASSERT(block_size >= (16 * cKB));
+
+        const u8  page_size_shift    = v_alloc_get_page_size_shift();
+        const u8  block_size_shift   = math::max((u8)math::ilog2(math::ceilpo2(block_size)), page_size_shift);
+        const u32 block_size_aligned = (u32)1 << block_size_shift;
+        ASSERT(block_size_shift > 0);
+        ASSERT((reserved_size % block_size_aligned) == 0);
+
+        const u32 max_block_count = (u32)(reserved_size / block_size_aligned);
+        ASSERT(max_block_count > 0 && max_block_count <= cINVALID_BLOCK_INDEX);
+
+        const uint_t page_size     = (uint_t)1 << page_size_shift;
+        const uint_t address_pages = reserved_size >> page_size_shift;
+        ASSERT(address_pages <= (uint_t)0xFFFFFFFFULL);
+        uint_t required_size        = sizeof(bbin_t) + ((uint_t)max_block_count * sizeof(bblock_t));
+        required_size               = math::alignUp(required_size, page_size);
+        const uint_t required_pages = required_size >> page_size_shift;
+        ASSERT(required_pages > 0 && required_pages <= 255);
+
+        layout.m_page_size_shift   = page_size_shift;
+        layout.m_block_size_shift  = block_size_shift;
+        layout.m_block_max_count   = (u16)max_block_count;
+        layout.m_bin_size_in_pages = (u8)required_pages;
+    }
+
+    static void* s_commit_block(bbin_t* bin, bblock_t* block, u16 block_index, u32 item_size)
+    {
         const u32 block_size    = (u32)1 << bin->m_block_size_shift;
         byte*     block_address = (byte*)bin->m_address_base + ((uint_t)block_index * block_size);
 
@@ -38,13 +94,12 @@ namespace ncore
         {
             const u32 pages_to_commit = required_pages - block->m_pages_committed;
 
-            v_alloc_commit(block_address + (block->m_pages_committed << bin->m_page_size_shift), pages_to_commit << bin->m_page_size_shift);
+            ASSERT(v_alloc_commit(block_address + (block->m_pages_committed << bin->m_page_size_shift), pages_to_commit << bin->m_page_size_shift));
             block->m_pages_committed += pages_to_commit;
             return block_address;
         }
         else if (block->m_pages_committed > required_pages)
         {
-            // decommit pages if the block has more pages committed than needed for the item size
             const u32 pages_to_decommit = block->m_pages_committed - required_pages;
 
             v_alloc_decommit(block_address + (required_pages << bin->m_page_size_shift), pages_to_decommit << bin->m_page_size_shift);
@@ -55,14 +110,13 @@ namespace ncore
         return block_address;
     }
 
-    // free an item back to the block, this is called when an item is freed
-    static void s_release_block(bbin_t* bin, bblock_t* block, u32 block_index, void* item_ptr)
+    static void s_release_block(bbin_t* bin, bblock_t* block, u16 block_index)
     {
         const u32 block_size = (u32)1 << bin->m_block_size_shift;
         if (block->m_pages_committed > 0)
         {
             byte* block_address = (byte*)bin->m_address_base + ((uint_t)block_index * block_size);
-            v_alloc_decommit(block_address, (block->m_pages_committed) << bin->m_page_size_shift);
+            v_alloc_decommit(block_address, block->m_pages_committed << bin->m_page_size_shift);
             block->m_pages_committed = 0;
         }
     }
@@ -78,22 +132,12 @@ namespace ncore
 
     void* bin_alloc(bbin_t* bin, u32 item_size)
     {
-        u64* layer0 = narena::base_ptr_as<u64>(bin->m_arena);
-        u64* layer1 = layer0 + 1;
-        u64* layer2 = layer1 + bin->m_layer1_size;
+        ASSERT(item_size <= ((u32)1 << bin->m_block_size_shift));
 
-        bblock_t* active_block_ptr   = nullptr;
-        s32       active_block_index = -1;
-        if (bin->m_block_count < bin->m_block_free_index)
+        u16 active_block_index;
+        if (bin->m_free_head != cINVALID_BLOCK_INDEX)
         {
-            active_block_index = nbitvec18::find_free(layer0, layer1, layer2, bin->m_block_free_index);
-            ASSERT(active_block_index >= 0 && (u32)active_block_index < bin->m_block_free_index);
-            bblock_t* block_array = bin->m_blocks;
-            active_block_ptr      = &block_array[active_block_index];
-            s_block_init(bin, active_block_ptr);
-
-            // This block is now used, mark it as used in the bit vector
-            nbitvec18::set_used(layer0, layer1, layer2, bin->m_block_free_index, active_block_index);
+            active_block_index = s_pop_from_list(bin, bin->m_free_head);
         }
         else
         {
@@ -101,20 +145,14 @@ namespace ncore
                 return nullptr;
 
             active_block_index = bin->m_block_free_index++;
-            active_block_ptr   = g_allocate<bblock_t>(bin->m_arena);
-
-            // This block is now used, mark it as used in the bit vector
-            nbitvec18::tick_used_lazy(layer0, layer1, layer2, bin->m_block_free_index, active_block_index);
-
-            s_block_init(bin, active_block_ptr);
         }
 
-        bin->m_block_count += 1;
-        void* item = s_commit_block(bin, active_block_ptr, active_block_index, item_size);
-        if (item == nullptr)
-            return nullptr;
+        bblock_t* blocks                       = s_blocks(bin);
+        bblock_t* active_block                 = &blocks[active_block_index];
+        active_block->m_pages_committed = 0;
 
-        return item;
+        bin->m_block_count += 1;
+        return s_commit_block(bin, active_block, active_block_index, item_size);
     }
 
     // 8888888888 8888888b.  8888888888 8888888888
@@ -128,20 +166,21 @@ namespace ncore
 
     void bin_free(bbin_t* bin, void* ptr)
     {
-        ASSERT(ptr != nullptr && ptr >= bin->m_address_base && ptr < (byte*)bin->m_address_base + bin->m_address_size);
+        const uint_t address_size = (uint_t)bin->m_address_size_in_pages << bin->m_page_size_shift;
+        ASSERT(ptr != nullptr && ptr >= bin->m_address_base && ptr < (byte*)bin->m_address_base + address_size);
 
-        // Find the block this item belongs to
-        const u8  block_size_shift = bin->m_block_size_shift;
-        const u32 block_index      = (u32)((uint_t)((byte*)ptr - (byte*)bin->m_address_base) >> block_size_shift);
-        bblock_t* block            = &bin->m_blocks[block_index];
-        s_release_block(bin, block, block_index, ptr);
+        const u8     block_size_shift = bin->m_block_size_shift;
+        const uint_t address_offset   = (uint_t)((byte*)ptr - (byte*)bin->m_address_base);
+        ASSERT((address_offset & (((uint_t)1 << block_size_shift) - 1)) == 0);
+        const u16 block_index = (u16)(address_offset >> block_size_shift);
+        ASSERT(block_index < bin->m_block_free_index && bin->m_block_count > 0);
+
+        bblock_t* blocks = s_blocks(bin);
+        bblock_t* block  = &blocks[block_index];
+        s_release_block(bin, block, block_index);
         bin->m_block_count -= 1;
 
-        // This block is now free, mark it as free in the bit vector
-        u64* layer0 = narena::base_ptr_as<u64>(bin->m_arena);
-        u64* layer1 = layer0 + 1;
-        u64* layer2 = layer1 + bin->m_layer1_size;
-        nbitvec18::set_free(layer0, layer1, layer2, bin->m_block_free_index, block_index);
+        s_add_to_list(bin, bin->m_free_head, block_index);
     }
 
     //  .d8888b.  8888888888 88888888888 888     888 8888888b.
@@ -153,61 +192,45 @@ namespace ncore
     // Y88b  d88P 888            888     Y88b. .d88P 888
     //  "Y8888P"  8888888888     888      "Y88888P"  888
 
-    void  bin_setup(bbin_t* bin, void* base_address, uint_t reserved_size, u32 block_size)
+    u32 bin_calculate_size(uint_t reserved_size, u32 block_size)
     {
-        // Note: Block size >= 16 KiB
-        ASSERT(block_size >= (16 * cKB));
+        bbin_layout_t layout;
+        s_bin_calculate_size(reserved_size, block_size, layout);
+        return layout.m_bin_size_in_pages;
+    }
 
-        bin->m_page_size_shift = v_alloc_get_page_size_shift();
+    bbin_t* bin_setup(void* bin_address, u32 bin_size_in_pages, void* base_address, uint_t reserved_size, u32 block_size)
+    {
+        ASSERT(bin_address != nullptr);
 
-        // Find the appropriate block size shift based on the block size, this is done by
-        // calculating the block size shift, which must be at least the page size shift.
-        const u8 block_size_shift  = math::max((u8)math::ilog2(math::ceilpo2(block_size)), (u8)bin->m_page_size_shift);
-        ASSERT(block_size_shift > 0);
-        const u32 block_size_aligned = (u32)1 << block_size_shift;
+        bbin_layout_t layout;
+        s_bin_calculate_size(reserved_size, block_size, layout);
+        ASSERT(bin_size_in_pages >= layout.m_bin_size_in_pages);
 
-        // the maximum number of blocks is calculated based on the reserved
-        // size and the calculated block size, but must be < 65536.
-        const u32 max_block_count = (u32)(reserved_size / block_size_aligned);
-        ASSERT(max_block_count > 0 && max_block_count <= 65536);
-
+        bbin_t* bin = (bbin_t*)bin_address;
+        g_memclr(bin, sizeof(bbin_t));
         if (base_address != nullptr)
         {
             bin->m_address_base = base_address;
-            bin->m_address_size = reserved_size;
             bin->m_ownership    = false;
         }
         else
         {
             bin->m_address_base = v_alloc_reserve(reserved_size);
-            bin->m_address_size = reserved_size;
-            bin->m_ownership    = true;
+            ASSERT(bin->m_address_base != nullptr);
+            bin->m_ownership = true;
         }
 
-        // Force to always have 3 layers so that we use nbitvec18
-        const u32 bin2_size = (max_block_count + 63) / 64;
-        const u32 bin1_size = (bin2_size + 63) / 64;
-        const u32 bin0_size = 1;
-
-        const u32 bitvec_bytes = ((bin0_size + bin1_size + bin2_size) * sizeof(u64));
-        const u32 blocks_bytes = max_block_count * sizeof(bblock_t);
-        bin->m_arena           = narena::new_arena(bitvec_bytes + blocks_bytes, bitvec_bytes);
-
-        u64* layer0        = g_allocate_array<u64>(bin->m_arena, bin0_size);
-        u64* layer1        = g_allocate_array<u64>(bin->m_arena, bin1_size);
-        u64* layer2        = g_allocate_array<u64>(bin->m_arena, bin2_size);
-        bin->m_layer1_size = bin1_size;
-
-        nbitvec18::setup_used_lazy(layer0, layer1, layer2, max_block_count);
-
-        bin->m_block_count      = 0;
-        bin->m_block_max_count  = (u16)max_block_count;
-        bin->m_block_free_index = 0;
-        bin->m_blocks           = narena::current_ptr_as<bblock_t>(bin->m_arena);
-        bin->m_block_size_shift = block_size_shift;
+        bin->m_address_size_in_pages = (u32)(reserved_size >> layout.m_page_size_shift);
+        bin->m_bin_size_in_pages     = layout.m_bin_size_in_pages;
+        bin->m_block_size_shift      = layout.m_block_size_shift;
+        bin->m_free_head             = cINVALID_BLOCK_INDEX;
+        bin->m_block_count           = 0;
+        bin->m_block_max_count       = layout.m_block_max_count;
+        bin->m_block_free_index      = 0;
+        bin->m_page_size_shift       = layout.m_page_size_shift;
+        return bin;
     }
-
-    void  bin_setup(bbin_t* bin, uint_t reserved_size, u32 block_size) { bin_setup(bin, nullptr, reserved_size, block_size); }
 
     u32 bin_size(bbin_t const * bin)
     {
@@ -226,16 +249,10 @@ namespace ncore
 
     void bin_destroy(bbin_t* bin)
     {
-        if (bin->m_arena != nullptr)
+        if (bin->m_address_base != nullptr && bin->m_ownership)
         {
-            narena::destroy(bin->m_arena);
-        }
-        if (bin->m_address_base != nullptr)
-        {
-            if (bin->m_ownership)
-            {
-                v_alloc_release(bin->m_address_base, bin->m_address_size);
-            }
+            const uint_t address_size = (uint_t)bin->m_address_size_in_pages << bin->m_page_size_shift;
+            v_alloc_release(bin->m_address_base, address_size);
         }
 
         g_memclr(bin, sizeof(bbin_t));

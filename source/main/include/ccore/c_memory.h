@@ -61,6 +61,17 @@ namespace ncore
 #    include "ccore/private/c_memory_portable.h"
 #endif
 
+// Platform-specific virtual memory functions
+namespace ncore
+{
+    u32   v_alloc_get_page_size();
+    u8    v_alloc_get_page_size_shift();
+    void* v_alloc_reserve(uint_t size);
+    bool  v_alloc_commit(void* addr, uint_t size);
+    bool  v_alloc_decommit(void* addr, uint_t extra_size);
+    bool  v_alloc_release(void* addr, uint_t size);
+}  // namespace ncore
+
 namespace ncore
 {
     template <class T>

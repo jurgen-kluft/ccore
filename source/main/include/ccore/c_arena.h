@@ -6,7 +6,6 @@
 #endif
 
 #include "ccore/c_allocator.h"
-#include "ccore/c_limits.h"
 
 namespace ncore
 {
@@ -193,14 +192,6 @@ namespace ncore
         narena::restore_address(s.m_arena, s.m_address);
         s.m_arena = nullptr;
     }
-
-    // Platform specific virtual memory functions
-    u32   v_alloc_get_page_size();
-    u8    v_alloc_get_page_size_shift();
-    void* v_alloc_reserve(uint_t size);
-    bool  v_alloc_commit(void* addr, uint_t size);
-    bool  v_alloc_decommit(void* addr, uint_t extra_size);
-    bool  v_alloc_release(void* addr, uint_t size);
 
 }  // namespace ncore
 
