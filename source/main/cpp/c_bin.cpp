@@ -9,8 +9,7 @@ namespace ncore
 {
     void bin_setup(bin32_t* bin, u16 item_size, u32 max_items)
     {
-        const s32 page_size = v_alloc_get_page_size();
-        ASSERT(item_size < (page_size >> 1));
+        ASSERT(item_size < (v_alloc_get_page_size() >> 1));
 
         // align the maximum number of items to a multiple of 64 (for binmap)
         max_items = math::alignUp(max_items, 64);
@@ -208,13 +207,19 @@ namespace ncore
         u64* m_bin2;
     };
 
+    //  .d8888b.  8888888888 88888888888 888     888 8888888b.
+    // d88P  Y88b 888            888     888     888 888   Y88b
+    // Y88b.      888            888     888     888 888    888
+    //  "Y888b.   8888888        888     888     888 888   d88P
+    //     "Y88b. 888            888     888     888 8888888P"
+    //       "888 888            888     888     888 888
+    // Y88b  d88P 888            888     Y88b. .d88P 888
+    //  "Y8888P"  8888888888     888      "Y88888P"  888
+
     void bin_setup(bin16_t* bin, u16 item_size, u32 max_items)
     {
         ASSERT(max_items <= 65536);
-
-        const s32 page_size = v_alloc_get_page_size();
-
-        ASSERT(item_size < (page_size >> 1));
+        ASSERT(item_size < (v_alloc_get_page_size() >> 1));
 
         // align the maximum number of items to a multiple of 64 (for binmap)
         max_items = math::alignUp(max_items, 64);
@@ -266,6 +271,14 @@ namespace ncore
         return (u32)((narena::current_pos(bin->m_arena) - items_array_pos) / ibin->m_item_sizeof);
     }
 
+    //        d8888 888      888      .d88888b.   .d8888b.
+    //       d88888 888      888     d88P" "Y88b d88P  Y88b
+    //      d88P888 888      888     888     888 888    888
+    //     d88P 888 888      888     888     888 888
+    //    d88P  888 888      888     888     888 888
+    //   d88P   888 888      888     888     888 888    888
+    //  d8888888888 888      888     Y88b. .d88P Y88b  d88P
+    // d88P     888 88888888 88888888 "Y88888P"   "Y8888P"
     void* bin_alloc(bin16_t* bin)
     {
         ibin16_t* ibin = narena::base_ptr_as<ibin16_t>(bin->m_arena);
@@ -298,6 +311,15 @@ namespace ncore
         }
     }
 
+    // 8888888888 8888888b.  8888888888 8888888888
+    // 888        888   Y88b 888        888
+    // 888        888    888 888        888
+    // 8888888    888   d88P 8888888    8888888
+    // 888        8888888P"  888        888
+    // 888        888 T88b   888        888
+    // 888        888  T88b  888        888
+    // 888        888   T88b 8888888888 8888888888
+
     void bin_free(bin16_t* bin, void* ptr)
     {
         ibin16_t* ibin            = narena::base_ptr_as<ibin16_t>(bin->m_arena);
@@ -311,6 +333,12 @@ namespace ncore
 
         // Decrease number of used items
         ibin->m_items_count -= 1;
+    }
+
+    u32 bin_item_sizeof(bin16_t const * bin)
+    {
+        ibin16_t* ibin = narena::base_ptr_as<ibin16_t>(bin->m_arena);
+        return ibin->m_item_sizeof;
     }
 
     // convert a pointer to an index within the bin

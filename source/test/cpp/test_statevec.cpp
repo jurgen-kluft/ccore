@@ -7,7 +7,7 @@ using namespace ncore;
 
 namespace
 {
-    static void init_statevec10_empty(u32& free0, u32& used0, u32 (&bin1)[1])
+    static void init_statevec10_empty(u32& free0, u32& used0, u32* bin1)
     {
         free0   = 0;
         used0   = (u32)~(u32)0;
@@ -15,14 +15,14 @@ namespace
         nstatevec10::clear_all_free(&free0, &used0, bin1, 32);
     }
 
-    static void init_statevec10_full(u32& free0, u32& used0, u32 (&bin1)[1])
+    static void init_statevec10_full(u32& free0, u32& used0, u32* bin1)
     {
         init_statevec10_empty(free0, used0, bin1);
         for (u32 bit = 0; bit < 32; ++bit)
             nstatevec10::set_used(&free0, &used0, bin1, 32, bit);
     }
 
-    static void init_statevec12_empty(u64& free0, u64& used0, u64 (&bin1)[1])
+    static void init_statevec12_empty(u64& free0, u64& used0, u64* bin1)
     {
         free0   = 0;
         used0   = (u64)~(u64)0;
@@ -30,14 +30,14 @@ namespace
         nstatevec12::clear_all_free(&free0, &used0, bin1, 64);
     }
 
-    static void init_statevec12_full(u64& free0, u64& used0, u64 (&bin1)[1])
+    static void init_statevec12_full(u64& free0, u64& used0, u64* bin1)
     {
         init_statevec12_empty(free0, used0, bin1);
         for (u32 bit = 0; bit < 64; ++bit)
             nstatevec12::set_used(&free0, &used0, bin1, 64, bit);
     }
 
-    static void init_statevec15_empty(u32& free0, u32 (&free1)[1], u32& used0, u32 (&used1)[1], u32 (&bin2)[1])
+    static void init_statevec15_empty(u32& free0, u32* free1, u32& used0, u32* used1, u32* bin2)
     {
         free0    = 0;
         free1[0] = 0;
@@ -47,7 +47,7 @@ namespace
         nstatevec15::clear_all_free(&free0, free1, &used0, used1, bin2, 32);
     }
 
-    static void init_statevec15_empty_64(u32& free0, u32 (&free1)[1], u32& used0, u32 (&used1)[1], u32 (&bin2)[2])
+    static void init_statevec15_empty_64(u32& free0, u32* free1, u32& used0, u32* used1, u32* bin2)
     {
         free0    = 0;
         free1[0] = 0;
@@ -58,7 +58,7 @@ namespace
         nstatevec15::clear_all_free(&free0, free1, &used0, used1, bin2, 64);
     }
 
-    static void init_statevec18_empty(u64& free0, u64 (&free1)[1], u64& used0, u64 (&used1)[1], u64 (&bin2)[2])
+    static void init_statevec18_empty(u64& free0, u64* free1, u64& used0, u64* used1, u64* bin2)
     {
         free0    = 0;
         free1[0] = 0;
@@ -69,7 +69,7 @@ namespace
         nstatevec18::clear_all_free(&free0, free1, &used0, used1, bin2, 128);
     }
 
-    static void init_statevec20_empty_64(u32& free0, u32 (&free1)[1], u32 (&free2)[1], u32& used0, u32 (&used1)[1], u32 (&used2)[1], u32 (&bin3)[2])
+    static void init_statevec20_empty_64(u32& free0, u32* free1, u32* free2, u32& used0, u32* used1, u32* used2, u32* bin3)
     {
         free0    = 0;
         free1[0] = 0;
@@ -82,7 +82,7 @@ namespace
         nstatevec20::clear_all_free(&free0, free1, free2, &used0, used1, used2, bin3, 64);
     }
 
-    static void init_statevec20_empty_1056(u32& free0, u32 (&free1)[1], u32 (&free2)[2], u32& used0, u32 (&used1)[1], u32 (&used2)[2], u32 (&bin3)[33])
+    static void init_statevec20_empty_1056(u32& free0, u32* free1, u32* free2, u32& used0, u32* used1, u32* used2, u32* bin3)
     {
         free0    = 0;
         free1[0] = 0;
@@ -98,7 +98,7 @@ namespace
     }
 }
 
-UNITTEST_SUITE_BEGIN(statevec)
+UNITTEST_SUITE_BEGIN(astatevec)
 {
     UNITTEST_FIXTURE(statevec10)
     {

@@ -18,13 +18,15 @@ namespace ncore
     //  "Y8888P"  888    888  "Y88888P"  888    Y888 888    Y88b
 
     // Chunk
-    // - max items <= 32768, so that we can use a u16 for the free list and item count
+    // - max items <= (1 << 12) = 4096
     struct cchunk_t
     {
-        u16 m_free_index;       // highwater mark free index
-        u16 m_item_count;       // number of items currently allocated in this chunk
-        u32 m_pages_committed;  // number of pages currently committed in this chunk, used for lazy commit/decommit
-        // u64 m_bitvec_data[];
+        u16 m_free_index;  // highwater mark free index
+        u16 m_item_count;  // number of items currently allocated in this chunk
+        u16 m_prev;        // previous chunk in list
+        u16 m_next;        // next chunk in list
+        u64 m_layer0;      // bitvec layer0
+        // u64 m_layer1[]; // bitvec layer1, size = m_chunk_max_items / 64
     };
 
     static inline cchunk_t* s_get_chunk_array(cbin_t* bin) { return (cchunk_t*)(narena::base_ptr_as<u64>(bin->m_arena) + (bin->m_bitvec_num_u64 << 1)); }
@@ -35,53 +37,32 @@ namespace ncore
         return (cchunk_t*)((u64*)chunk_array + (chunk_index * bin->m_chunk_entry_num_u64));
     }
 
-    static inline u64* s_get_chunk_layer0(cchunk_t* chunk)
+    static inline u64* s_get_chunk_layer1(cchunk_t* chunk)
     {
         ASSERT((sizeof(cchunk_t) & 7) == 0);  // ensure chunk header is a multiple of 8 bytes
-        return (u64*)(chunk + 1);           // bitvec data starts right after the chunk header
-    }
-
-    static inline u64* s_get_chunk_layer1(cbin_t* bin, cchunk_t* chunk)
-    {
-        u64* layer0 = s_get_chunk_layer0(chunk);
-        return (bin->m_chunk_entry_num_u64 > 2) ? layer0 + 1 : nullptr;
+        return (u64*)(chunk + 1);             // bitvec data starts right after the chunk header
     }
 
     static inline void s_chunk_init(cbin_t* bin, cchunk_t* chunk)
     {
-        chunk->m_item_count      = 0;                          // no items allocated yet
-        chunk->m_pages_committed = 0;                          // no pages committed yet
-        u64* layer0              = s_get_chunk_layer0(chunk);  // bitvec data starts right after the chunk header
-        u64* layer1              = s_get_chunk_layer1(bin, chunk);
+        chunk->m_item_count = 0;                          // no items allocated yet
+        u64* layer0         = &chunk->m_layer0;            // bitvec data starts right after the chunk header
+        u64* layer1         = s_get_chunk_layer1(chunk);
 
         // TODO setup_used_lazy
 
-        if (layer1 != nullptr)
-        {
-            nbitvec12::set_all_free(layer0, layer1, bin->m_chunk_max_items);
-        }
-        else
-        {
-            nbitvec6::setup(layer0, bin->m_chunk_max_items);
-        }
+        nbitvec12::set_all_free(layer0, layer1, bin->m_chunk_max_items);
     }
 
     static void* s_chunk_alloc_item(cbin_t* bin, cchunk_t* chunk, u32 chunk_index)
     {
-        u64*      layer0 = s_get_chunk_layer0(chunk);  // bitvec data starts right after the chunk header
-        u64*      layer1 = s_get_chunk_layer1(bin, chunk);
+        u64* layer0 = &chunk->m_layer0;            // bitvec data starts right after the chunk header
+        u64* layer1 = s_get_chunk_layer1(chunk);
 
         // TODO tick_used_lazy and use count + free index to optimize free slot search
 
         s32 free_item_index = -1;
-        if (layer1 != nullptr)
-        {
-            free_item_index = nbitvec12::find_free_and_remove(layer0, layer1, bin->m_chunk_max_items);
-        }
-        else
-        {
-            free_item_index = nbitvec6::find_free_and_remove(layer0, bin->m_chunk_max_items);
-        }
+        free_item_index     = nbitvec12::find_free_and_remove(layer0, layer1, bin->m_chunk_max_items);
 
         if (free_item_index >= 0)
         {
@@ -105,36 +86,23 @@ namespace ncore
         const u16 item_index    = (u16)(((byte*)item_ptr - chunk_address) / bin->m_sizeof_item);
 
         // Mark this item as free in the bitvec
-        u64* layer0 = s_get_chunk_layer0(chunk);
-        u64* layer1 = s_get_chunk_layer1(bin, chunk);
-        if (layer1 != nullptr)
-        {
-            nbitvec12::set_free(layer0, layer1, bin->m_chunk_max_items, item_index);
-        }
-        else
-        {
-            nbitvec6::set_free(layer0, bin->m_chunk_max_items, item_index);
-        }
+        u64* layer0 = &chunk->m_layer0;
+        u64* layer1 = s_get_chunk_layer1(chunk);
+        nbitvec12::set_free(layer0, layer1, bin->m_chunk_max_items, item_index);
         chunk->m_item_count -= 1;  // decrease item count
     }
 
     static void s_commit_chunk_memory(cbin_t* bin, u32 chunk_index)
     {
-        const u32 chunk_size      = (u32)1 << bin->m_chunk_size_shift;
-        const u32 chunk_num_pages = chunk_size >> v_alloc_get_page_size_shift();
-
-        cchunk_t* chunk          = s_get_chunk(bin, chunk_index);
-        chunk->m_pages_committed = chunk_num_pages;
-
-        byte* chunk_address = (byte*)bin->m_address_base + ((uint_t)chunk_index * chunk_size);
+        cchunk_t* chunk         = s_get_chunk(bin, chunk_index);
+        const u32 chunk_size    = (u32)1 << bin->m_chunk_size_shift;
+        byte*     chunk_address = (byte*)bin->m_address_base + ((uint_t)chunk_index * chunk_size);
         v_alloc_commit(chunk_address, chunk_size);
     }
 
     static void s_decommit_chunk_memory(cbin_t* bin, u32 chunk_index)
     {
-        cchunk_t* chunk          = s_get_chunk(bin, chunk_index);
-        chunk->m_pages_committed = 0;
-
+        cchunk_t* chunk         = s_get_chunk(bin, chunk_index);
         const u32 chunk_size    = (u32)1 << bin->m_chunk_size_shift;
         byte*     chunk_address = (byte*)bin->m_address_base + ((uint_t)chunk_index * chunk_size);
         v_alloc_decommit(chunk_address, chunk_size);
@@ -314,7 +282,7 @@ namespace ncore
         const u32 chunk_size = (u32)1 << chunk_size_shift;
 
         const u32 items_per_chunk = chunk_size / item_sizeof;
-        ASSERT(items_per_chunk >= 4 && items_per_chunk <= (64 * 64));
+        ASSERT(items_per_chunk >= 2 && items_per_chunk <= (64 * 64));
 
         // Clear the structure
         g_memclr(bin, sizeof(cbin_t));
@@ -325,17 +293,11 @@ namespace ncore
         bin->m_chunk_entry_num_u64    = sizeof(cchunk_t) + (u16)chunk_entry_num_u64;
 
         // the maximum number of chunks is calculated based on the reserved
-        // size and the calculated chunk size, but must be < 4096.
+        // size and the calculated chunk size, but must be <= 65536.
         const u32 max_chunk_count = (u32)(reserved_size / chunk_size);
-        ASSERT(max_chunk_count > 0 && max_chunk_count <= 4096);
-
-        bin->m_bitvec_num_u64 = (max_chunk_count + 63) / 64;
-        bin->m_bitvec_num_u64 += 1;  // layer 0 is always present
+        ASSERT(max_chunk_count > 0 && max_chunk_count <= 65536);
 
         bin->m_arena = narena::new_arena((uint_t)max_chunk_count * (chunk_entry_num_u64 * sizeof(u64)), 0);
-
-        g_allocate_array_and_clear<u64>(bin->m_arena, bin->m_bitvec_num_u64);  // allocate bitvec for free chunks
-        g_allocate_array_and_clear<u64>(bin->m_arena, bin->m_bitvec_num_u64);  // allocate bitvec for active chunks
 
         if (base_address != nullptr)
         {

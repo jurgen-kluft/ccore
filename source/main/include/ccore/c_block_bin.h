@@ -17,7 +17,7 @@ namespace ncore
     // added to the list.
 
     // Note: Block size is configurable
-    // Note: Maximum number of blocks is 32768
+    // Note: Maximum number of blocks is 1<<18 = 262144
     // Note; Reserved size must be a multiple of block size
     struct bblock_t;
     struct bbin_t

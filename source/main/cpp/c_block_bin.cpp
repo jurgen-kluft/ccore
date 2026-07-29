@@ -153,47 +153,23 @@ namespace ncore
     // Y88b  d88P 888            888     Y88b. .d88P 888
     //  "Y8888P"  8888888888     888      "Y88888P"  888
 
-    // - sizeof(item) >=    8 B && sizeof(item) <=  128 B -> block-size =   4 KiB
-    // - sizeof(item)  >  128 B && sizeof(item) <=  256 B -> block-size =   8 KiB
-    // - sizeof(item)  >  256 B && sizeof(item) <=  512 B -> block-size =  16 KiB
-    // - sizeof(item)  >  512 B && sizeof(item) <=  1 KiB -> block-size =  32 KiB
-    // - sizeof(item)  >  1 KiB && sizeof(item) <=  2 KiB -> block-size =  64 KiB
-    // - sizeof(item)  >  2 KiB && sizeof(item) <=  4 KiB -> block-size = 128 KiB
-    // - sizeof(item)  >  4 KiB && sizeof(item) <=  8 KiB -> block-size = 256 KiB
-    // - sizeof(item)  >  8 KiB && sizeof(item) <= 16 KiB -> block-size = 512 KiB
-    // - sizeof(item)  > 16 KiB && sizeof(item) <= 32 KiB -> block-size =   1 MiB
-
-    // clang-format off
-    const static u8 s_cchunk_configs[] = {
-         12, 12, 12, // 1<<0, 1<<1, 1<<2
-         12, 12, 12, // 1<<3, 1<<4, 1<<5,
-         12, 12, 13, // 1<<6, 1<<7, 1<<8,
-         14, 15, 16, // 1<<9, 1<<10, 1<<11,
-         17, 18, 19, // 1<<12, 1<<13, 1<<14,
-         20, 21,     // 1<<15, 1<<16
-    };
-    // clang-format on
-
-    void bin_setup(bbin_t* bin, void* base_address, uint_t reserved_size, u32 item_sizeof)
+    void  bin_setup(bbin_t* bin, void* base_address, uint_t reserved_size, u32 block_size)
     {
-        // Note: Item size >= 16 KiB
-        ASSERT(item_sizeof >= (16 * cKB));
+        // Note: Block size >= 16 KiB
+        ASSERT(block_size >= (16 * cKB));
 
         bin->m_page_size_shift = v_alloc_get_page_size_shift();
 
-        // Find the appropriate block size based on the item size, this is done by
-        // looking up the 's_cchunk_configs' array, which has predefined block size shifts
-        // for different item size ranges.
-        const u8 item_size_shift  = math::max((u8)math::ilog2(math::ceilpo2(item_sizeof)), (u8)3);
-        const u8 block_size_shift = math::max(s_cchunk_configs[item_size_shift], bin->m_page_size_shift);
-
+        // Find the appropriate block size shift based on the block size, this is done by
+        // calculating the block size shift, which must be at least the page size shift.
+        const u8 block_size_shift  = math::max((u8)math::ilog2(math::ceilpo2(block_size)), (u8)bin->m_page_size_shift);
         ASSERT(block_size_shift > 0);
-        const u32 block_size = (u32)1 << block_size_shift;
+        const u32 block_size_aligned = (u32)1 << block_size_shift;
 
-        // the maximum number of chunks is calculated based on the reserved
+        // the maximum number of blocks is calculated based on the reserved
         // size and the calculated block size, but must be < 65536.
-        const u32 max_block_count = (u32)(reserved_size / block_size);
-        ASSERT(max_block_count > 0 && max_block_count < 65536);
+        const u32 max_block_count = (u32)(reserved_size / block_size_aligned);
+        ASSERT(max_block_count > 0 && max_block_count <= 65536);
 
         if (base_address != nullptr)
         {
@@ -207,10 +183,6 @@ namespace ncore
             bin->m_address_size = reserved_size;
             bin->m_ownership    = true;
         }
-
-        // When computing the layout of nbitvec18, we are forcing the minimum number of
-        // blocks to be 8192 so that we always have 3 layers in the bit vector, which simplifies
-        // the logic of dealing with bitvector.
 
         // Force to always have 3 layers so that we use nbitvec18
         const u32 bin2_size = (max_block_count + 63) / 64;
@@ -235,7 +207,7 @@ namespace ncore
         bin->m_block_size_shift = block_size_shift;
     }
 
-    void bin_setup(bbin_t* bin, uint_t reserved_size, u32 item_sizeof) { bin_setup(bin, nullptr, reserved_size, item_sizeof); }
+    void  bin_setup(bbin_t* bin, uint_t reserved_size, u32 block_size) { bin_setup(bin, nullptr, reserved_size, block_size); }
 
     u32 bin_size(bbin_t const * bin)
     {

@@ -18,7 +18,7 @@ namespace ncore
     typedef void (*putchar_func_t)(char character);
     extern putchar_func_t putchar;
 
-    s32 printf_(const char* format, const va_t* argv, s32 argc);
+    s32 printf_(const char* format, const va_t* argv, i32 argc);
 
     template<typename... Args>
     s32 printf(const char* format, Args... _args)

@@ -80,8 +80,8 @@ namespace ncore
 #endif
 
 #if defined(TARGET_ARDUINO) && defined(COMPILER_DEFAULT)
-#    define D_BREAK           \
-        {                     \
+#    define D_BREAK \
+        {           \
         }
 #endif
 
@@ -203,11 +203,9 @@ namespace ncore
                 D_BREAK;                                                                                                         \
         } while (0)
 
-#    define DASSERTCT(expr)          \
-        do                           \
-        {                            \
-            static_assert(expr, ""); \
-        } while (0);
+#    define DASSERTCT(expr) static_assert(expr, "");
+
+#    define DASSERTCTS(expr, str) static_assert(expr, str);
 
 #    define DASSERTSL(level, expr, str)                                                                                       \
         do                                                                                                                    \
@@ -238,6 +236,7 @@ namespace ncore
         } while (0)
 
 #    define ASSERTCT(expr)                    DASSERTCT(expr)
+#    define ASSERTCTS(expr, str)              DASSERTCTS(expr, str)
 #    define ASSERTSL(level, expr, str)        DASSERTSL(level, expr, str)
 #    define ASSERTL(level, expr)              DASSERTL(level, expr)
 #    define ASSERT(expr)                      DASSERT(expr)
@@ -252,6 +251,7 @@ namespace ncore
 #    define DASSERTSL(level, expr, str) (void(0))
 #    define DASSERTL(level, expr)       (void(0))
 #    define ASSERTCT(expr)
+#    define ASSERTCTS(expr, str)
 #    define ASSERT(expr)                      (void(0))
 #    define ASSERT_OPEN_RANGE(_i, _min, _max) (void(0))
 #    define ASSERTS(expr, str)                (void(0))
