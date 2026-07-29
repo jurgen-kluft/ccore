@@ -30,6 +30,9 @@ namespace ncore
         T max(T integerA, T integerB, T integerC);  // Return the biggest value of 3
 
         template <class T>
+        T map(T integerA, T inLowA, T inHighA, T inLowB, T inHighB);  // Map integerA from range A to range B
+
+        template <class T>
         void sort(T& integerA, T& integerB);  // Return integerA = smallest value, integerB = biggest value
 
         template <class T>
@@ -73,6 +76,15 @@ namespace ncore
         template <typename T>
         inline bool ispo2(T integer);  // Check if integer is a power-of-two
 
+        template <typename T>
+        inline T bitSet(T integer, u8 bitIndex);  // Set the bit at bitIndex to 1
+        template <typename T>
+        inline T bitClear(T integer, u8 bitIndex);  // Clear the bit at bitIndex to 0
+        template <typename T>
+        inline T bitToggle(T integer, u8 bitIndex);  // Toggle the bit at bitIndex
+        template <typename T>
+        inline u8  bitRead(T integer, u8 bitIndex);  // Read the bit at bitIndex
+
         inline u32 ceilpo2(u32 integer);   // Return the smallest power-of-two larger than integer
         inline u64 ceilpo2(u64 integer);   // Return the smallest power-of-two larger than integer
         inline u32 floorpo2(u32 integer);  // Return the biggest power-of-two smaller than integer
@@ -90,7 +102,9 @@ namespace ncore
         inline s8 ilog2(u16 integer) { return ilog2((u32)integer); }
         inline s8 ilog2(s16 integer) { return ilog2((u32)integer); }
 
-        inline u64 getMaskForValue(u64 value);             // Return the mask of the value
+        inline u32 mask(u32 value);             // Return the mask of the value
+        inline u64 mask(u64 value);             // Return the mask of the value
+
         inline s8  countTrailingZeros(u8 integer);         // find the number of trailing zeros in 8-bit v
         inline s8  countLeadingZeros(u8 integer);          // find the number of trailing zeros in 8-bit v
         inline s8  countTrailingZeros(u16 integer);        // find the number of trailing zeros in 16-bit v

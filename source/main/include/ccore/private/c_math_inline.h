@@ -15,8 +15,12 @@ namespace ncore
         { return integerA >= integerB ? integerA : integerB; }
 
         template <class T>
-        T max(T integerA, T integerB, T integerC)
+        inline T max(T integerA, T integerB, T integerC)
         { return max(integerC, max(integerA, integerB)); }
+
+        template <class T>
+        inline T map(T integerA, T inLowA, T inHighA, T inLowB, T inHighB)
+        { return (integerA - inLowA) * (inHighB - inLowB) / (inHighA - inLowA) + inLowB; }
 
         // Function template, integerA = smallest value, integerB = biggest value
         template <class T>
@@ -145,6 +149,31 @@ namespace ncore
         // Return the power-of-two smaller than or equal to value
         inline u32 floorpo2(u32 value) { return (u32)1 << (31 - countLeadingZeros(value)); }
         inline u64 floorpo2(u64 value) { return (u64)1 << (63 - countLeadingZeros(value)); }
+
+        template <typename T>
+        inline T bitSet(T integer, u8 bitIndex)
+        {
+            ASSERTS(bitIndex < sizeof(T) * 8, "Error: bitIndex out of range");
+            return integer | ((T)1 << bitIndex);
+        }
+        template <typename T>
+        inline T bitClear(T integer, u8 bitIndex)
+        {
+            ASSERTS(bitIndex < sizeof(T) * 8, "Error: bitIndex out of range");
+            return integer & ~((T)1 << bitIndex);
+        }
+        template <typename T>
+        inline T bitToggle(T integer, u8 bitIndex)
+        {
+            ASSERTS(bitIndex < sizeof(T) * 8, "Error: bitIndex out of range");
+            return integer ^ ((T)1 << bitIndex);
+        }
+        template <typename T>
+        inline u8 bitRead(T integer, u8 bitIndex)
+        {
+            ASSERTS(bitIndex < sizeof(T) * 8, "Error: bitIndex out of range");
+            return (integer >> bitIndex) & 1;
+        }
 
         // Return the mask of the value
         // e.g. value = 0b10100 -> return 0b11111
