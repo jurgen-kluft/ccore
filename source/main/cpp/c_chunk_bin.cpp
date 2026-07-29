@@ -17,52 +17,113 @@ namespace ncore
     // Y88b  d88P 888    888 Y88b. .d88P 888   Y8888 888   Y88b
     //  "Y8888P"  888    888  "Y88888P"  888    Y888 888    Y88b
 
+    const u16 cINVALID_CHUNK_INDEX = 0xFFFF;
+
     // Chunk
-    // - max items <= (1 << 12) = 4096
+    // - max items <= (1 << 10) = 1024
     struct cchunk_t
     {
         u16 m_free_index;  // highwater mark free index
         u16 m_item_count;  // number of items currently allocated in this chunk
         u16 m_prev;        // previous chunk in list
         u16 m_next;        // next chunk in list
-        u64 m_layer0;      // bitvec layer0
-        // u64 m_layer1[]; // bitvec layer1, size = m_chunk_max_items / 64
+        u32 m_layer0;      // bitvec layer0
+        // u32 m_layer1[]; // bitvec layer1, size = m_chunk_max_items / 32
     };
-
-    static inline cchunk_t* s_get_chunk_array(cbin_t* bin) { return (cchunk_t*)(narena::base_ptr_as<u64>(bin->m_arena) + (bin->m_bitvec_num_u64 << 1)); }
 
     static inline cchunk_t* s_get_chunk(cbin_t* bin, u32 chunk_index)
     {
-        cchunk_t* chunk_array = s_get_chunk_array(bin);
-        return (cchunk_t*)((u64*)chunk_array + (chunk_index * bin->m_chunk_entry_num_u64));
+        // cchunk_t is a variable-sized struct, so we calculate the address of the chunk based
+        // on the chunk index and the number of u32 entries per chunk.
+        return (cchunk_t*)((byte*)bin->m_chunk_array + (chunk_index * bin->m_chunk_sizeof));
     }
 
-    static inline u64* s_get_chunk_layer1(cchunk_t* chunk)
+    static inline void s_push_to_list(cbin_t* bin, u16* list_head, u16 chunk_index)
     {
-        ASSERT((sizeof(cchunk_t) & 7) == 0);  // ensure chunk header is a multiple of 8 bytes
-        return (u64*)(chunk + 1);             // bitvec data starts right after the chunk header
+        cchunk_t* chunk = s_get_chunk(bin, chunk_index);
+        chunk->m_prev   = cINVALID_CHUNK_INDEX;
+        chunk->m_next   = *list_head;
+
+        if (*list_head != cINVALID_CHUNK_INDEX)
+        {
+            s_get_chunk(bin, *list_head)->m_prev = chunk_index;
+        }
+
+        *list_head = chunk_index;
     }
 
+    static inline u16 s_pop_from_list(cbin_t* bin, u16* list_head)
+    {
+        if (*list_head == cINVALID_CHUNK_INDEX)
+        {
+            return cINVALID_CHUNK_INDEX;
+        }
+
+        u16       chunk_index = *list_head;
+        cchunk_t* chunk       = s_get_chunk(bin, chunk_index);
+
+        *list_head = chunk->m_next;
+
+        if (chunk->m_next != cINVALID_CHUNK_INDEX)
+        {
+            s_get_chunk(bin, chunk->m_next)->m_prev = cINVALID_CHUNK_INDEX;
+        }
+
+        chunk->m_prev = cINVALID_CHUNK_INDEX;
+        chunk->m_next = cINVALID_CHUNK_INDEX;
+
+        return chunk_index;
+    }
+
+    static inline void s_remove_from_list(cbin_t* bin, u16* list_head, u16 chunk_index)
+    {
+        ASSERT(chunk_index != cINVALID_CHUNK_INDEX);
+
+        cchunk_t* chunk      = s_get_chunk(bin, chunk_index);
+        u16 const prev_index = chunk->m_prev;
+        u16 const next_index = chunk->m_next;
+
+        if (prev_index != cINVALID_CHUNK_INDEX)
+        {
+            s_get_chunk(bin, prev_index)->m_next = next_index;
+        }
+        else
+        {
+            ASSERT(*list_head == chunk_index);
+            *list_head = next_index;
+        }
+
+        if (next_index != cINVALID_CHUNK_INDEX)
+        {
+            s_get_chunk(bin, next_index)->m_prev = prev_index;
+        }
+
+        chunk->m_prev = cINVALID_CHUNK_INDEX;
+        chunk->m_next = cINVALID_CHUNK_INDEX;
+    }
     static inline void s_chunk_init(cbin_t* bin, cchunk_t* chunk)
     {
-        chunk->m_item_count = 0;                          // no items allocated yet
-        u64* layer0         = &chunk->m_layer0;            // bitvec data starts right after the chunk header
-        u64* layer1         = s_get_chunk_layer1(chunk);
+        chunk->m_free_index = 0;
+        chunk->m_item_count = 0;                 // no items allocated yet
+        chunk->m_prev       = cINVALID_CHUNK_INDEX;
+        chunk->m_next       = cINVALID_CHUNK_INDEX;
+        u32* layer0         = &chunk->m_layer0;  // bitvec data starts right after the chunk header
+        u32* layer1         = layer0 + 1;        // layer1 starts right after layer0
 
         // TODO setup_used_lazy
 
-        nbitvec12::set_all_free(layer0, layer1, bin->m_chunk_max_items);
+        nbitvec10::set_all_free(layer0, layer1, bin->m_chunk_max_items);
     }
 
     static void* s_chunk_alloc_item(cbin_t* bin, cchunk_t* chunk, u32 chunk_index)
     {
-        u64* layer0 = &chunk->m_layer0;            // bitvec data starts right after the chunk header
-        u64* layer1 = s_get_chunk_layer1(chunk);
+        u32* layer0 = &chunk->m_layer0;  // bitvec data starts right after the chunk header
+        u32* layer1 = layer0 + 1;        // layer1 starts right after layer0
 
         // TODO tick_used_lazy and use count + free index to optimize free slot search
 
         s32 free_item_index = -1;
-        free_item_index     = nbitvec12::find_free_and_remove(layer0, layer1, bin->m_chunk_max_items);
+        free_item_index     = nbitvec10::find_free_and_remove(layer0, layer1, bin->m_chunk_max_items);
 
         if (free_item_index >= 0)
         {
@@ -86,15 +147,17 @@ namespace ncore
         const u16 item_index    = (u16)(((byte*)item_ptr - chunk_address) / bin->m_sizeof_item);
 
         // Mark this item as free in the bitvec
-        u64* layer0 = &chunk->m_layer0;
-        u64* layer1 = s_get_chunk_layer1(chunk);
-        nbitvec12::set_free(layer0, layer1, bin->m_chunk_max_items, item_index);
+        u32* layer0 = &chunk->m_layer0;
+        u32* layer1 = layer0 + 1;  // layer1 starts right after layer0
+        nbitvec10::set_free(layer0, layer1, bin->m_chunk_max_items, item_index);
         chunk->m_item_count -= 1;  // decrease item count
+
+        // TODO: Find the top free index for the chunk, and update the free index if necessary
+        // Note: Currently there is no function in nbitvec10 that can lower our free index
     }
 
     static void s_commit_chunk_memory(cbin_t* bin, u32 chunk_index)
     {
-        cchunk_t* chunk         = s_get_chunk(bin, chunk_index);
         const u32 chunk_size    = (u32)1 << bin->m_chunk_size_shift;
         byte*     chunk_address = (byte*)bin->m_address_base + ((uint_t)chunk_index * chunk_size);
         v_alloc_commit(chunk_address, chunk_size);
@@ -102,7 +165,6 @@ namespace ncore
 
     static void s_decommit_chunk_memory(cbin_t* bin, u32 chunk_index)
     {
-        cchunk_t* chunk         = s_get_chunk(bin, chunk_index);
         const u32 chunk_size    = (u32)1 << bin->m_chunk_size_shift;
         byte*     chunk_address = (byte*)bin->m_address_base + ((uint_t)chunk_index * chunk_size);
         v_alloc_decommit(chunk_address, chunk_size);
@@ -122,35 +184,19 @@ namespace ncore
         cchunk_t* active_chunk       = nullptr;
         s32       active_chunk_index = -1;
 
-        if (bin->m_num_active_chunks > 0)
+        if (bin->m_chunk_active_list_head != cINVALID_CHUNK_INDEX)
         {
             // Get the active chunk from the head of the active chunk list
-
-            u64* active_chunks_layer0 = narena::base_ptr_as<u64>(bin->m_arena) + bin->m_bitvec_num_u64;
-            u64* active_chunks_layer1 = active_chunks_layer0 + 1;
-
-            active_chunk_index = nbitvec12::find_free(active_chunks_layer0, active_chunks_layer1, bin->m_chunk_max_count);
+            active_chunk_index = bin->m_chunk_active_list_head;
             active_chunk       = s_get_chunk(bin, active_chunk_index);
         }
-        else if (bin->m_num_free_chunks > 0)
+        else if (bin->m_chunk_free_list_head != cINVALID_CHUNK_INDEX)
         {
-            u64* free_chunks_layer0 = narena::base_ptr_as<u64>(bin->m_arena);
-            u64* free_chunks_layer1 = free_chunks_layer0 + 1;
-
-            active_chunk_index = nbitvec12::find_free(free_chunks_layer0, free_chunks_layer1, bin->m_chunk_max_count);
+            active_chunk_index = s_pop_from_list(bin, &bin->m_chunk_free_list_head);
             active_chunk       = s_get_chunk(bin, active_chunk_index);
             s_chunk_init(bin, active_chunk);
-
-            nbitvec12::set_used(free_chunks_layer0, free_chunks_layer1, bin->m_chunk_max_count, active_chunk_index);
-
-            u64* active_chunks_layer0 = free_chunks_layer0 + bin->m_bitvec_num_u64;
-            u64* active_chunks_layer1 = active_chunks_layer0 + 1;
-            nbitvec12::set_free(active_chunks_layer0, active_chunks_layer1, bin->m_chunk_max_count, active_chunk_index);
-
-            bin->m_num_free_chunks -= 1;
-            bin->m_num_active_chunks += 1;
-
             s_commit_chunk_memory(bin, active_chunk_index);
+            s_push_to_list(bin, &bin->m_chunk_active_list_head, active_chunk_index);
         }
         else
         {
@@ -162,17 +208,10 @@ namespace ncore
             }
 
             active_chunk_index = bin->m_chunk_free_index++;
-
-            void* new_chunk = narena::alloc(bin->m_arena, bin->m_chunk_entry_num_u64 * sizeof(u64));
-            active_chunk    = (cchunk_t*)new_chunk;
+            active_chunk       = (cchunk_t*)((byte*)bin->m_chunk_array + (active_chunk_index * bin->m_chunk_sizeof));
             s_chunk_init(bin, active_chunk);
             s_commit_chunk_memory(bin, active_chunk_index);
-
-            // This chunk is now active, mark it as active
-            u64* active_chunks_layer0 = narena::base_ptr_as<u64>(bin->m_arena) + bin->m_bitvec_num_u64;
-            u64* active_chunks_layer1 = active_chunks_layer0 + 1;
-            nbitvec12::set_free(active_chunks_layer0, active_chunks_layer1, bin->m_chunk_max_count, active_chunk_index);
-            bin->m_num_active_chunks += 1;
+            s_push_to_list(bin, &bin->m_chunk_active_list_head, active_chunk_index);
         }
 
         ASSERT(active_chunk != nullptr && active_chunk_index >= 0 && active_chunk_index < bin->m_chunk_free_index);
@@ -182,10 +221,7 @@ namespace ncore
         if (active_chunk->m_item_count >= bin->m_chunk_max_items)
         {
             // This chunk is now full, remove it from the active chunk list
-            u64* active_chunks_layer0 = narena::base_ptr_as<u64>(bin->m_arena) + bin->m_bitvec_num_u64;
-            u64* active_chunks_layer1 = active_chunks_layer0 + 1;
-            nbitvec12::set_used(active_chunks_layer0, active_chunks_layer1, bin->m_chunk_max_count, (u32)active_chunk_index);
-            bin->m_num_active_chunks -= 1;
+            s_remove_from_list(bin, &bin->m_chunk_active_list_head, (u16)active_chunk_index);
         }
 
         bin->m_total_items_count += 1;
@@ -205,32 +241,29 @@ namespace ncore
     {
         ASSERT(ptr != nullptr && ptr >= bin->m_address_base && ptr < (byte*)bin->m_address_base + bin->m_address_size);
 
-        cchunk_t* chunk_array      = (cchunk_t*)(narena::base_ptr_as<u64>(bin->m_arena) + ((u32)bin->m_bitvec_num_u64 << 1));
-        const u8  chunk_size_shift = bin->m_chunk_size_shift;
+        const u8 chunk_size_shift = bin->m_chunk_size_shift;
 
         // Find the chunk this item belongs to
         const u32 chunk_index = (u32)((uint_t)((byte*)ptr - (byte*)bin->m_address_base) >> chunk_size_shift);
-        cchunk_t* chunk       = (cchunk_t*)((u64*)chunk_array + (chunk_index * bin->m_chunk_entry_num_u64));
+        cchunk_t* chunk       = s_get_chunk(bin, chunk_index);
 
         const bool chunk_was_full = (chunk->m_item_count >= bin->m_chunk_max_items);
 
-        // Insert this item back to the free list of the chunk
+        // Free the item from the chunk
         s_chunk_free_item(bin, chunk, chunk_index, ptr);
-
-        // TODO
-        // See if we can move 'bin->m_chunk_free_index' back, this requires
-        // chunks to be in a doubly linked list!
 
         bin->m_total_items_count -= 1;
 
         if (chunk_was_full)
         {
             // This chunk was full before, now it has a free item, add it back to the active chunk list
+            s_push_to_list(bin, &bin->m_chunk_active_list_head, chunk_index);
         }
         else if (chunk->m_item_count == 0)
         {
             // This chunk is now empty, move it to the free list and decommit its backing pages.
-
+            s_remove_from_list(bin, &bin->m_chunk_active_list_head, (u16)chunk_index);
+            s_push_to_list(bin, &bin->m_chunk_free_list_head, chunk_index);
             s_decommit_chunk_memory(bin, chunk_index);
         }
     }
@@ -244,85 +277,133 @@ namespace ncore
     // Y88b  d88P 888            888     Y88b. .d88P 888
     //  "Y8888P"  8888888888     888      "Y88888P"  888
 
-    // - sizeof(item) >=    8 B && sizeof(item) <=  128 B -> chunk-size =   4 KiB
-    // - sizeof(item)  >  128 B && sizeof(item) <=  256 B -> chunk-size =   8 KiB
-    // - sizeof(item)  >  256 B && sizeof(item) <=  512 B -> chunk-size =  16 KiB
-    // - sizeof(item)  >  512 B && sizeof(item) <=  1 KiB -> chunk-size =  32 KiB
-    // - sizeof(item)  >  1 KiB && sizeof(item) <=  2 KiB -> chunk-size =  64 KiB
-    // - sizeof(item)  >  2 KiB && sizeof(item) <=  4 KiB -> chunk-size = 128 KiB
-    // - sizeof(item)  >  4 KiB && sizeof(item) <=  8 KiB -> chunk-size = 256 KiB
-    // - sizeof(item)  >  8 KiB && sizeof(item) <= 16 KiB -> chunk-size = 512 KiB
-    // - sizeof(item)  > 16 KiB && sizeof(item) <= 32 KiB -> chunk-size =   1 MiB
+    const u32 s_max_items_per_chunk = 1024;
+    const u32 s_min_chunk_size      = 16 * cKB;
+    const u32 s_max_chunk_size      = 64 * cKB;
 
-    // clang-format off
-    const static u8 s_cchunk_configs[] = {
-         12, 12, 12, // 1<<0, 1<<1, 1<<2
-         12, 12, 12, // 1<<3, 1<<4, 1<<5,
-         12, 12, 13, // 1<<6, 1<<7, 1<<8,
-         14, 15, 16, // 1<<9, 1<<10, 1<<11,
-         17, 18, 19, // 1<<12, 1<<13, 1<<14,
-         20, 21,     // 1<<15, 1<<16
-    };
-    // clang-format on
-
-    void bin_setup(cbin_t* bin, void* base_address, uint_t reserved_size, u16 item_sizeof)
+    struct cbin_layout_t
     {
-        // Note: Item size >= 8 B and <= 32 KiB
-        ASSERT(item_sizeof <= (32 * cKB));
+        u32 m_chunk_size;         // size of each chunk in bytes
+        u32 m_items_per_chunk;    // number of items per chunk
+        u32 m_chunk_layer1_size;  // size of layer1 bitvec in bytes
+        u32 m_chunk_sizeof;       // size of chunk_t + layer1 in bytes
+        u32 m_max_chunk_count;    // maximum number of chunks that can be allocated
+        u32 m_required_size;      // required size of the bin structure including chunk array
+    };
 
-        const u8 page_size_shift = v_alloc_get_page_size_shift();
+    static void s_setup_bin(cbin_t* bin, cbin_layout_t const& layout, void* base_address, uint_t base_size, u16 item_sizeof)
+    {
+        bin->m_chunk_max_count  = (u16)layout.m_max_chunk_count;
+        bin->m_chunk_size_shift = (u8)math::ilog2(layout.m_chunk_size);
+        bin->m_chunk_sizeof     = (u16)layout.m_chunk_sizeof;
 
-        // Find the appropriate chunk size based on the item size, this is done by
-        // looking up the 's_cchunk_configs' array, which has predefined chunk size shifts
-        // for different item size ranges.
-        const u8 item_size_shift  = math::max((u8)math::ilog2(math::ceilpo2(item_sizeof)), (u8)3);
-        const u8 chunk_size_shift = math::max(s_cchunk_configs[item_size_shift], page_size_shift);
-
-        ASSERT(chunk_size_shift > 0);
-        const u32 chunk_size = (u32)1 << chunk_size_shift;
-
-        const u32 items_per_chunk = chunk_size / item_sizeof;
-        ASSERT(items_per_chunk >= 2 && items_per_chunk <= (64 * 64));
-
-        // Clear the structure
-        g_memclr(bin, sizeof(cbin_t));
-
-        // Calculate the number of u64s we need for chunk layer1
-        ASSERT((sizeof(cchunk_t) & 7) == 0);  // ensure chunk struct is a multiple of u64
-        const u32 chunk_entry_num_u64 = items_per_chunk > 64 ? (items_per_chunk + 63) / 64 : 0;
-        bin->m_chunk_entry_num_u64    = sizeof(cchunk_t) + (u16)chunk_entry_num_u64;
-
-        // the maximum number of chunks is calculated based on the reserved
-        // size and the calculated chunk size, but must be <= 65536.
-        const u32 max_chunk_count = (u32)(reserved_size / chunk_size);
-        ASSERT(max_chunk_count > 0 && max_chunk_count <= 65536);
-
-        bin->m_arena = narena::new_arena((uint_t)max_chunk_count * (chunk_entry_num_u64 * sizeof(u64)), 0);
+        bin->m_chunk_count       = 0;
+        bin->m_chunk_free_index  = 0;
+        bin->m_total_items_count = 0;
+        bin->m_chunk_max_items   = (u16)(layout.m_items_per_chunk);
+        bin->m_sizeof_item       = item_sizeof;
+        bin->m_chunk_free_list_head   = cINVALID_CHUNK_INDEX;
+        bin->m_chunk_active_list_head = cINVALID_CHUNK_INDEX;
+        bin->m_chunk_array_ownership  = false;
 
         if (base_address != nullptr)
         {
             bin->m_address_base = base_address;
-            bin->m_address_size = reserved_size;
             bin->m_ownership    = false;
         }
         else
         {
-            bin->m_address_base = v_alloc_reserve(reserved_size);
-            bin->m_address_size = reserved_size;
+            bin->m_address_base = v_alloc_reserve(base_size);
             bin->m_ownership    = true;
         }
-
-        bin->m_chunk_max_count  = (u16)max_chunk_count;
-        bin->m_chunk_size_shift = chunk_size_shift;
-
-        bin->m_total_items_count = 0;
-        bin->m_chunk_max_items   = (u16)(items_per_chunk);
-        bin->m_sizeof_item       = (u16)1 << item_size_shift;
+        bin->m_address_size = base_size;
     }
 
-    void bin_setup(cbin_t* bin, uint_t reserved_size, u16 item_sizeof) { bin_setup(bin, nullptr, reserved_size, item_sizeof); }
+    static void s_bin_calculate_size(uint_t base_size, u16 item_sizeof, cbin_layout_t& layout)
+    {
+        ASSERT(item_sizeof <= (32 * cKB));
 
-    u32 bin_size(cbin_t const * bin)
+        // Calculate the chunk size based on the item size and maximum items per chunk
+        u32 chunk_size = item_sizeof * s_max_items_per_chunk;
+        chunk_size     = math::floorpo2(chunk_size);                                   // round down to nearest power of two
+        chunk_size     = math::clamp(chunk_size, s_min_chunk_size, s_max_chunk_size);  // clamp to min/max chunk size
+
+        const u32 items_per_chunk = math::min(chunk_size / item_sizeof, s_max_items_per_chunk);
+        ASSERT(items_per_chunk >= 2 && items_per_chunk <= s_max_items_per_chunk);
+
+        // Calculate the number of u32s needed for layer1, then calculate the size of a chunk_t structure including layer1
+        ASSERT((sizeof(cchunk_t) & 3) == 0);  // ensure chunk struct is a multiple of u32
+        const u32 chunk_layer1 = items_per_chunk > 32 ? (items_per_chunk + 31) / 32 : 0;
+        const u16 chunk_sizeof = sizeof(cchunk_t) + (u16)(chunk_layer1 * sizeof(u32));
+
+        // Calculate the maximum number of chunks based on the reserved size and chunk size
+        const u32 max_chunk_count = (u32)(base_size / chunk_size);
+        ASSERT(max_chunk_count > 0 && max_chunk_count <= 65536);
+
+        // Calculate the total size needed for the bin structure and the chunk array
+        uint_t required_size = sizeof(cbin_t) + ((uint_t)max_chunk_count * (uint_t)chunk_sizeof);
+        required_size        = math::alignUp(required_size, (uint_t)v_alloc_get_page_size());
+
+        layout.m_chunk_size        = chunk_size;
+        layout.m_items_per_chunk   = items_per_chunk;
+        layout.m_chunk_layer1_size = chunk_layer1 * sizeof(u32);
+        layout.m_chunk_sizeof      = chunk_sizeof;
+        layout.m_max_chunk_count   = max_chunk_count;
+        layout.m_required_size     = (u32)required_size;
+    }
+
+    u32     bin_calculate_size(uint_t base_size, u16 item_sizeof)
+    {
+        cbin_layout_t layout;
+        s_bin_calculate_size(base_size, item_sizeof, layout);
+        return layout.m_required_size;
+    }
+
+    cbin_t* bin_setup(void* bin_address, u32 bin_size, void* base_address, uint_t base_size, u16 item_sizeof)
+    {
+        ASSERT(bin_address != nullptr);
+        ASSERT(item_sizeof <= (32 * cKB));
+
+        cbin_layout_t layout;
+        s_bin_calculate_size(base_size, item_sizeof, layout);
+        ASSERTS(bin_size >= layout.m_required_size, "Error: bin_size is too small for the requested base_size and item_sizeof");
+
+        cbin_t* bin = (cbin_t*)bin_address;
+        g_memclr(bin, sizeof(cbin_t));
+        s_setup_bin(bin, layout, base_address, base_size, item_sizeof);
+
+        // Reserve the virtual address space for the chunk array, which will hold the chunks
+        uint_t chunk_array_size = (uint_t)bin->m_chunk_max_count * (uint_t)layout.m_chunk_sizeof;
+        chunk_array_size        = math::alignUp(chunk_array_size, (uint_t)v_alloc_get_page_size());
+        bin->m_chunk_array      = (byte*)bin_address + sizeof(cbin_t);
+
+        return bin;
+    }
+
+    void bin_setup(cbin_t* bin, void* base_address, uint_t base_size, u16 item_sizeof)
+    {
+        // Note: Item size >= 8 B and <= 32 KiB
+        ASSERT(item_sizeof <= (32 * cKB));
+
+        cbin_layout_t layout;
+        s_bin_calculate_size(base_size, item_sizeof, layout);
+
+        // Clear the structure
+        g_memclr(bin, sizeof(cbin_t));
+        s_setup_bin(bin, layout, base_address, base_size, item_sizeof);
+
+        // Reserve the virtual address space for the chunk array, which will hold the chunks
+        uint_t chunk_array_size = (uint_t)bin->m_chunk_max_count * (uint_t)layout.m_chunk_sizeof;
+        chunk_array_size        = math::alignUp(chunk_array_size, (uint_t)v_alloc_get_page_size());
+        bin->m_chunk_array      = v_alloc_reserve(chunk_array_size);
+        ASSERT(bin->m_chunk_array != nullptr);
+        ASSERT(v_alloc_commit(bin->m_chunk_array, chunk_array_size));
+        bin->m_chunk_array_ownership = true;
+    }
+
+    void bin_setup(cbin_t* bin, uint_t base_size, u16 item_sizeof) { bin_setup(bin, nullptr, base_size, item_sizeof); }
+
+    u32 bin_size(cbin_t const* bin)
     {
         // The global item count
         return bin->m_total_items_count;
@@ -339,9 +420,11 @@ namespace ncore
 
     void bin_destroy(cbin_t* bin)
     {
-        if (bin->m_arena != nullptr)
+        if (bin->m_chunk_array != nullptr && bin->m_chunk_array_ownership)
         {
-            narena::destroy(bin->m_arena);
+            uint_t chunk_array_size = (uint_t)bin->m_chunk_max_count * (uint_t)bin->m_chunk_sizeof;
+            chunk_array_size        = math::alignUp(chunk_array_size, (uint_t)v_alloc_get_page_size());
+            v_alloc_release(bin->m_chunk_array, chunk_array_size);
         }
         if (bin->m_address_base != nullptr)
         {

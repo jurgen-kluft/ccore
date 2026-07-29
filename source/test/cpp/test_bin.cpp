@@ -53,6 +53,65 @@ UNITTEST_SUITE_BEGIN(bin)
             bin_destroy(&bin);
         }
 
+        UNITTEST_TEST(small_capacity_still_works)
+        {
+            bin32_t bin;
+            bin_setup(&bin, 64, 60);
+
+            for (u32 i = 0; i < 64; ++i)
+            {
+                void* ptr = bin_alloc(&bin);
+                CHECK_NOT_NULL(ptr);
+            }
+
+            CHECK_NULL(bin_alloc(&bin));
+            bin_destroy(&bin);
+        }
+
+        UNITTEST_TEST(bm3_commit_growth_boundary)
+        {
+            bin32_t bin;
+            bin_setup(&bin, 64, 64 * cKB);  // 64K items
+
+            const u32 num_allocs = 33000;
+            void**    ptrs       = g_allocate_array<void*>(Allocator, num_allocs);
+
+            for (u32 i = 0; i < num_allocs; ++i)
+            {
+                ptrs[i] = bin_alloc(&bin);
+                CHECK_NOT_NULL(ptrs[i]);
+            }
+
+            for (u32 i = 0; i < num_allocs; ++i)
+                bin_free(&bin, ptrs[i]);
+
+            g_deallocate_array(Allocator, ptrs);
+            bin_destroy(&bin);
+        }
+
+        UNITTEST_TEST(bm3_first_page_crossing)
+        {
+            bin32_t bin;
+            bin_setup(&bin, 64, 64 * cKB);  // 64K items
+
+            const u32 num_allocs = 31233;
+            void**    ptrs       = g_allocate_array<void*>(Allocator, num_allocs);
+
+            for (u32 i = 0; i < num_allocs; ++i)
+            {
+                ptrs[i] = bin_alloc(&bin);
+                CHECK_NOT_NULL(ptrs[i]);
+            }
+
+            CHECK_EQUAL(bin_highwater_mark(&bin), num_allocs);
+
+            for (u32 i = 0; i < num_allocs; ++i)
+                bin_free(&bin, ptrs[i]);
+
+            g_deallocate_array(Allocator, ptrs);
+            bin_destroy(&bin);
+        }
+
         UNITTEST_TEST(a_lot_more_alloc_free)
         {
             bin32_t bin;
@@ -127,6 +186,52 @@ UNITTEST_SUITE_BEGIN(bin)
             {
                 bin_free(&bin, ptrs[i]);
             }
+
+            bin_destroy(&bin);
+        }
+
+        UNITTEST_TEST(small_capacity_still_works)
+        {
+            bin16_t bin;
+            bin_setup(&bin, 64, 60);
+
+            for (u32 i = 0; i < 64; ++i)
+            {
+                void* ptr = bin_alloc(&bin);
+                CHECK_NOT_NULL(ptr);
+            }
+
+            CHECK_NULL(bin_alloc(&bin));
+            bin_destroy(&bin);
+        }
+
+        UNITTEST_TEST(boundary_63_64_65)
+        {
+            bin16_t bin;
+            bin_setup(&bin, 64, 65);
+
+            void* ptrs[65];
+            for (u32 i = 0; i < 65; ++i)
+            {
+                ptrs[i] = bin_alloc(&bin);
+                CHECK_NOT_NULL(ptrs[i]);
+            }
+
+            CHECK_EQUAL(bin_highwater_mark(&bin), 65u);
+
+            bin_free(&bin, ptrs[63]);
+            CHECK_EQUAL(bin_highest_free(&bin), 63);
+
+            void* recycled = bin_alloc(&bin);
+            CHECK_EQUAL(recycled, ptrs[63]);
+            CHECK_EQUAL(bin_ptr2idx(&bin, recycled), 63);
+
+            for (u32 i = 0; i < 65; ++i)
+            {
+                if (ptrs[i] != recycled)
+                    bin_free(&bin, ptrs[i]);
+            }
+            bin_free(&bin, recycled);
 
             bin_destroy(&bin);
         }
