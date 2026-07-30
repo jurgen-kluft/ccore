@@ -1,4 +1,3 @@
-#include "ccore/c_arena.h"
 #include "ccore/c_bitvec.h"
 #include "ccore/c_math.h"
 #include "ccore/c_memory.h"
@@ -31,11 +30,31 @@ namespace ncore
         // u32 m_layer1[]; // bitvec layer1, size = m_chunk_max_items / 32
     };
 
+    struct cbin_t
+    {
+        void* m_address_base;
+        u32   m_address_size_in_pages;
+        u32   m_bin_size_in_pages;
+        u32   m_total_items_count;
+        u16   m_chunk_max_count;
+        u16   m_chunk_free_index;
+        u16   m_chunk_max_items;
+        u16   m_sizeof_item;
+        u16   m_chunk_sizeof;
+        u16   m_chunk_free_list_head;
+        u16   m_chunk_active_list_head;
+        u8    m_chunk_size_shift;
+        u8    m_page_size_shift;
+        b8    m_ownership;
+    };
+
+    static inline byte* s_chunks(cbin_t* bin) { return (byte*)bin + sizeof(cbin_t); }
+
     static inline cchunk_t* s_get_chunk(cbin_t* bin, u32 chunk_index)
     {
         // cchunk_t is a variable-sized struct, so we calculate the address of the chunk based
         // on the chunk index and the number of u32 entries per chunk.
-        return (cchunk_t*)((byte*)bin->m_chunk_array + (chunk_index * bin->m_chunk_sizeof));
+        return (cchunk_t*)(s_chunks(bin) + (chunk_index * bin->m_chunk_sizeof));
     }
 
     static inline void s_push_to_list(cbin_t* bin, u16* list_head, u16 chunk_index)
@@ -208,7 +227,7 @@ namespace ncore
             }
 
             active_chunk_index = bin->m_chunk_free_index++;
-            active_chunk       = (cchunk_t*)((byte*)bin->m_chunk_array + (active_chunk_index * bin->m_chunk_sizeof));
+            active_chunk       = s_get_chunk(bin, active_chunk_index);
             s_chunk_init(bin, active_chunk);
             s_commit_chunk_memory(bin, active_chunk_index);
             s_push_to_list(bin, &bin->m_chunk_active_list_head, active_chunk_index);
@@ -239,7 +258,8 @@ namespace ncore
 
     void bin_free(cbin_t* bin, void* ptr)
     {
-        ASSERT(ptr != nullptr && ptr >= bin->m_address_base && ptr < (byte*)bin->m_address_base + bin->m_address_size);
+        const uint_t address_size = (uint_t)bin->m_address_size_in_pages << bin->m_page_size_shift;
+        ASSERT(ptr != nullptr && ptr >= bin->m_address_base && ptr < (byte*)bin->m_address_base + address_size);
 
         const u8 chunk_size_shift = bin->m_chunk_size_shift;
 
@@ -288,7 +308,7 @@ namespace ncore
         u32 m_chunk_layer1_size;  // size of layer1 bitvec in bytes
         u32 m_chunk_sizeof;       // size of chunk_t + layer1 in bytes
         u32 m_max_chunk_count;    // maximum number of chunks that can be allocated
-        u32 m_required_size;      // required size of the bin structure including chunk array
+        u32 m_required_pages;     // required pages for the bin structure including chunk array
     };
 
     static void s_setup_bin(cbin_t* bin, cbin_layout_t const& layout, void* base_address, uint_t base_size, u16 item_sizeof)
@@ -297,15 +317,12 @@ namespace ncore
         bin->m_chunk_size_shift = (u8)math::ilog2(layout.m_chunk_size);
         bin->m_chunk_sizeof     = (u16)layout.m_chunk_sizeof;
 
-        bin->m_chunk_count       = 0;
         bin->m_chunk_free_index  = 0;
         bin->m_total_items_count = 0;
         bin->m_chunk_max_items   = (u16)(layout.m_items_per_chunk);
         bin->m_sizeof_item       = item_sizeof;
         bin->m_chunk_free_list_head   = cINVALID_CHUNK_INDEX;
         bin->m_chunk_active_list_head = cINVALID_CHUNK_INDEX;
-        bin->m_chunk_array_ownership  = false;
-
         if (base_address != nullptr)
         {
             bin->m_address_base = base_address;
@@ -314,9 +331,12 @@ namespace ncore
         else
         {
             bin->m_address_base = v_alloc_reserve(base_size);
+            ASSERT(bin->m_address_base != nullptr);
             bin->m_ownership    = true;
         }
-        bin->m_address_size = base_size;
+        bin->m_page_size_shift       = v_alloc_get_page_size_shift();
+        bin->m_address_size_in_pages = (u32)(base_size >> bin->m_page_size_shift);
+        bin->m_bin_size_in_pages     = layout.m_required_pages;
     }
 
     static void s_bin_calculate_size(uint_t base_size, u16 item_sizeof, cbin_layout_t& layout)
@@ -333,75 +353,51 @@ namespace ncore
 
         // Calculate the number of u32s needed for layer1, then calculate the size of a chunk_t structure including layer1
         ASSERT((sizeof(cchunk_t) & 3) == 0);  // ensure chunk struct is a multiple of u32
-        const u32 chunk_layer1 = items_per_chunk > 32 ? (items_per_chunk + 31) / 32 : 0;
+        const u32 chunk_layer1 = (items_per_chunk + 31) / 32;
         const u16 chunk_sizeof = sizeof(cchunk_t) + (u16)(chunk_layer1 * sizeof(u32));
 
         // Calculate the maximum number of chunks based on the reserved size and chunk size
         const u32 max_chunk_count = (u32)(base_size / chunk_size);
-        ASSERT(max_chunk_count > 0 && max_chunk_count <= 65536);
+        ASSERT(max_chunk_count > 0 && max_chunk_count <= cINVALID_CHUNK_INDEX);
 
         // Calculate the total size needed for the bin structure and the chunk array
-        uint_t required_size = sizeof(cbin_t) + ((uint_t)max_chunk_count * (uint_t)chunk_sizeof);
-        required_size        = math::alignUp(required_size, (uint_t)v_alloc_get_page_size());
+        const u8 page_size_shift = v_alloc_get_page_size_shift();
+        const uint_t page_size   = (uint_t)1 << page_size_shift;
+        uint_t required_size     = sizeof(cbin_t) + ((uint_t)max_chunk_count * (uint_t)chunk_sizeof);
+        required_size            = math::alignUp(required_size, page_size);
+        const uint_t required_pages = required_size >> page_size_shift;
+        ASSERT(required_pages > 0 && required_pages <= 0xFFFFFFFFULL);
 
         layout.m_chunk_size        = chunk_size;
         layout.m_items_per_chunk   = items_per_chunk;
         layout.m_chunk_layer1_size = chunk_layer1 * sizeof(u32);
         layout.m_chunk_sizeof      = chunk_sizeof;
         layout.m_max_chunk_count   = max_chunk_count;
-        layout.m_required_size     = (u32)required_size;
+        layout.m_required_pages    = (u32)required_pages;
     }
 
-    u32     bin_calculate_size(uint_t base_size, u16 item_sizeof)
+    u32 bin_calculate_size(uint_t base_size, u16 item_sizeof)
     {
         cbin_layout_t layout;
         s_bin_calculate_size(base_size, item_sizeof, layout);
-        return layout.m_required_size;
+        return layout.m_required_pages;
     }
 
-    cbin_t* bin_setup(void* bin_address, u32 bin_size, void* base_address, uint_t base_size, u16 item_sizeof)
+    cbin_t* bin_setup(void* bin_address, u32 bin_size_in_pages, void* base_address, uint_t base_size, u16 item_sizeof)
     {
         ASSERT(bin_address != nullptr);
         ASSERT(item_sizeof <= (32 * cKB));
 
         cbin_layout_t layout;
         s_bin_calculate_size(base_size, item_sizeof, layout);
-        ASSERTS(bin_size >= layout.m_required_size, "Error: bin_size is too small for the requested base_size and item_sizeof");
+        ASSERTS(bin_size_in_pages >= layout.m_required_pages, "Error: bin_size is too small for the requested base_size and item_sizeof");
 
         cbin_t* bin = (cbin_t*)bin_address;
         g_memclr(bin, sizeof(cbin_t));
         s_setup_bin(bin, layout, base_address, base_size, item_sizeof);
 
-        // Reserve the virtual address space for the chunk array, which will hold the chunks
-        uint_t chunk_array_size = (uint_t)bin->m_chunk_max_count * (uint_t)layout.m_chunk_sizeof;
-        chunk_array_size        = math::alignUp(chunk_array_size, (uint_t)v_alloc_get_page_size());
-        bin->m_chunk_array      = (byte*)bin_address + sizeof(cbin_t);
-
         return bin;
     }
-
-    void bin_setup(cbin_t* bin, void* base_address, uint_t base_size, u16 item_sizeof)
-    {
-        // Note: Item size >= 8 B and <= 32 KiB
-        ASSERT(item_sizeof <= (32 * cKB));
-
-        cbin_layout_t layout;
-        s_bin_calculate_size(base_size, item_sizeof, layout);
-
-        // Clear the structure
-        g_memclr(bin, sizeof(cbin_t));
-        s_setup_bin(bin, layout, base_address, base_size, item_sizeof);
-
-        // Reserve the virtual address space for the chunk array, which will hold the chunks
-        uint_t chunk_array_size = (uint_t)bin->m_chunk_max_count * (uint_t)layout.m_chunk_sizeof;
-        chunk_array_size        = math::alignUp(chunk_array_size, (uint_t)v_alloc_get_page_size());
-        bin->m_chunk_array      = v_alloc_reserve(chunk_array_size);
-        ASSERT(bin->m_chunk_array != nullptr);
-        ASSERT(v_alloc_commit(bin->m_chunk_array, chunk_array_size));
-        bin->m_chunk_array_ownership = true;
-    }
-
-    void bin_setup(cbin_t* bin, uint_t base_size, u16 item_sizeof) { bin_setup(bin, nullptr, base_size, item_sizeof); }
 
     u32 bin_size(cbin_t const* bin)
     {
@@ -420,18 +416,10 @@ namespace ncore
 
     void bin_destroy(cbin_t* bin)
     {
-        if (bin->m_chunk_array != nullptr && bin->m_chunk_array_ownership)
+        if (bin->m_address_base != nullptr && bin->m_ownership)
         {
-            uint_t chunk_array_size = (uint_t)bin->m_chunk_max_count * (uint_t)bin->m_chunk_sizeof;
-            chunk_array_size        = math::alignUp(chunk_array_size, (uint_t)v_alloc_get_page_size());
-            v_alloc_release(bin->m_chunk_array, chunk_array_size);
-        }
-        if (bin->m_address_base != nullptr)
-        {
-            if (bin->m_ownership)
-            {
-                v_alloc_release(bin->m_address_base, bin->m_address_size);
-            }
+            const uint_t address_size = (uint_t)bin->m_address_size_in_pages << bin->m_page_size_shift;
+            v_alloc_release(bin->m_address_base, address_size);
         }
 
         g_memclr(bin, sizeof(cbin_t));
