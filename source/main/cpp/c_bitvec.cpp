@@ -1214,9 +1214,22 @@ namespace ncore
             layout.m_bin0 = (len + 63) >> 6;
         }
 
-        void compute_3_layers(u32 number_of_bits, layout64_t& layout)
+        void compute_l2(u32 number_of_bits, layout64_t& layout)
         {
-            ASSERT(number_of_bits > 0 && number_of_bits <= 256 * 1024);
+            ASSERT(number_of_bits > 0 && number_of_bits <= (64 * 64));
+
+            layout.m_maxbits = number_of_bits;
+
+            // force 2 layers
+            u32 len       = number_of_bits;
+            len           = (len + 63) >> 6;
+            layout.m_bin1 = len > 0 ? len : 1;
+            layout.m_bin0 = 1;
+        }
+
+        void compute_l3(u32 number_of_bits, layout64_t& layout)
+        {
+            ASSERT(number_of_bits > 0 && number_of_bits <= (64 * 64 * 64));
 
             layout.m_maxbits = number_of_bits;
 
@@ -1229,28 +1242,24 @@ namespace ncore
             layout.m_bin0 = 1;
         }
 
-        void pointers(byte* ptr, layout64_t const & l, u64*& bin0, u64*& bin1, u64*& bin2, u64*& bin3)
+        void compute_l4(u32 number_of_bits, layout64_t& layout)
         {
-            bin0 = (u64*)ptr;
-            bin1 = (u64*)(ptr + sizeof(u64));
-            bin2 = bin1 + l.m_bin1;
-            bin3 = bin2 + l.m_bin2;
+            ASSERT(number_of_bits > 0 && number_of_bits <= (64 * 64 * 64 * 64));
+
+            layout.m_maxbits = number_of_bits;
+
+            // force 4 layers
+            u32 len       = number_of_bits;
+            len           = (len + 63) >> 6;
+            layout.m_bin3 = len > 0 ? len : 1;
+            len           = (len + 63) >> 6;
+            layout.m_bin2 = len > 0 ? len : 1;
+            len           = (len + 63) >> 6;
+            layout.m_bin1 = len > 0 ? len : 1;
+            layout.m_bin0 = 1;
         }
 
         u32 sizeof_data(layout64_t const & l) { return l.m_bin0 + l.m_bin1 + l.m_bin2 + l.m_bin3; }
-
-        u32 sizeof_data(layout64_t const & l, u32 bit)
-        {
-            u32 size = l.m_bin0;
-            switch (l.m_levels)
-            {
-                case 3: size += l.m_bin2;
-                case 2: size += l.m_bin1;
-                case 1: break;
-            }
-            size += (bit + 63) >> 6;
-            return size;
-        }
 
         // Note: maximum count is 1 Million (5 bits + 5 bits + 5 bits + 5 bits = 20 bits = 1 M)
         void compute(u32 number_of_bits, layout32_t& layout)
@@ -1275,28 +1284,52 @@ namespace ncore
             layout.m_bin0 = (len + 31) >> 5;
         }
 
-        void pointers(byte* ptr, layout32_t const & l, u32*& bin0, u32*& bin1, u32*& bin2, u32*& bin3)
+        void compute_l2(u32 number_of_bits, layout32_t& layout)
         {
-            bin0 = (u32*)ptr;
-            bin1 = (u32*)(ptr + sizeof(u32));
-            bin2 = bin1 + l.m_bin1;
-            bin3 = bin2 + l.m_bin2;
+            ASSERT(number_of_bits > 0 && number_of_bits <= (32 * 32));
+
+            layout.m_maxbits = number_of_bits;
+
+            // force 2 layers
+            u32 len       = number_of_bits;
+            len           = (len + 31) >> 5;
+            layout.m_bin1 = len > 0 ? len : 1;
+            layout.m_bin0 = 1;
+        }
+
+        void compute_l3(u32 number_of_bits, layout32_t& layout)
+        {
+            ASSERT(number_of_bits > 0 && number_of_bits <= (32 * 32 * 32));
+
+            layout.m_maxbits = number_of_bits;
+
+            // force 3 layers
+            u32 len       = number_of_bits;
+            len           = (len + 31) >> 5;
+            layout.m_bin2 = len > 0 ? len : 1;
+            len           = (len + 31) >> 5;
+            layout.m_bin1 = len > 0 ? len : 1;
+            layout.m_bin0 = 1;
+        }
+
+        void compute_l4(u32 number_of_bits, layout32_t& layout)
+        {
+            ASSERT(number_of_bits > 0 && number_of_bits <= (32 * 32 * 32 * 32));
+
+            layout.m_maxbits = number_of_bits;
+
+            // force 4 layers
+            u32 len       = number_of_bits;
+            len           = (len + 31) >> 5;
+            layout.m_bin3 = len > 0 ? len : 1;
+            len           = (len + 31) >> 5;
+            layout.m_bin2 = len > 0 ? len : 1;
+            len           = (len + 31) >> 5;
+            layout.m_bin1 = len > 0 ? len : 1;
+            layout.m_bin0 = 1;
         }
 
         u32 sizeof_data(layout32_t const & l) { return l.m_bin0 + l.m_bin1 + l.m_bin2 + l.m_bin3; }
-
-        u32 sizeof_data(layout32_t const & l, u32 bit)
-        {
-            u32 size = l.m_bin0;
-            switch (l.m_levels)
-            {
-                case 3: size += l.m_bin2;
-                case 2: size += l.m_bin1;
-                case 1: break;
-            }
-            size += (bit + 31) >> 5;
-            return size;
-        }
 
     }  // namespace nbitvec
 

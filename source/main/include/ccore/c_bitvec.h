@@ -23,10 +23,11 @@ namespace ncore
         };
 
         void compute(u32 number_of_bits, layout64_t& l);
-        void pointers(byte* ptr, layout64_t const & l, u64*& bin0, u64*& bin1, u64*& bin2, u64*& bin3);
-        u32  sizeof_data(layout64_t const & l);  // u64[N], where N is computed based on layout
-        // This will compute the data size in u64[N], where the full level is considered 'growable' up to 'bit'
-        u32 sizeof_data(layout64_t const & l, u32 bit);
+        void compute_l2(u32 number_of_bits, layout64_t& layout);
+        void compute_l3(u32 number_of_bits, layout64_t& layout);
+        void compute_l4(u32 number_of_bits, layout64_t& layout);
+
+        u32 sizeof_data(layout64_t const & l);  // u64[N], where N is computed based on layout
 
         struct layout32_t
         {
@@ -37,11 +38,12 @@ namespace ncore
             u8  m_bin0;     // number of u32 at this level (unit = number of u32, should always be == 1)
             u8  m_levels;   // number of levels (0 = bin0, 1 = bin0+bin1, 2 = bin0+bin1+bin2, 3 = bin0+bin1+bin2+bin3)
         };
+
         void compute(u32 number_of_bits, layout32_t& l);
-        void pointers(byte* ptr, layout32_t const & l, u32*& bin0, u32*& bin1, u32*& bin2, u32*& bin3);
+        void compute_l2(u32 number_of_bits, layout32_t& l);
+        void compute_l3(u32 number_of_bits, layout32_t& l);
+        void compute_l4(u32 number_of_bits, layout32_t& l);
         u32  sizeof_data(layout32_t const & l);  // u32[N], where N is computed based on layout
-        // This will compute the data size in u32[N], where the full level is considered 'growable' up to 'bit'
-        u32 sizeof_data(layout32_t const & l, u32 bit);
 
     }  // namespace nbitvec
 
@@ -56,18 +58,18 @@ namespace ncore
         // are looking for '1' bits and the set/set_all_free functions are setting/clearing '1' bits.
         typedef u32 bintype_t;
 
-        void        setup(bintype_t* CC_RESTRICT bin0, u32 maxbits);
-        void        set_all_free(bintype_t* CC_RESTRICT bin0, u32 maxbits);
-        void        set_all_used(bintype_t* CC_RESTRICT bin0, u32 maxbits);
-        void        set_free(bintype_t* CC_RESTRICT bin0, u32 maxbits, u32 bit);
-        void        set_used(bintype_t* CC_RESTRICT bin0, u32 maxbits, u32 bit);
-        bool        get(bintype_t const * CC_RESTRICT bin0, u32 maxbits, u32 bit);
-        s32         find_free(bintype_t const * CC_RESTRICT bin0, u32 maxbits);
-        s32         find_free_and_remove(bintype_t* CC_RESTRICT bin0, u32 maxbits);
-        s32         find_free_last(bintype_t const * CC_RESTRICT bin0, u32 maxbits);               // Finds the last free bit and returns the bit index
-        s32         find_free_last_and_remove(bintype_t* CC_RESTRICT bin0, u32 maxbits);           // Finds the last free bit and sets it to used and returns the bit index
-        s32         find_free_after(bintype_t const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
-        s32         find_free_before(bintype_t const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
+        void setup(bintype_t* CC_RESTRICT bin0, u32 maxbits);
+        void set_all_free(bintype_t* CC_RESTRICT bin0, u32 maxbits);
+        void set_all_used(bintype_t* CC_RESTRICT bin0, u32 maxbits);
+        void set_free(bintype_t* CC_RESTRICT bin0, u32 maxbits, u32 bit);
+        void set_used(bintype_t* CC_RESTRICT bin0, u32 maxbits, u32 bit);
+        bool get(bintype_t const * CC_RESTRICT bin0, u32 maxbits, u32 bit);
+        s32  find_free(bintype_t const * CC_RESTRICT bin0, u32 maxbits);
+        s32  find_free_and_remove(bintype_t* CC_RESTRICT bin0, u32 maxbits);
+        s32  find_free_last(bintype_t const * CC_RESTRICT bin0, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32  find_free_last_and_remove(bintype_t* CC_RESTRICT bin0, u32 maxbits);           // Finds the last free bit and sets it to used and returns the bit index
+        s32  find_free_after(bintype_t const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32  find_free_before(bintype_t const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbitvec5
 
     // 2^6 binmap, can handle a maximum of 64 bits.
@@ -77,18 +79,18 @@ namespace ncore
         // are looking for '1' bits and the set/set_all_free functions are setting/clearing '1' bits.
         typedef u64 bintype_t;
 
-        void        setup(bintype_t* CC_RESTRICT bin0, u32 maxbits);
-        void        set_all_free(bintype_t* CC_RESTRICT bin0, u32 maxbits);
-        void        set_all_used(bintype_t* CC_RESTRICT bin0, u32 maxbits);
-        void        set_free(bintype_t* CC_RESTRICT bin0, u32 maxbits, u32 bit);
-        void        set_used(bintype_t* CC_RESTRICT bin0, u32 maxbits, u32 bit);
-        bool        get(bintype_t const * CC_RESTRICT bin0, u32 maxbits, u32 bit);
-        s32         find_free(bintype_t const * CC_RESTRICT bin0, u32 maxbits);
-        s32         find_free_and_remove(bintype_t* CC_RESTRICT bin0, u32 maxbits);
-        s32         find_free_last(bintype_t const * CC_RESTRICT bin0, u32 maxbits);               // Finds the last free bit and returns the bit index
-        s32         find_free_last_and_remove(bintype_t* CC_RESTRICT bin0, u32 maxbits);           // Finds the last free bit and sets it to used and returns the bit index
-        s32         find_free_after(bintype_t const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
-        s32         find_free_before(bintype_t const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
+        void setup(bintype_t* CC_RESTRICT bin0, u32 maxbits);
+        void set_all_free(bintype_t* CC_RESTRICT bin0, u32 maxbits);
+        void set_all_used(bintype_t* CC_RESTRICT bin0, u32 maxbits);
+        void set_free(bintype_t* CC_RESTRICT bin0, u32 maxbits, u32 bit);
+        void set_used(bintype_t* CC_RESTRICT bin0, u32 maxbits, u32 bit);
+        bool get(bintype_t const * CC_RESTRICT bin0, u32 maxbits, u32 bit);
+        s32  find_free(bintype_t const * CC_RESTRICT bin0, u32 maxbits);
+        s32  find_free_and_remove(bintype_t* CC_RESTRICT bin0, u32 maxbits);
+        s32  find_free_last(bintype_t const * CC_RESTRICT bin0, u32 maxbits);               // Finds the last free bit and returns the bit index
+        s32  find_free_last_and_remove(bintype_t* CC_RESTRICT bin0, u32 maxbits);           // Finds the last free bit and sets it to used and returns the bit index
+        s32  find_free_after(bintype_t const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);   // Finds the first free bit after the pivot
+        s32  find_free_before(bintype_t const * CC_RESTRICT bin0, u32 maxbits, u32 pivot);  // Finds the first free bit before the pivot (high to low)
     }  // namespace nbitvec6
 
     // --------------------------------------------------------------------------------------------

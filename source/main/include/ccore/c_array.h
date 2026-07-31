@@ -8,28 +8,28 @@
 namespace ncore
 {
     template <typename T, typename I>
-    inline T& g_at(T* array, I capacity, I index)
+    inline T& g_array_at(T* array, I capacity, I index)
     {
         ASSERT(index < capacity);
         return array[index];
     }
 
     template <typename T, typename I>
-    inline T const& g_at(T const* array, I capacity, I index)
+    inline T const& g_array_at(T const* array, I capacity, I index)
     {
         ASSERT(index < capacity);
         return array[index];
     }
 
     template <typename T, typename I>
-    inline T const* g_view(T const* array, I capacity, I from, I to)
+    inline T const* g_array_view(T const* array, I capacity, I from, I to)
     {
         ASSERT(from < to && to <= capacity);
         return &array[from];
     }
 
     template <typename T, typename I>
-    inline void g_push_back(T* array, I capacity, I& count, T const& item)
+    inline void g_array_push_back(T* array, I capacity, I& count, T const& item)
     {
         ASSERT(count < capacity);
         array[count] = item;
@@ -37,7 +37,7 @@ namespace ncore
     }
 
     template <typename T, typename I>
-    inline bool g_pop_back(T* array, I capacity, I& count, T& out_item)
+    inline bool g_array_pop_back(T* array, I capacity, I& count, T& out_item)
     {
         if (count > 0)
         {
@@ -62,7 +62,7 @@ namespace ncore
     }
 
     template <typename T, typename I>
-    inline void g_swap(T* array, I capacity, I index_a, I index_b)
+    inline void g_array_swap(T* array, I capacity, I index_a, I index_b)
     {
         if (index_a != index_b && index_a < capacity && index_b < capacity)
         {
@@ -74,7 +74,7 @@ namespace ncore
     }
 
     template <typename T, typename I>
-    void g_remove(T* array, I capacity, I& count, I index)
+    void g_array_remove(T* array, I capacity, I& count, I index)
     {
         ASSERT(index < count);
         for (I i = index; i < count - 1; ++i)
@@ -85,7 +85,7 @@ namespace ncore
     }
 
     template <typename T, typename I>
-    inline void g_swap_remove(T* array, I capacity, I& count, I index)
+    inline void g_array_swap_remove(T* array, I capacity, I& count, I index)
     {
         if (count > 0)
         {
