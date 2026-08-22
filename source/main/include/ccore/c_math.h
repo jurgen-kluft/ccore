@@ -20,30 +20,30 @@ namespace ncore
     {
         const f32 PI = 3.14159265358979323846f;
 
-        template <class T>
+        template <typename T>
         T min(T integerA, T integerB);  // Return the smallest value of 2
-        template <class T>
+        template <typename T>
         T min(T integerA, T integerB, T integerC);  // Return the smallest value of 3
-        template <class T>
+        template <typename T>
         T max(T integerA, T integerB);  // Return the biggest value
-        template <class T>
+        template <typename T>
         T max(T integerA, T integerB, T integerC);  // Return the biggest value of 3
 
-        template <class T>
+        template <typename T>
         T map(T integerA, T inLowA, T inHighA, T inLowB, T inHighB);  // Map integerA from range A to range B
 
-        template <class T>
+        template <typename T>
         void sort(T& integerA, T& integerB);  // Return integerA = smallest value, integerB = biggest value
 
-        template <class T>
+        template <typename T>
         T sign(T integerA)
         { return (integerA > 0) ? 1 : ((integerA < 0) ? -1 : 0); }
 
-        template <class T>
+        template <typename T>
         T clamp(T integerA, T low, T high);  // Return the clamp value
 
         /// clamp sub-range inside of encompassing range
-        template <class T>
+        template <typename T>
         void clampRange(T& subfrom, T& subto, T enfrom, T ento)
         {
             sort(subfrom, subto);
@@ -83,7 +83,7 @@ namespace ncore
         template <typename T>
         inline T bitToggle(T integer, u8 bitIndex);  // Toggle the bit at bitIndex
         template <typename T>
-        inline u8  bitRead(T integer, u8 bitIndex);  // Read the bit at bitIndex
+        inline u8 bitRead(T integer, u8 bitIndex);  // Read the bit at bitIndex
 
         inline u32 ceilpo2(u32 integer);   // Return the smallest power-of-two larger than integer
         inline u64 ceilpo2(u64 integer);   // Return the smallest power-of-two larger than integer
@@ -102,8 +102,8 @@ namespace ncore
         inline s8 ilog2(u16 integer) { return ilog2((u32)integer); }
         inline s8 ilog2(s16 integer) { return ilog2((u32)integer); }
 
-        inline u32 mask(u32 value);             // Return the mask of the value
-        inline u64 mask(u64 value);             // Return the mask of the value
+        inline u32 mask(u32 value);  // Return the mask of the value
+        inline u64 mask(u64 value);  // Return the mask of the value
 
         inline s8  countTrailingZeros(u8 integer);         // find the number of trailing zeros in 8-bit v
         inline s8  countLeadingZeros(u8 integer);          // find the number of trailing zeros in 8-bit v
@@ -128,31 +128,139 @@ namespace ncore
         inline u32 rol32(u32 integer, u32 shift);          // Roll all the bits in integer to the left by shift number of bits
         inline u32 ror32(u32 integer, u32 shift);          // Roll all the bits in integer to the right by shift number of bits
 
-        // floating point math functions
-        f32 atanf(f32);
-        f32 cosf(f32);
-        f32 sinf(f32);
-        f32 tanf(f32);
-        f32 tanhf(f32);
-        f32 frexpf(f32, i32*);
-        f32 modff(f32, f32*);
-        f32 ceilf(f32);
-        f32 fabsf(f32);
-        f32 floorf(f32);
+        namespace nf32
+        {
+            typedef f32 value_t;
 
-        f32 acosf(f32);
-        f32 asinf(f32);
-        f32 atan2f(f32, f32);
-        f32 coshf(f32);
-        f32 sinhf(f32);
-        f32 expf(f32);
-        f32 ldexpf(f32, i32);
-        f32 logf(f32);
-        f32 log10f(f32);
-        f32 powf(f32, f32);
-        f32 sqrtf(f32);
-        f32 fmodf(f32, f32);
+            value_t abs(value_t);
+            value_t min(value_t, value_t);
+            value_t max(value_t, value_t);
+            value_t clamp(value_t, value_t, value_t);
+            value_t average(value_t, value_t);
+            void    sort(value_t& a, value_t& b);
+            void    sort(value_t& a, value_t& b, value_t& c);
 
+            value_t floor(value_t);
+            value_t ceil(value_t);
+            value_t round(value_t);
+            value_t sqr(value_t);
+            value_t map(value_t, value_t, value_t, value_t, value_t);
+
+            value_t smooth_step(value_t, value_t, value_t);
+            value_t lerp(value_t, value_t, value_t);
+            value_t slerp(value_t, value_t, value_t);
+
+            value_t atan(value_t);
+            value_t cos(value_t);
+            value_t sin(value_t);
+            value_t tan(value_t);
+            value_t tanh(value_t);
+            value_t frexp(value_t, i32*);
+            value_t modf(value_t, value_t*);
+            value_t ceil(value_t);
+            value_t fabs(value_t);
+            value_t floor(value_t);
+
+            value_t acos(value_t);
+            value_t asin(value_t);
+            value_t atan2(value_t, value_t);
+            value_t cosh(value_t);
+            value_t sinh(value_t);
+            value_t exp(value_t);
+            value_t ldexp(value_t, i32);
+            value_t log(value_t);
+            value_t log10(value_t);
+            value_t pow(value_t, value_t);
+            value_t sqrt(value_t);
+            value_t fmod(value_t, value_t);
+        }  // namespace nf32
+
+        namespace nf64
+        {
+            typedef f64 value_t;
+
+            value_t abs(value_t);
+            value_t min(value_t, value_t);
+            value_t max(value_t, value_t);
+            value_t clamp(value_t, value_t, value_t);
+            value_t average(value_t, value_t);
+            void    sort(value_t& a, value_t& b);
+            void    sort(value_t& a, value_t& b, value_t& c);
+
+            value_t floor(value_t);
+            value_t ceil(value_t);
+            value_t round(value_t);
+            value_t sqr(value_t);
+            value_t map(value_t, value_t, value_t, value_t, value_t);
+
+            value_t smooth_step(value_t, value_t, value_t);
+            value_t lerp(value_t, value_t, value_t);
+            value_t slerp(value_t, value_t, value_t);
+
+            value_t atan(value_t);
+            value_t cos(value_t);
+            value_t sin(value_t);
+            value_t tan(value_t);
+            value_t tanh(value_t);
+            value_t frexp(value_t, i32*);
+            value_t modf(value_t, value_t*);
+            value_t ceil(value_t);
+            value_t fabs(value_t);
+            value_t floor(value_t);
+
+            value_t acos(value_t);
+            value_t asin(value_t);
+            value_t atan2(value_t, value_t);
+            value_t cosh(value_t);
+            value_t sinh(value_t);
+            value_t exp(value_t);
+            value_t ldexp(value_t, i32);
+            value_t log(value_t);
+            value_t log10(value_t);
+            value_t pow(value_t, value_t);
+            value_t sqrt(value_t);
+            value_t fmod(value_t, value_t);
+        }  // namespace nf64
+
+        namespace ni32
+        {
+            typedef i32 value_t;
+
+            value_t abs(value_t);
+            value_t min(value_t, value_t);
+            value_t max(value_t, value_t);
+            value_t clamp(value_t, value_t, value_t);
+            value_t average(value_t, value_t);
+            void    sort(value_t& a, value_t& b);
+            void    sort(value_t& a, value_t& b, value_t& c);
+
+            value_t sqr(value_t);
+            value_t map(value_t, value_t, value_t, value_t, value_t);
+
+            value_t lerp(value_t start, value_t end, value_t t, u8 shift = 8);
+            value_t lerp_angle(value_t start, value_t end, value_t t, u8 shift = 8);
+            value_t smoothstep(value_t start, value_t end, value_t t, u8 shift = 8);
+        }  // namespace ni32
+
+        namespace ni64
+        {
+            typedef i64 value_t;
+
+            value_t abs(value_t);
+            value_t min(value_t, value_t);
+            value_t max(value_t, value_t);
+            value_t clamp(value_t, value_t, value_t);
+            value_t average(value_t, value_t);
+            void    sort(value_t& a, value_t& b);
+            void    sort(value_t& a, value_t& b, value_t& c);
+
+            value_t sqr(value_t);
+            value_t map(value_t, value_t, value_t, value_t, value_t);
+
+            value_t lerp(value_t start, value_t end, value_t t, u8 shift = 16);
+            value_t lerp_angle(value_t start, value_t end, value_t t, u8 shift = 16);
+            value_t smoothstep(value_t start, value_t end, value_t t, u8 shift = 16);
+        }  // namespace ni64
     }  // namespace math
 };  // namespace ncore
 
