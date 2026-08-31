@@ -19,7 +19,7 @@ namespace ncore
         {
             // float implementations
 
-            value_t abs(value_t a) { return ::abs(a); }
+            value_t abs(value_t a) { return (value_t)::fabs(a); }
             value_t min(value_t a, value_t b) { return a <= b ? a : b; }
             value_t max(value_t a, value_t b) { return a >= b ? a : b; }
             value_t clamp(value_t a, value_t b, value_t c) { return a < b ? b : (a > c ? c : a); }
@@ -92,7 +92,7 @@ namespace ncore
         {
             // double implementations
 
-            value_t abs(value_t a) { return ::abs(a); }
+            value_t abs(value_t a) { return ::fabs(a); }
             value_t min(value_t a, value_t b) { return a <= b ? a : b; }
             value_t max(value_t a, value_t b) { return a >= b ? a : b; }
             value_t clamp(value_t a, value_t b, value_t c) { return a < b ? b : (a > c ? c : a); }
@@ -328,7 +328,7 @@ namespace ncore
             value_t smoothstep(value_t start, value_t end, value_t t, u8 shift)
             {
                 // 1. Calculate the maximum value of t based on the shift
-                value_t max_t = 1 << shift;
+                value_t max_t = (value_t)1 << shift;
 
                 // Guard against out-of-bounds inputs
                 if (t <= 0)
