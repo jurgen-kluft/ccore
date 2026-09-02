@@ -46,7 +46,7 @@ namespace ncore
             value_t sqr(value_t a) { return a * a; }
             value_t map(value_t a, value_t b, value_t c, value_t d, value_t e) { return (a - b) * (e - d) / (c - b) + d; }
 
-            value_t smooth_step(value_t a, value_t b, value_t c)
+            value_t smooth_step(value_t a, value_t b, value_t c, u8 shift)
             {
                 if (c <= a)
                     return 0.0f;
@@ -55,8 +55,8 @@ namespace ncore
                 value_t t = (c - a) / (b - a);
                 return t * t * (3.0f - 2.0f * t);
             }
-            value_t lerp(value_t a, value_t b, value_t c) { return a + (b - a) * c; }
-            value_t slerp(value_t a, value_t b, value_t c)
+            value_t lerp(value_t a, value_t b, value_t c, u8 shift) { return a + (b - a) * c; }
+            value_t slerp(value_t a, value_t b, value_t c, u8 shift)
             {
                 value_t theta = ::acosf(a * b);
                 if (::fabsf(theta) < 0.00001f)
@@ -119,7 +119,7 @@ namespace ncore
             value_t sqr(value_t a) { return a * a; }
             value_t map(value_t a, value_t b, value_t c, value_t d, value_t e) { return (a - b) * (e - d) / (c - b) + d; }
 
-            value_t smooth_step(value_t a, value_t b, value_t c)
+            value_t smooth_step(value_t a, value_t b, value_t c, u8 shift)
             {
                 if (c <= a)
                     return 0.0;
@@ -128,8 +128,8 @@ namespace ncore
                 value_t t = (c - a) / (b - a);
                 return t * t * (3.0 - 2.0 * t);
             }
-            value_t lerp(value_t a, value_t b, value_t c) { return a + (b - a) * c; }
-            value_t slerp(value_t a, value_t b, value_t c)
+            value_t lerp(value_t a, value_t b, value_t c, u8 shift) { return a + (b - a) * c; }
+            value_t slerp(value_t a, value_t b, value_t c, u8 shift)
             {
                 value_t theta = ::acos(a * b);
                 if (::fabs(theta) < 0.00001)

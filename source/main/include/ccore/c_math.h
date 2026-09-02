@@ -146,9 +146,9 @@ namespace ncore
             value_t sqr(value_t);
             value_t map(value_t, value_t, value_t, value_t, value_t);
 
-            value_t smooth_step(value_t, value_t, value_t);
-            value_t lerp(value_t, value_t, value_t);
-            value_t slerp(value_t, value_t, value_t);
+            value_t smooth_step(value_t start, value_t end, value_t t, u8 shift = 8);
+            value_t lerp(value_t start, value_t end, value_t t, u8 shift = 8);
+            value_t slerp(value_t start, value_t end, value_t t, u8 shift = 8);
 
             value_t atan(value_t);
             value_t cos(value_t);
@@ -193,9 +193,9 @@ namespace ncore
             value_t sqr(value_t);
             value_t map(value_t, value_t, value_t, value_t, value_t);
 
-            value_t smooth_step(value_t, value_t, value_t);
-            value_t lerp(value_t, value_t, value_t);
-            value_t slerp(value_t, value_t, value_t);
+            value_t smooth_step(value_t start, value_t end, value_t t, u8 shift = 16);
+            value_t lerp(value_t start, value_t end, value_t t, u8 shift = 16);
+            value_t slerp(value_t start, value_t end, value_t t, u8 shift = 16);
 
             value_t atan(value_t);
             value_t cos(value_t);
