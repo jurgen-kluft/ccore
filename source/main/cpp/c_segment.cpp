@@ -132,9 +132,9 @@ namespace ncore
             ASSERT(class_index >= 0 && class_index < 32);
             ASSERT(node_index != cINVALID_INDEX);
             ASSERT(node_index < allocator->m_total_minsize_segments);
-            const u16 previous_head                            = allocator->m_free_list_heads[class_index];
-            allocator->m_nodes[node_index].m_free.m_next       = previous_head;
-            allocator->m_nodes[node_index].m_free.m_prev       = cINVALID_INDEX;
+            const u16 previous_head                      = allocator->m_free_list_heads[class_index];
+            allocator->m_nodes[node_index].m_free.m_next = previous_head;
+            allocator->m_nodes[node_index].m_free.m_prev = cINVALID_INDEX;
             if (previous_head != cINVALID_INDEX)
             {
                 ASSERT(previous_head < allocator->m_total_minsize_segments);
@@ -148,7 +148,7 @@ namespace ncore
             if (allocator == nullptr || allocator->m_chain == nullptr || node_index >= allocator->m_total_minsize_segments)
                 return false;
 
-            chain_t const* node = &allocator->m_chain[node_index];
+            chain_t const * node = &allocator->m_chain[node_index];
             if (node_index == 0)
             {
                 if (node->m_prev != cINVALID_INDEX)
@@ -176,13 +176,13 @@ namespace ncore
         static inline i32 s_node_class(allocator_t* allocator, u16 node_index)
         {
             ASSERT(s_is_active_node(allocator, node_index));
-            chain_t const* node = &allocator->m_chain[node_index];
-            const u32 span = node->m_next != cINVALID_INDEX ? (u32)node->m_next - node_index : allocator->m_total_minsize_segments - node_index;
+            chain_t const * node = &allocator->m_chain[node_index];
+            const u32       span = node->m_next != cINVALID_INDEX ? (u32)node->m_next - node_index : allocator->m_total_minsize_segments - node_index;
             if (span == 0 || !math::ispo2(span))
                 return -1;
 
             const i32 class_index = math::ilog2(span);
-            const i32 top_class  = allocator->m_segment_maxsize_shift - allocator->m_segment_minsize_shift;
+            const i32 top_class   = allocator->m_segment_maxsize_shift - allocator->m_segment_minsize_shift;
             return class_index <= top_class ? class_index : -1;
         }
 
@@ -212,15 +212,15 @@ namespace ncore
             bool  result       = false;
             if (target_pages > current_pages)
             {
-                byte* commit_address = node_address + ((u64)current_pages << allocator->m_pagesize_shift);
-                const uint_t commit_size = (uint_t)(target_pages - current_pages) << allocator->m_pagesize_shift;
-                result = v_alloc_commit(commit_address, commit_size);
+                byte*        commit_address = node_address + ((u64)current_pages << allocator->m_pagesize_shift);
+                const uint_t commit_size    = (uint_t)(target_pages - current_pages) << allocator->m_pagesize_shift;
+                result                      = v_alloc_commit(commit_address, commit_size);
             }
             else
             {
-                byte* decommit_address = node_address + ((u64)target_pages << allocator->m_pagesize_shift);
-                const uint_t decommit_size = (uint_t)(current_pages - target_pages) << allocator->m_pagesize_shift;
-                result = v_alloc_decommit(decommit_address, decommit_size);
+                byte*        decommit_address = node_address + ((u64)target_pages << allocator->m_pagesize_shift);
+                const uint_t decommit_size    = (uint_t)(current_pages - target_pages) << allocator->m_pagesize_shift;
+                result                        = v_alloc_decommit(decommit_address, decommit_size);
             }
 
             if (!result)
@@ -237,7 +237,7 @@ namespace ncore
             ASSERT(class_index >= 0 && class_index < 32);
             ASSERT(node_index < allocator->m_total_minsize_segments);
 
-            dlnode_t& free_node = allocator->m_nodes[node_index].m_free;
+            dlnode_t& free_node     = allocator->m_nodes[node_index].m_free;
             const u16 previous_node = free_node.m_prev;
             const u16 next_node     = free_node.m_next;
 
@@ -334,8 +334,8 @@ namespace ncore
                     chain_t* current_node_next = s_chain_index_to_ptr(allocator, current_node->m_next);
                     current_node_next->m_prev  = right_buddy_index;
                 }
-                current_node->m_next                        = right_buddy_index;
-                right_buddy->m_committed_pages              = 0;
+                current_node->m_next                                = right_buddy_index;
+                right_buddy->m_committed_pages                      = 0;
                 allocator->m_nodes[right_buddy_index].m_free.m_next = cINVALID_INDEX;
                 allocator->m_nodes[right_buddy_index].m_free.m_prev = cINVALID_INDEX;
 
@@ -347,7 +347,7 @@ namespace ncore
             }
 
             // Mark final node as USED
-            current_node->m_flags = set_used(current_node->m_flags);
+            current_node->m_flags                                  = set_used(current_node->m_flags);
             allocator->m_nodes[current_node_index].m_user.m_tag    = 0;
             allocator->m_nodes[current_node_index].m_user.m_unused = 0;
 
@@ -384,7 +384,7 @@ namespace ncore
                 return;
 
             current_node->m_flags = set_free(current_node->m_flags);
-            const i32 top_class = allocator->m_segment_maxsize_shift - allocator->m_segment_minsize_shift;
+            const i32 top_class   = allocator->m_segment_maxsize_shift - allocator->m_segment_minsize_shift;
 
             while (current_class < top_class)
             {
@@ -402,8 +402,8 @@ namespace ncore
 
                 const u16 left_index  = math::min(current_index, buddy_index);
                 const u16 right_index = math::max(current_index, buddy_index);
-                chain_t* left_node    = &allocator->m_chain[left_index];
-                chain_t* right_node   = &allocator->m_chain[right_index];
+                chain_t*  left_node   = &allocator->m_chain[left_index];
+                chain_t*  right_node  = &allocator->m_chain[right_index];
                 if (left_node->m_next != right_index || right_node->m_prev != left_index)
                     break;
 
@@ -415,10 +415,10 @@ namespace ncore
                 if (right_node->m_next != cINVALID_INDEX)
                     allocator->m_chain[right_node->m_next].m_prev = left_index;
 
-                right_node->m_next            = cINVALID_INDEX;
-                right_node->m_prev            = cINVALID_INDEX;
-                right_node->m_committed_pages = 0;
-                right_node->m_flags           = 0;
+                right_node->m_next                            = cINVALID_INDEX;
+                right_node->m_prev                            = cINVALID_INDEX;
+                right_node->m_committed_pages                 = 0;
+                right_node->m_flags                           = 0;
                 allocator->m_nodes[right_index].m_free.m_next = cINVALID_INDEX;
                 allocator->m_nodes[right_index].m_free.m_prev = cINVALID_INDEX;
 
@@ -507,7 +507,7 @@ namespace ncore
             if (allocator == nullptr || allocator->m_base_address == nullptr || address == nullptr)
                 return cINVALID_NODE;
 
-            const uptr_t base_address = (uptr_t)allocator->m_base_address;
+            const uptr_t base_address  = (uptr_t)allocator->m_base_address;
             const uptr_t query_address = (uptr_t)address;
             if (query_address < base_address)
                 return cINVALID_NODE;
@@ -521,7 +521,7 @@ namespace ncore
             const i32 top_class  = allocator->m_segment_maxsize_shift - allocator->m_segment_minsize_shift;
             for (i32 class_index = 0; class_index <= top_class; ++class_index)
             {
-                const u32 class_span     = 1u << class_index;
+                const u32 class_span    = 1u << class_index;
                 const u32 candidate_u32 = slot_index & ~(class_span - 1u);
                 if (candidate_u32 >= allocator->m_total_minsize_segments)
                     continue;
@@ -530,7 +530,7 @@ namespace ncore
                 if (!s_is_active_node(allocator, candidate))
                     continue;
 
-                chain_t const* node = &allocator->m_chain[candidate];
+                chain_t const * node = &allocator->m_chain[candidate];
                 if (!is_used(node->m_flags) || s_node_class(allocator, candidate) != class_index)
                     continue;
 
@@ -569,8 +569,7 @@ namespace ncore
             if (num_pages < allocator->m_chain[node_index].m_committed_pages)
                 return;
 
-            const bool result = s_set_committed_pages(allocator, node_index, num_pages);
-            ASSERT(result);
+            DVERIFY(s_set_committed_pages(allocator, node_index, num_pages), true);
         }
 
         // 8888888b.  8888888888 .d8888b.   .d88888b.  888b     d888 888b     d888 8888888 88888888888
@@ -594,8 +593,7 @@ namespace ncore
             if (num_pages > allocator->m_chain[node_index].m_committed_pages)
                 return;
 
-            const bool result = s_set_committed_pages(allocator, node_index, num_pages);
-            ASSERT(result);
+            DVERIFY(s_set_committed_pages(allocator, node_index, num_pages), true);
         }
 
         // 8888888 888b    888 8888888 88888888888 8888888        d8888 888      8888888 8888888888P 8888888888
@@ -691,12 +689,12 @@ namespace ncore
                 const u16 iprev    = (i > 0) ? icurrent - step : cINVALID_INDEX;
                 const u16 inext    = (i < num_top_nodes - 1) ? icurrent + step : cINVALID_INDEX;
 
-                chain_t* current                   = &allocator->m_chain[icurrent];
-                current->m_prev                    = iprev;
-                current->m_next                    = inext;
-                current->m_flags                   = set_free(0);
-                current->m_flags                   = set_side(current->m_flags, i & 1);
-                current->m_committed_pages         = 0;
+                chain_t* current                           = &allocator->m_chain[icurrent];
+                current->m_prev                            = iprev;
+                current->m_next                            = inext;
+                current->m_flags                           = set_free(0);
+                current->m_flags                           = set_side(current->m_flags, i & 1);
+                current->m_committed_pages                 = 0;
                 allocator->m_nodes[icurrent].m_free.m_next = inext;
                 allocator->m_nodes[icurrent].m_free.m_prev = iprev;
             }
@@ -719,8 +717,7 @@ namespace ncore
                 return;
             u64 total_size = (u64)allocator->m_total_minsize_segments << allocator->m_segment_minsize_shift;
             total_size += (u64)allocator->m_bookkeeping_num_pages << allocator->m_pagesize_shift;
-            const bool released = v_alloc_release(allocator->m_base_address, total_size);
-            ASSERT(released);
+            DVERIFY(v_alloc_release(allocator->m_base_address, total_size), true);
             g_memset(allocator, 0, sizeof(allocator_t));
             for (u32 i = 0; i < 32; ++i)
                 allocator->m_free_list_heads[i] = cINVALID_INDEX;

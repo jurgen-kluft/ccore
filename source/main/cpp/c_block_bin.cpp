@@ -71,8 +71,7 @@ namespace ncore
         ASSERT(max_block_count > 0 && max_block_count <= cINVALID_BLOCK_INDEX);
 
         const uint_t page_size     = (uint_t)1 << page_size_shift;
-        const uint_t address_pages = reserved_size >> page_size_shift;
-        ASSERT(address_pages <= (uint_t)0xFFFFFFFFULL);
+        ASSERT((reserved_size >> page_size_shift) <= (uint_t)0xFFFFFFFFULL);
         uint_t required_size        = sizeof(bbin_t) + ((uint_t)max_block_count * sizeof(bblock_t));
         required_size               = math::alignUp(required_size, page_size);
         const uint_t required_pages = required_size >> page_size_shift;
@@ -166,8 +165,7 @@ namespace ncore
 
     void bin_free(bbin_t* bin, void* ptr)
     {
-        const uint_t address_size = (uint_t)bin->m_address_size_in_pages << bin->m_page_size_shift;
-        ASSERT(ptr != nullptr && ptr >= bin->m_address_base && ptr < (byte*)bin->m_address_base + address_size);
+        ASSERT(ptr != nullptr && ptr >= bin->m_address_base && ptr < (byte*)bin->m_address_base + ((uint_t)bin->m_address_size_in_pages << bin->m_page_size_shift));
 
         const u8     block_size_shift = bin->m_block_size_shift;
         const uint_t address_offset   = (uint_t)((byte*)ptr - (byte*)bin->m_address_base);

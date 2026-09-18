@@ -258,8 +258,7 @@ namespace ncore
 
     void bin_free(cbin_t* bin, void* ptr)
     {
-        const uint_t address_size = (uint_t)bin->m_address_size_in_pages << bin->m_page_size_shift;
-        ASSERT(ptr != nullptr && ptr >= bin->m_address_base && ptr < (byte*)bin->m_address_base + address_size);
+        ASSERT(ptr != nullptr && ptr >= bin->m_address_base && ptr < (byte*)bin->m_address_base + ((uint_t)bin->m_address_size_in_pages << bin->m_page_size_shift));
 
         const u8 chunk_size_shift = bin->m_chunk_size_shift;
 
